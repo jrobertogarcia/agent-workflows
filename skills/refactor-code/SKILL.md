@@ -1,0 +1,17 @@
+---
+name: refactor-code
+description: In-depth analysis of code design violations, presenting a refactoring plan before executing behavior-preserving cleanup.
+---
+
+# Clean Design & Refactoring
+
+## Design Principles
+- **SOLID**: Single responsibility, extension points, decoupled layers.
+- **Coupling & Cohesion**: High internal cohesion, low external coupling.
+- **Simplicity**: Eliminate dead code, premature abstractions (YAGNI/KISS).
+- **Readability**: Self-documenting naming, clean control flows.
+
+## Execution
+1. **Audit & Plan**: Audit code smells in the files under development or modification. Write a structured `implementation_plan.md` artifact. **Wait for user approval before modifying code.**
+2. **Refactor**: Apply behavior-preserving restructures incrementally to the files under development or modification. Do not add new features or unrelated fixes.
+3. **Verify**: Run build, lint, and test commands (e.g., running the project's standard compilation, linting, and testing suites) to confirm no behavioral regressions.
