@@ -202,15 +202,48 @@ def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystem
             sync_target_directory(skills_dir, target.path, fs_manager, file_suffix=target.file_suffix, uninstall_all=True)
 
 
+class RuleCompiler:
+    """Base class defining the interface for rule compilers."""
+    def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
+        raise NotImplementedError
+
+
+class CursorRuleCompiler(RuleCompiler):
+    """Compiles rules into Cursor's .mdc format."""
+    def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
+        cursor_dir = project_path / ".cursor" / "rules"
+        cursor_dir.mkdir(parents=True, exist_ok=True)
+        cursor_file = cursor_dir / f"{skill_name}.mdc"
+        desc = metadata.get("description", f"Behavior rule for {skill_name}")
+        cursor_content = f"---\ndescription: {desc}\nglobs: [\"**/*\"]\nalwaysApply: false\n---\n\n{body.strip()}\n"
+        with open(cursor_file, "w", encoding="utf-8") as f:
+            f.write(cursor_content)
+        print(f"  [Cursor Rule Created] {cursor_file.relative_to(project_path)}")
+
+
+class WindsurfRuleCompiler(RuleCompiler):
+    """Compiles rules into Windsurf's .md rule format."""
+    def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
+        windsurf_dir = project_path / ".windsurf" / "rules"
+        windsurf_dir.mkdir(parents=True, exist_ok=True)
+        windsurf_file = windsurf_dir / f"{skill_name}.md"
+        title = skill_name.replace('-', ' ').title()
+        with open(windsurf_file, "w", encoding="utf-8") as f:
+            f.write(f"# {title}\n\n{body.strip()}\n")
+        print(f"  [Windsurf Rule Created] {windsurf_file.relative_to(project_path)}")
+
+
 def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystemManager) -> None:
-    """Compiles rules locally into the target project workspace for Cursor and Windsurf."""
+    """Compiles rules locally into the target project workspace for all registered compilers."""
     project_path = project_path.resolve()
     if not project_path.is_dir():
         print(f"Error: Target path {project_path} is not a valid directory.")
         sys.exit(1)
 
-    cursor_dir = project_path / ".cursor" / "rules"
-    windsurf_dir = project_path / ".windsurf" / "rules"
+    compilers: List[RuleCompiler] = [
+        CursorRuleCompiler(),
+        WindsurfRuleCompiler()
+    ]
 
     print(f"Configuring project-level rules at: {project_path}")
 
@@ -222,22 +255,8 @@ def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystem
                 continue
 
             metadata, body = fs_manager.load_frontmatter(skill_md)
-            desc = metadata.get("description", f"Behavior rule for {skill_folder.name}")
-            
-            # Cursor Compilation (.mdc format)
-            cursor_dir.mkdir(parents=True, exist_ok=True)
-            cursor_file = cursor_dir / f"{skill_folder.name}.mdc"
-            cursor_content = f"---\ndescription: {desc}\nglobs: [\"**/*\"]\nalwaysApply: false\n---\n\n{body.strip()}\n"
-            with open(cursor_file, "w", encoding="utf-8") as f:
-                f.write(cursor_content)
-            print(f"  [Cursor Rule Created] {cursor_file.relative_to(project_path)}")
-
-            # Windsurf Compilation (.md format)
-            windsurf_dir.mkdir(parents=True, exist_ok=True)
-            windsurf_file = windsurf_dir / f"{skill_folder.name}.md"
-            with open(windsurf_file, "w", encoding="utf-8") as f:
-                f.write(f"# {skill_folder.name.replace('-', ' ').title()}\n\n{body.strip()}\n")
-            print(f"  [Windsurf Rule Created] {windsurf_file.relative_to(project_path)}")
+            for compiler in compilers:
+                compiler.compile(skill_folder.name, metadata, body, project_path)
 
 
 def main() -> None:
