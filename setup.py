@@ -4,6 +4,7 @@ import sys
 import shutil
 import argparse
 from pathlib import Path
+from typing import Dict, Tuple
 
 # Target paths for global tools
 HOME = Path.home()
@@ -14,10 +15,11 @@ TARGETS = {
     "codex": HOME / ".codex" / "skills",
 }
 
-def load_frontmatter(skill_md_path: Path):
+def load_frontmatter(skill_md_path: Path) -> Tuple[Dict[str, str], str]:
     """Parses a SKILL.md file and extracts its frontmatter and markdown body."""
+    empty_metadata: Dict[str, str] = {}
     if not skill_md_path.exists():
-        return {}, ""
+        return empty_metadata, ""
     
     with open(skill_md_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -34,23 +36,23 @@ def load_frontmatter(skill_md_path: Path):
             body_lines = lines[end_idx+1:]
             
             # Parse simple YAML key-value pairs
-            metadata = {}
+            metadata: Dict[str, str] = {}
             for line in frontmatter_lines:
                 if ":" in line:
                     key, value = line.split(":", 1)
                     metadata[key.strip()] = value.strip()
             return metadata, "\n".join(body_lines)
             
-    return {}, content
+    return empty_metadata, content
 
-def clean_target(target: Path):
+def clean_target(target: Path) -> None:
     """Safely deletes a file, directory, or symlink at the target path."""
     if target.is_symlink() or target.is_file():
         target.unlink()
     elif target.is_dir():
         shutil.rmtree(target)
 
-def link_or_copy(source: Path, target: Path, is_directory: bool = False):
+def link_or_copy(source: Path, target: Path, is_directory: bool = False) -> None:
     """Attempts to create a symlink; falls back to copying on OS permission restrictions."""
     target.parent.mkdir(parents=True, exist_ok=True)
     
@@ -63,22 +65,29 @@ def link_or_copy(source: Path, target: Path, is_directory: bool = False):
     except (OSError, PermissionError):
         # Fallback to copy (Crucial for non-developer mode Windows users)
         if is_directory:
-            shutil.copytree(source, target)
             try:
-                (target / ".agent-workflows-source").touch()
-            except OSError:
-                pass
-            print(f"  [Copied (Fallback)] {target.name} (Directory)")
+                shutil.copytree(source, target)
+                try:
+                    (target / ".agent-workflows-source").touch()
+                except OSError as err:
+                    print(f"  [Warning] Failed to write source signature to {target}: {err}")
+                print(f"  [Copied (Fallback)] {target.name} (Directory)")
+            except OSError as err:
+                print(f"  [Error] Failed to copy directory {source} to {target}: {err}")
         else:
             try:
                 signature = "<!-- Source: agent-workflows -->\n"
                 content = source.read_text(encoding="utf-8")
                 target.write_text(signature + content, encoding="utf-8")
-            except OSError:
-                shutil.copy2(source, target)
-            print(f"  [Copied (Fallback)] {target.name} (File)")
+                print(f"  [Copied (Fallback)] {target.name} (File)")
+            except (OSError, UnicodeDecodeError):
+                try:
+                    shutil.copy2(source, target)
+                    print(f"  [Copied (Fallback)] {target.name} (File via binary copy)")
+                except OSError as copy_err:
+                    print(f"  [Error] Failed to copy file {source} to {target}: {copy_err}")
 
-def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bool = False):
+def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bool = False) -> None:
     """Removes orphaned or stale rules in the target directory managed by this repository."""
     if not target_path.exists():
         return
@@ -96,13 +105,13 @@ def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bo
                 resolved = item.resolve()
                 if repo_dir in resolved.parents or resolved == repo_dir:
                     is_managed = True
-            except Exception:
+            except (OSError, ValueError):
                 # Broken symlink - check if link target text contains "agent-workflows"
                 try:
                     link_target = os.readlink(item)
                     if "agent-workflows" in link_target:
                         is_managed = True
-                except Exception:
+                except OSError:
                     pass
         # 2. Directory Copy check (contains marker file)
         elif item.is_dir():
@@ -111,11 +120,11 @@ def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bo
         # 3. File Copy check (starts with signature comment)
         elif item.is_file():
             try:
-                with open(item, "r", encoding="utf-8") as f:
+                with open(item, "r", encoding="utf-8", errors="ignore") as f:
                     first_line = f.readline()
                 if "<!-- Source: agent-workflows -->" in first_line:
                     is_managed = True
-            except Exception:
+            except OSError:
                 pass
 
         if is_managed:
@@ -126,10 +135,13 @@ def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bo
 
             # Remove if uninstalling or skill no longer active
             if uninstall_all or skill_name not in active_skills:
-                clean_target(item)
-                print(f"  [Cleaned Orphaned] {item.name}")
+                try:
+                    clean_target(item)
+                    print(f"  [Cleaned Orphaned] {item.name}")
+                except OSError as err:
+                    print(f"  [Error] Failed to clean orphaned target {item.name}: {err}")
 
-def install_global(skills_dir: Path):
+def install_global(skills_dir: Path) -> None:
     """Installs skills globally for detected agent tool folders."""
     print("Scanning active agent configurations...")
     linked_any = False
@@ -160,7 +172,7 @@ def install_global(skills_dir: Path):
         print("\nNo active agent config directories (e.g. ~/.claude or ~/.gemini/antigravity) were detected.")
         print("Please run your agent tools at least once to initialize their default paths.")
 
-def uninstall_global(skills_dir: Path):
+def uninstall_global(skills_dir: Path) -> None:
     """Cleans up all globally linked/copied skills."""
     print("Cleaning global agent configurations...")
     for tool, target_path in TARGETS.items():
@@ -168,7 +180,7 @@ def uninstall_global(skills_dir: Path):
             print(f"\nCleaning {tool.upper()} skills at: {target_path}")
             sync_target_directory(skills_dir, target_path, uninstall_all=True)
 
-def compile_project(skills_dir: Path, project_path: Path):
+def compile_project(skills_dir: Path, project_path: Path) -> None:
     """Compiles rules locally into the target project workspace for Cursor and Windsurf."""
     project_path = project_path.resolve()
     if not project_path.is_dir():
@@ -205,7 +217,7 @@ def compile_project(skills_dir: Path, project_path: Path):
                 f.write(f"# {skill_folder.name.replace('-', ' ').title()}\n\n{body.strip()}\n")
             print(f"  [Windsurf Rule Created] {windsurf_file.relative_to(project_path)}")
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Shared Agent Skills Repository installer script.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
