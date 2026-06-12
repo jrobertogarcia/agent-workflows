@@ -1,0 +1,40 @@
+# ==========================================
+# 1. Python Compilation and Caching
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ==========================================
+# 2. Virtual Environments (Local Dependencies)
+# ==========================================
+.venv/
+venv/
+env/
+ENV/
+pyvenv.cfg
+.python-version
+
+# ==========================================
+# 3. Local Rule Compilation Artifacts
+# ==========================================
+# Ignore locally compiled rules if setup.py is tested on this repository root
+.cursor/rules/
+.windsurf/rules/
+
+# ==========================================
+# 4. OS/System Metadata
+# ==========================================
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# 5. IDE / Editor Configurations
+# ==========================================
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
