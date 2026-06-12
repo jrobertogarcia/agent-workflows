@@ -64,10 +64,70 @@ def link_or_copy(source: Path, target: Path, is_directory: bool = False):
         # Fallback to copy (Crucial for non-developer mode Windows users)
         if is_directory:
             shutil.copytree(source, target)
+            try:
+                (target / ".agent-workflows-source").touch()
+            except OSError:
+                pass
             print(f"  [Copied (Fallback)] {target.name} (Directory)")
         else:
-            shutil.copy2(source, target)
+            try:
+                signature = "<!-- Source: agent-workflows -->\n"
+                content = source.read_text(encoding="utf-8")
+                target.write_text(signature + content, encoding="utf-8")
+            except OSError:
+                shutil.copy2(source, target)
             print(f"  [Copied (Fallback)] {target.name} (File)")
+
+def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bool = False):
+    """Removes orphaned or stale rules in the target directory managed by this repository."""
+    if not target_path.exists():
+        return
+
+    # Get active skills in repository
+    active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
+    repo_dir = skills_dir.parent.resolve()
+
+    for item in target_path.iterdir():
+        is_managed = False
+        
+        # 1. Symlink check
+        if item.is_symlink():
+            try:
+                resolved = item.resolve()
+                if repo_dir in resolved.parents or resolved == repo_dir:
+                    is_managed = True
+            except Exception:
+                # Broken symlink - check if link target text contains "agent-workflows"
+                try:
+                    link_target = os.readlink(item)
+                    if "agent-workflows" in link_target:
+                        is_managed = True
+                except Exception:
+                    pass
+        # 2. Directory Copy check (contains marker file)
+        elif item.is_dir():
+            if (item / ".agent-workflows-source").exists():
+                is_managed = True
+        # 3. File Copy check (starts with signature comment)
+        elif item.is_file():
+            try:
+                with open(item, "r", encoding="utf-8") as f:
+                    first_line = f.readline()
+                if "<!-- Source: agent-workflows -->" in first_line:
+                    is_managed = True
+            except Exception:
+                pass
+
+        if is_managed:
+            # Extract skill name from target file/folder name
+            skill_name = item.name
+            if skill_name.endswith(".agent.md"):
+                skill_name = skill_name[:-9]
+
+            # Remove if uninstalling or skill no longer active
+            if uninstall_all or skill_name not in active_skills:
+                clean_target(item)
+                print(f"  [Cleaned Orphaned] {item.name}")
 
 def install_global(skills_dir: Path):
     """Installs skills globally for detected agent tool folders."""
@@ -80,6 +140,9 @@ def install_global(skills_dir: Path):
         if parent_config.exists():
             print(f"\nConfiguring {tool.upper()} skills at: {target_path}")
             target_path.mkdir(parents=True, exist_ok=True)
+            
+            # Sync target path to clean up any orphaned rules first!
+            sync_target_directory(skills_dir, target_path, uninstall_all=False)
             
             for skill_folder in skills_dir.iterdir():
                 if skill_folder.is_dir():
@@ -103,18 +166,7 @@ def uninstall_global(skills_dir: Path):
     for tool, target_path in TARGETS.items():
         if target_path.exists():
             print(f"\nCleaning {tool.upper()} skills at: {target_path}")
-            for skill_folder in skills_dir.iterdir():
-                if skill_folder.is_dir():
-                    if tool in ["claude", "gemini", "codex"]:
-                        target = target_path / skill_folder.name
-                        if target.exists() or target.is_symlink():
-                            clean_target(target)
-                            print(f"  [Removed] {target.name}")
-                    elif tool == "copilot":
-                        target = target_path / f"{skill_folder.name}.agent.md"
-                        if target.exists() or target.is_symlink():
-                            clean_target(target)
-                            print(f"  [Removed] {target.name}")
+            sync_target_directory(skills_dir, target_path, uninstall_all=True)
 
 def compile_project(skills_dir: Path, project_path: Path):
     """Compiles rules locally into the target project workspace for Cursor and Windsurf."""
@@ -165,7 +217,7 @@ def main():
 
     # Project command
     proj_parser = subparsers.add_parser("project", help="Link/Compile skills locally for Cursor and Windsurf in a project.")
-    proj_parser.add_argument("--path", required=True, help="Path to the local project workspace root.")
+    proj_parser.add_argument("--path", default=".", help="Path to the local project workspace root (defaults to current directory).")
 
     args = parser.parse_args()
 
