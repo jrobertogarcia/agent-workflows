@@ -9,7 +9,7 @@ from pathlib import Path
 HOME = Path.home()
 TARGETS = {
     "claude": HOME / ".claude" / "skills",
-    "gemini": HOME / ".gemini" / "antigravity" / "skills",
+    "gemini": HOME / ".gemini" / "config" / "skills",
     "copilot": HOME / ".copilot" / "agents",
     "codex": HOME / ".codex" / "skills",
 }
