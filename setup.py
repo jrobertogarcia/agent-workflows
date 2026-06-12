@@ -186,7 +186,13 @@ def sync_target_directory(skills_dir: Path, target_path: Path, fs_manager: FileS
         
     repo_dir = skills_dir.parent.resolve()
 
-    for item in target_path.iterdir():
+    try:
+        items = list(target_path.iterdir())
+    except OSError as err:
+        Console.warning(f"Failed to read target directory {target_path} for sync/cleanup: {err}")
+        return
+
+    for item in items:
         if fs_manager.is_managed_target(item, repo_dir):
             # Extract skill name from target file/folder name
             skill_name = item.name
