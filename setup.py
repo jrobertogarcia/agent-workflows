@@ -21,7 +21,7 @@ class WorkflowSetupError(Exception):
 
 
 class Console:
-    """Helper for colored/formatted console logging output."""
+    """Helper for formatted console logging output."""
     @staticmethod
     def info(message: str) -> None:
         print(message)
@@ -85,7 +85,10 @@ class FileSystemManager:
                 for line in frontmatter_lines:
                     if ":" in line:
                         key, value = line.split(":", 1)
-                        metadata[key.strip()] = value.strip()
+                        val = value.strip()
+                        if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                            val = val[1:-1]
+                        metadata[key.strip()] = val
                 return metadata, "\n".join(body_lines)
                 
         return empty_metadata, content
@@ -272,7 +275,8 @@ class CursorRuleCompiler(RuleCompiler):
             cursor_dir.mkdir(parents=True, exist_ok=True)
             cursor_file = cursor_dir / f"{skill_name}.mdc"
             desc = metadata.get("description", f"Behavior rule for {skill_name}")
-            cursor_content = f"---\ndescription: {desc}\nglobs: [\"**/*\"]\nalwaysApply: false\nsource: agent-workflows\n---\n\n{body.strip()}\n"
+            safe_desc = desc.replace('\\', '\\\\').replace('"', '\\"')
+            cursor_content = f"---\ndescription: \"{safe_desc}\"\nglobs: [\"**/*\"]\nalwaysApply: false\nsource: agent-workflows\n---\n\n{body.strip()}\n"
             with open(cursor_file, "w", encoding="utf-8") as f:
                 f.write(cursor_content)
             Console.success("Cursor Rule Created", str(cursor_file.relative_to(project_path)))
