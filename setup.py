@@ -87,6 +87,38 @@ def link_or_copy(source: Path, target: Path, is_directory: bool = False) -> None
                 except OSError as copy_err:
                     print(f"  [Error] Failed to copy file {source} to {target}: {copy_err}")
 
+def _is_managed_target(item: Path, repo_dir: Path) -> bool:
+    """Determines whether a target item (symlink, file, or directory) is managed by this repository."""
+    # 1. Symlink check
+    if item.is_symlink():
+        try:
+            resolved = item.resolve()
+            if repo_dir in resolved.parents or resolved == repo_dir:
+                return True
+        except (OSError, ValueError):
+            # Broken symlink - check if link target text contains "agent-workflows"
+            try:
+                link_target = os.readlink(item)
+                if "agent-workflows" in link_target:
+                    return True
+            except OSError:
+                pass
+    # 2. Directory Copy check (contains marker file)
+    elif item.is_dir():
+        if (item / ".agent-workflows-source").exists():
+            return True
+    # 3. File Copy check (starts with signature comment)
+    elif item.is_file():
+        try:
+            with open(item, "r", encoding="utf-8", errors="ignore") as f:
+                first_line = f.readline()
+            if "<!-- Source: agent-workflows -->" in first_line:
+                return True
+        except OSError:
+            pass
+
+    return False
+
 def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bool = False) -> None:
     """Removes orphaned or stale rules in the target directory managed by this repository."""
     if not target_path.exists():
@@ -95,43 +127,14 @@ def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bo
     # Get active skills in repository
     active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
     repo_dir = skills_dir.parent.resolve()
+    copilot_suffix = ".agent.md"
 
     for item in target_path.iterdir():
-        is_managed = False
-        
-        # 1. Symlink check
-        if item.is_symlink():
-            try:
-                resolved = item.resolve()
-                if repo_dir in resolved.parents or resolved == repo_dir:
-                    is_managed = True
-            except (OSError, ValueError):
-                # Broken symlink - check if link target text contains "agent-workflows"
-                try:
-                    link_target = os.readlink(item)
-                    if "agent-workflows" in link_target:
-                        is_managed = True
-                except OSError:
-                    pass
-        # 2. Directory Copy check (contains marker file)
-        elif item.is_dir():
-            if (item / ".agent-workflows-source").exists():
-                is_managed = True
-        # 3. File Copy check (starts with signature comment)
-        elif item.is_file():
-            try:
-                with open(item, "r", encoding="utf-8", errors="ignore") as f:
-                    first_line = f.readline()
-                if "<!-- Source: agent-workflows -->" in first_line:
-                    is_managed = True
-            except OSError:
-                pass
-
-        if is_managed:
+        if _is_managed_target(item, repo_dir):
             # Extract skill name from target file/folder name
             skill_name = item.name
-            if skill_name.endswith(".agent.md"):
-                skill_name = skill_name[:-9]
+            if skill_name.endswith(copilot_suffix):
+                skill_name = skill_name[:-len(copilot_suffix)]
 
             # Remove if uninstalling or skill no longer active
             if uninstall_all or skill_name not in active_skills:
