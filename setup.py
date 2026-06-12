@@ -4,7 +4,7 @@ import sys
 import shutil
 import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Set
 
 # Configuration registry class for developer tools/agents
 class AgentTarget:
@@ -123,12 +123,15 @@ class FileSystemManager:
         elif item.is_dir():
             if (item / self.MARKER_FILE).exists():
                 return True
-        # 3. File Copy check (starts with signature comment)
+        # 3. File Copy check (starts with signature comment or contains compiler source tag)
         elif item.is_file():
             try:
                 with open(item, "r", encoding="utf-8", errors="ignore") as f:
-                    first_line = f.readline()
-                if self.SIGNATURE_COMMENT.strip() in first_line:
+                    first_lines = [f.readline() for _ in range(5)]
+                content_sample = "".join(first_lines)
+                if (self.SIGNATURE_COMMENT.strip() in content_sample or
+                        "source: agent-workflows" in content_sample or
+                        "<!-- Source: agent-workflows -->" in content_sample):
                     return True
             except OSError:
                 pass
@@ -200,11 +203,12 @@ def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystem
         if target.path.exists():
             print(f"\nCleaning {target.name.upper()} skills at: {target.path}")
             sync_target_directory(skills_dir, target.path, fs_manager, file_suffix=target.file_suffix, uninstall_all=True)
-
-
 class RuleCompiler:
     """Base class defining the interface for rule compilers."""
     def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
+        raise NotImplementedError
+
+    def clean(self, project_path: Path, fs_manager: FileSystemManager, active_skills: Set[str], repo_dir: Path, uninstall_all: bool = False) -> None:
         raise NotImplementedError
 
 
@@ -215,10 +219,24 @@ class CursorRuleCompiler(RuleCompiler):
         cursor_dir.mkdir(parents=True, exist_ok=True)
         cursor_file = cursor_dir / f"{skill_name}.mdc"
         desc = metadata.get("description", f"Behavior rule for {skill_name}")
-        cursor_content = f"---\ndescription: {desc}\nglobs: [\"**/*\"]\nalwaysApply: false\n---\n\n{body.strip()}\n"
+        cursor_content = f"---\ndescription: {desc}\nglobs: [\"**/*\"]\nalwaysApply: false\nsource: agent-workflows\n---\n\n{body.strip()}\n"
         with open(cursor_file, "w", encoding="utf-8") as f:
             f.write(cursor_content)
         print(f"  [Cursor Rule Created] {cursor_file.relative_to(project_path)}")
+
+    def clean(self, project_path: Path, fs_manager: FileSystemManager, active_skills: Set[str], repo_dir: Path, uninstall_all: bool = False) -> None:
+        cursor_dir = project_path / ".cursor" / "rules"
+        if not cursor_dir.exists():
+            return
+        for item in cursor_dir.iterdir():
+            if fs_manager.is_managed_target(item, repo_dir):
+                skill_name = item.name[:-4]  # strip '.mdc'
+                if uninstall_all or skill_name not in active_skills:
+                    try:
+                        fs_manager.clean_target(item)
+                        print(f"  [Cursor Rule Cleaned] {item.relative_to(project_path)}")
+                    except OSError as err:
+                        print(f"  [Error] Failed to clean Cursor rule {item.name}: {err}")
 
 
 class WindsurfRuleCompiler(RuleCompiler):
@@ -229,11 +247,25 @@ class WindsurfRuleCompiler(RuleCompiler):
         windsurf_file = windsurf_dir / f"{skill_name}.md"
         title = skill_name.replace('-', ' ').title()
         with open(windsurf_file, "w", encoding="utf-8") as f:
-            f.write(f"# {title}\n\n{body.strip()}\n")
+            f.write(f"<!-- Source: agent-workflows -->\n# {title}\n\n{body.strip()}\n")
         print(f"  [Windsurf Rule Created] {windsurf_file.relative_to(project_path)}")
 
+    def clean(self, project_path: Path, fs_manager: FileSystemManager, active_skills: Set[str], repo_dir: Path, uninstall_all: bool = False) -> None:
+        windsurf_dir = project_path / ".windsurf" / "rules"
+        if not windsurf_dir.exists():
+            return
+        for item in windsurf_dir.iterdir():
+            if fs_manager.is_managed_target(item, repo_dir):
+                skill_name = item.name[:-3]  # strip '.md'
+                if uninstall_all or skill_name not in active_skills:
+                    try:
+                        fs_manager.clean_target(item)
+                        print(f"  [Windsurf Rule Cleaned] {item.relative_to(project_path)}")
+                    except OSError as err:
+                        print(f"  [Error] Failed to clean Windsurf rule {item.name}: {err}")
 
-def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystemManager) -> None:
+
+def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystemManager, clean_only: bool = False) -> None:
     """Compiles rules locally into the target project workspace for all registered compilers."""
     project_path = project_path.resolve()
     if not project_path.is_dir():
@@ -245,7 +277,17 @@ def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystem
         WindsurfRuleCompiler()
     ]
 
+    repo_dir = skills_dir.parent.resolve()
+    active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
+
     print(f"Configuring project-level rules at: {project_path}")
+
+    # Synchronize/clean rules first
+    for compiler in compilers:
+        compiler.clean(project_path, fs_manager, active_skills, repo_dir, uninstall_all=clean_only)
+
+    if clean_only:
+        return
 
     # Process all skills
     for skill_folder in skills_dir.iterdir():
@@ -272,6 +314,7 @@ def main() -> None:
     # Project command
     proj_parser = subparsers.add_parser("project", help="Link/Compile skills locally for Cursor and Windsurf in a project.")
     proj_parser.add_argument("--path", default=".", help="Path to the local project workspace root (defaults to current directory).")
+    proj_parser.add_argument("--clean", action="store_true", help="Remove all compiled rules in the project workspace.")
 
     args = parser.parse_args()
 
@@ -290,7 +333,7 @@ def main() -> None:
     elif args.command == "unlink":
         uninstall_global(skills_dir, config, fs_manager)
     elif args.command == "project":
-        compile_project(skills_dir, Path(args.path), fs_manager)
+        compile_project(skills_dir, Path(args.path), fs_manager, clean_only=args.clean)
 
 
 if __name__ == "__main__":
