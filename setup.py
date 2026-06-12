@@ -4,16 +4,23 @@ import sys
 import shutil
 import argparse
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
-# Target paths for global tools
+# Configuration registry class for developer tools/agents
+class AgentTarget:
+    def __init__(self, name: str, path: Path, is_directory_based: bool, file_suffix: str = ""):
+        self.name: str = name
+        self.path: Path = path
+        self.is_directory_based: bool = is_directory_based
+        self.file_suffix: str = file_suffix
+
 HOME = Path.home()
-TARGETS = {
-    "claude": HOME / ".claude" / "skills",
-    "gemini": HOME / ".gemini" / "config" / "skills",
-    "copilot": HOME / ".copilot" / "agents",
-    "codex": HOME / ".codex" / "skills",
-}
+TARGETS: List[AgentTarget] = [
+    AgentTarget("claude", HOME / ".claude" / "skills", is_directory_based=True),
+    AgentTarget("gemini", HOME / ".gemini" / "config" / "skills", is_directory_based=True),
+    AgentTarget("copilot", HOME / ".copilot" / "agents", is_directory_based=False, file_suffix=".agent.md"),
+    AgentTarget("codex", HOME / ".codex" / "skills", is_directory_based=True),
+]
 
 def load_frontmatter(skill_md_path: Path) -> Tuple[Dict[str, str], str]:
     """Parses a SKILL.md file and extracts its frontmatter and markdown body."""
@@ -119,7 +126,7 @@ def _is_managed_target(item: Path, repo_dir: Path) -> bool:
 
     return False
 
-def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bool = False) -> None:
+def sync_target_directory(skills_dir: Path, target_path: Path, file_suffix: str = "", uninstall_all: bool = False) -> None:
     """Removes orphaned or stale rules in the target directory managed by this repository."""
     if not target_path.exists():
         return
@@ -127,14 +134,13 @@ def sync_target_directory(skills_dir: Path, target_path: Path, uninstall_all: bo
     # Get active skills in repository
     active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
     repo_dir = skills_dir.parent.resolve()
-    copilot_suffix = ".agent.md"
 
     for item in target_path.iterdir():
         if _is_managed_target(item, repo_dir):
             # Extract skill name from target file/folder name
             skill_name = item.name
-            if skill_name.endswith(copilot_suffix):
-                skill_name = skill_name[:-len(copilot_suffix)]
+            if file_suffix and skill_name.endswith(file_suffix):
+                skill_name = skill_name[:-len(file_suffix)]
 
             # Remove if uninstalling or skill no longer active
             if uninstall_all or skill_name not in active_skills:
@@ -149,26 +155,26 @@ def install_global(skills_dir: Path) -> None:
     print("Scanning active agent configurations...")
     linked_any = False
 
-    for tool, target_path in TARGETS.items():
+    for target in TARGETS:
         # Check if the parent configuration folder exists (indicates tool is active/installed)
-        parent_config = target_path.parent
+        parent_config = target.path.parent
         if parent_config.exists():
-            print(f"\nConfiguring {tool.upper()} skills at: {target_path}")
-            target_path.mkdir(parents=True, exist_ok=True)
+            print(f"\nConfiguring {target.name.upper()} skills at: {target.path}")
+            target.path.mkdir(parents=True, exist_ok=True)
             
             # Sync target path to clean up any orphaned rules first!
-            sync_target_directory(skills_dir, target_path, uninstall_all=False)
+            sync_target_directory(skills_dir, target.path, file_suffix=target.file_suffix, uninstall_all=False)
             
             for skill_folder in skills_dir.iterdir():
                 if skill_folder.is_dir():
-                    if tool in ["claude", "gemini", "codex"]:
+                    if target.is_directory_based:
                         # Directory-based linking
-                        link_or_copy(skill_folder, target_path / skill_folder.name, is_directory=True)
-                    elif tool == "copilot":
-                        # Flat file-based linking with .agent.md suffix
+                        link_or_copy(skill_folder, target.path / skill_folder.name, is_directory=True)
+                    else:
+                        # Flat file-based linking with custom suffix
                         skill_file = skill_folder / "SKILL.md"
                         if skill_file.exists():
-                            link_or_copy(skill_file, target_path / f"{skill_folder.name}.agent.md", is_directory=False)
+                            link_or_copy(skill_file, target.path / f"{skill_folder.name}{target.file_suffix}", is_directory=False)
             linked_any = True
 
     if not linked_any:
@@ -178,10 +184,10 @@ def install_global(skills_dir: Path) -> None:
 def uninstall_global(skills_dir: Path) -> None:
     """Cleans up all globally linked/copied skills."""
     print("Cleaning global agent configurations...")
-    for tool, target_path in TARGETS.items():
-        if target_path.exists():
-            print(f"\nCleaning {tool.upper()} skills at: {target_path}")
-            sync_target_directory(skills_dir, target_path, uninstall_all=True)
+    for target in TARGETS:
+        if target.path.exists():
+            print(f"\nCleaning {target.name.upper()} skills at: {target.path}")
+            sync_target_directory(skills_dir, target.path, file_suffix=target.file_suffix, uninstall_all=True)
 
 def compile_project(skills_dir: Path, project_path: Path) -> None:
     """Compiles rules locally into the target project workspace for Cursor and Windsurf."""
