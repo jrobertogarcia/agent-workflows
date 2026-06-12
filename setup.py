@@ -15,6 +15,31 @@ class AgentTarget:
         self.file_suffix: str = file_suffix
 
 
+class WorkflowSetupError(Exception):
+    """Custom exception raised when setup/compilation operations fail."""
+    pass
+
+
+class Console:
+    """Helper for colored/formatted console logging output."""
+    @staticmethod
+    def info(message: str) -> None:
+        print(message)
+
+    @staticmethod
+    def success(action: str, target: str, detail: str = "") -> None:
+        extra = f" -> {detail}" if detail else ""
+        print(f"  [{action}] {target}{extra}")
+
+    @staticmethod
+    def warning(message: str) -> None:
+        print(f"  [Warning] {message}")
+
+    @staticmethod
+    def error(message: str) -> None:
+        print(f"  [Error] {message}", file=sys.stderr)
+
+
 class AppConfig:
     """Encapsulates system configuration and active agent targets."""
     def __init__(self, home_dir: Optional[Path] = None):
@@ -38,8 +63,11 @@ class FileSystemManager:
         if not skill_md_path.exists():
             return empty_metadata, ""
         
-        with open(skill_md_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        try:
+            with open(skill_md_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to read skill file {skill_md_path}: {err}")
         
         lines = content.splitlines()
         if len(lines) > 0 and lines[0].strip() == "---":
@@ -64,21 +92,27 @@ class FileSystemManager:
 
     def clean_target(self, target: Path) -> None:
         """Safely deletes a file, directory, or symlink at the target path."""
-        if target.is_symlink() or target.is_file():
-            target.unlink()
-        elif target.is_dir():
-            shutil.rmtree(target)
+        try:
+            if target.is_symlink() or target.is_file():
+                target.unlink()
+            elif target.is_dir():
+                shutil.rmtree(target)
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to clean target {target}: {err}")
 
     def link_or_copy(self, source: Path, target: Path, is_directory: bool = False) -> None:
         """Attempts to create a symlink; falls back to copying on OS permission restrictions."""
-        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to create directory {target.parent}: {err}")
         
         if target.exists() or target.is_symlink():
             self.clean_target(target)
             
         try:
             os.symlink(source, target, target_is_directory=is_directory)
-            print(f"  [Linked] {target.name} -> {source}")
+            Console.success("Linked", target.name, str(source))
         except (OSError, PermissionError):
             # Fallback to copy (Crucial for non-developer mode Windows users)
             if is_directory:
@@ -87,21 +121,21 @@ class FileSystemManager:
                     try:
                         (target / self.MARKER_FILE).touch()
                     except OSError as err:
-                        print(f"  [Warning] Failed to write source signature to {target}: {err}")
-                    print(f"  [Copied (Fallback)] {target.name} (Directory)")
+                        Console.warning(f"Failed to write source signature to {target}: {err}")
+                    Console.success("Copied (Fallback)", target.name, "Directory")
                 except OSError as err:
-                    print(f"  [Error] Failed to copy directory {source} to {target}: {err}")
+                    raise WorkflowSetupError(f"Failed to copy directory {source} to {target}: {err}")
             else:
                 try:
                     content = source.read_text(encoding="utf-8")
                     target.write_text(self.SIGNATURE_COMMENT + content, encoding="utf-8")
-                    print(f"  [Copied (Fallback)] {target.name} (File)")
+                    Console.success("Copied (Fallback)", target.name, "File")
                 except (OSError, UnicodeDecodeError):
                     try:
                         shutil.copy2(source, target)
-                        print(f"  [Copied (Fallback)] {target.name} (File via binary copy)")
+                        Console.success("Copied (Fallback)", target.name, "File via binary copy")
                     except OSError as copy_err:
-                        print(f"  [Error] Failed to copy file {source} to {target}: {copy_err}")
+                        raise WorkflowSetupError(f"Failed to copy file {source} to {target}: {copy_err}")
 
     def is_managed_target(self, item: Path, repo_dir: Path) -> bool:
         """Determines whether a target item (symlink, file, or directory) is managed by this repository."""
@@ -145,7 +179,11 @@ def sync_target_directory(skills_dir: Path, target_path: Path, fs_manager: FileS
         return
 
     # Get active skills in repository
-    active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
+    try:
+        active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
+    except OSError as err:
+        raise WorkflowSetupError(f"Failed to read skills folder {skills_dir}: {err}")
+        
     repo_dir = skills_dir.parent.resolve()
 
     for item in target_path.iterdir():
@@ -159,50 +197,58 @@ def sync_target_directory(skills_dir: Path, target_path: Path, fs_manager: FileS
             if uninstall_all or skill_name not in active_skills:
                 try:
                     fs_manager.clean_target(item)
-                    print(f"  [Cleaned Orphaned] {item.name}")
-                except OSError as err:
-                    print(f"  [Error] Failed to clean orphaned target {item.name}: {err}")
+                    Console.success("Cleaned Orphaned", item.name)
+                except WorkflowSetupError as err:
+                    Console.error(f"Failed to clean orphaned target {item.name}: {err}")
 
 
 def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager) -> None:
     """Installs skills globally for detected agent tool folders."""
-    print("Scanning active agent configurations...")
+    Console.info("Scanning active agent configurations...")
     linked_any = False
 
     for target in config.targets:
         # Check if the parent configuration folder exists (indicates tool is active/installed)
         parent_config = target.path.parent
         if parent_config.exists():
-            print(f"\nConfiguring {target.name.upper()} skills at: {target.path}")
-            target.path.mkdir(parents=True, exist_ok=True)
+            Console.info(f"\nConfiguring {target.name.upper()} skills at: {target.path}")
+            try:
+                target.path.mkdir(parents=True, exist_ok=True)
+            except OSError as err:
+                raise WorkflowSetupError(f"Failed to create target directory {target.path}: {err}")
             
             # Sync target path to clean up any orphaned rules first!
             sync_target_directory(skills_dir, target.path, fs_manager, file_suffix=target.file_suffix, uninstall_all=False)
             
-            for skill_folder in skills_dir.iterdir():
-                if skill_folder.is_dir():
-                    if target.is_directory_based:
-                        # Directory-based linking
-                        fs_manager.link_or_copy(skill_folder, target.path / skill_folder.name, is_directory=True)
-                    else:
-                        # Flat file-based linking with custom suffix
-                        skill_file = skill_folder / "SKILL.md"
-                        if skill_file.exists():
-                            fs_manager.link_or_copy(skill_file, target.path / f"{skill_folder.name}{target.file_suffix}", is_directory=False)
+            try:
+                for skill_folder in skills_dir.iterdir():
+                    if skill_folder.is_dir():
+                        if target.is_directory_based:
+                            # Directory-based linking
+                            fs_manager.link_or_copy(skill_folder, target.path / skill_folder.name, is_directory=True)
+                        else:
+                            # Flat file-based linking with custom suffix
+                            skill_file = skill_folder / "SKILL.md"
+                            if skill_file.exists():
+                                fs_manager.link_or_copy(skill_file, target.path / f"{skill_folder.name}{target.file_suffix}", is_directory=False)
+            except OSError as err:
+                raise WorkflowSetupError(f"Failed to read skills folder during installation: {err}")
             linked_any = True
 
     if not linked_any:
-        print("\nNo active agent config directories (e.g. ~/.claude or ~/.gemini/antigravity) were detected.")
-        print("Please run your agent tools at least once to initialize their default paths.")
+        Console.info("\nNo active agent config directories (e.g. ~/.claude or ~/.gemini/antigravity) were detected.")
+        Console.info("Please run your agent tools at least once to initialize their default paths.")
 
 
 def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager) -> None:
     """Cleans up all globally linked/copied skills."""
-    print("Cleaning global agent configurations...")
+    Console.info("Cleaning global agent configurations...")
     for target in config.targets:
         if target.path.exists():
-            print(f"\nCleaning {target.name.upper()} skills at: {target.path}")
+            Console.info(f"\nCleaning {target.name.upper()} skills at: {target.path}")
             sync_target_directory(skills_dir, target.path, fs_manager, file_suffix=target.file_suffix, uninstall_all=True)
+
+
 class RuleCompiler:
     """Base class defining the interface for rule compilers."""
     def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
@@ -215,72 +261,81 @@ class RuleCompiler:
 class CursorRuleCompiler(RuleCompiler):
     """Compiles rules into Cursor's .mdc format."""
     def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
-        cursor_dir = project_path / ".cursor" / "rules"
-        cursor_dir.mkdir(parents=True, exist_ok=True)
-        cursor_file = cursor_dir / f"{skill_name}.mdc"
-        desc = metadata.get("description", f"Behavior rule for {skill_name}")
-        cursor_content = f"---\ndescription: {desc}\nglobs: [\"**/*\"]\nalwaysApply: false\nsource: agent-workflows\n---\n\n{body.strip()}\n"
-        with open(cursor_file, "w", encoding="utf-8") as f:
-            f.write(cursor_content)
-        print(f"  [Cursor Rule Created] {cursor_file.relative_to(project_path)}")
+        try:
+            cursor_dir = project_path / ".cursor" / "rules"
+            cursor_dir.mkdir(parents=True, exist_ok=True)
+            cursor_file = cursor_dir / f"{skill_name}.mdc"
+            desc = metadata.get("description", f"Behavior rule for {skill_name}")
+            cursor_content = f"---\ndescription: {desc}\nglobs: [\"**/*\"]\nalwaysApply: false\nsource: agent-workflows\n---\n\n{body.strip()}\n"
+            with open(cursor_file, "w", encoding="utf-8") as f:
+                f.write(cursor_content)
+            Console.success("Cursor Rule Created", str(cursor_file.relative_to(project_path)))
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to write Cursor rule for {skill_name}: {err}")
 
     def clean(self, project_path: Path, fs_manager: FileSystemManager, active_skills: Set[str], repo_dir: Path, uninstall_all: bool = False) -> None:
         cursor_dir = project_path / ".cursor" / "rules"
         if not cursor_dir.exists():
             return
-        for item in cursor_dir.iterdir():
-            if fs_manager.is_managed_target(item, repo_dir):
-                skill_name = item.name[:-4]  # strip '.mdc'
-                if uninstall_all or skill_name not in active_skills:
-                    try:
+        try:
+            for item in cursor_dir.iterdir():
+                if fs_manager.is_managed_target(item, repo_dir):
+                    skill_name = item.name[:-4]  # strip '.mdc'
+                    if uninstall_all or skill_name not in active_skills:
                         fs_manager.clean_target(item)
-                        print(f"  [Cursor Rule Cleaned] {item.relative_to(project_path)}")
-                    except OSError as err:
-                        print(f"  [Error] Failed to clean Cursor rule {item.name}: {err}")
+                        Console.success("Cursor Rule Cleaned", str(item.relative_to(project_path)))
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to list Cursor rules directory for clean: {err}")
 
 
 class WindsurfRuleCompiler(RuleCompiler):
     """Compiles rules into Windsurf's .md rule format."""
     def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
-        windsurf_dir = project_path / ".windsurf" / "rules"
-        windsurf_dir.mkdir(parents=True, exist_ok=True)
-        windsurf_file = windsurf_dir / f"{skill_name}.md"
-        title = skill_name.replace('-', ' ').title()
-        with open(windsurf_file, "w", encoding="utf-8") as f:
-            f.write(f"<!-- Source: agent-workflows -->\n# {title}\n\n{body.strip()}\n")
-        print(f"  [Windsurf Rule Created] {windsurf_file.relative_to(project_path)}")
+        try:
+            windsurf_dir = project_path / ".windsurf" / "rules"
+            windsurf_dir.mkdir(parents=True, exist_ok=True)
+            windsurf_file = windsurf_dir / f"{skill_name}.md"
+            title = skill_name.replace('-', ' ').title()
+            with open(windsurf_file, "w", encoding="utf-8") as f:
+                f.write(f"<!-- Source: agent-workflows -->\n# {title}\n\n{body.strip()}\n")
+            Console.success("Windsurf Rule Created", str(windsurf_file.relative_to(project_path)))
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to write Windsurf rule for {skill_name}: {err}")
 
     def clean(self, project_path: Path, fs_manager: FileSystemManager, active_skills: Set[str], repo_dir: Path, uninstall_all: bool = False) -> None:
         windsurf_dir = project_path / ".windsurf" / "rules"
         if not windsurf_dir.exists():
             return
-        for item in windsurf_dir.iterdir():
-            if fs_manager.is_managed_target(item, repo_dir):
-                skill_name = item.name[:-3]  # strip '.md'
-                if uninstall_all or skill_name not in active_skills:
-                    try:
+        try:
+            for item in windsurf_dir.iterdir():
+                if fs_manager.is_managed_target(item, repo_dir):
+                    skill_name = item.name[:-3]  # strip '.md'
+                    if uninstall_all or skill_name not in active_skills:
                         fs_manager.clean_target(item)
-                        print(f"  [Windsurf Rule Cleaned] {item.relative_to(project_path)}")
-                    except OSError as err:
-                        print(f"  [Error] Failed to clean Windsurf rule {item.name}: {err}")
+                        Console.success("Windsurf Rule Cleaned", str(item.relative_to(project_path)))
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to list Windsurf rules directory for clean: {err}")
 
 
 def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystemManager, clean_only: bool = False) -> None:
     """Compiles rules locally into the target project workspace for all registered compilers."""
     project_path = project_path.resolve()
     if not project_path.is_dir():
-        print(f"Error: Target path {project_path} is not a valid directory.")
-        sys.exit(1)
+        raise WorkflowSetupError(f"Target path {project_path} is not a valid directory.")
 
     compilers: List[RuleCompiler] = [
         CursorRuleCompiler(),
         WindsurfRuleCompiler()
     ]
 
+    try:
+        active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
+    except OSError as err:
+        raise WorkflowSetupError(f"Failed to read skills directory: {err}")
+        
     repo_dir = skills_dir.parent.resolve()
-    active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
 
-    print(f"Configuring project-level rules at: {project_path}")
+    Console.info(f"Configuring project-level rules at: {project_path}")
 
     # Synchronize/clean rules first
     for compiler in compilers:
@@ -290,15 +345,18 @@ def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystem
         return
 
     # Process all skills
-    for skill_folder in skills_dir.iterdir():
-        if skill_folder.is_dir():
-            skill_md = skill_folder / "SKILL.md"
-            if not skill_md.exists():
-                continue
+    try:
+        for skill_folder in skills_dir.iterdir():
+            if skill_folder.is_dir():
+                skill_md = skill_folder / "SKILL.md"
+                if not skill_md.exists():
+                    continue
 
-            metadata, body = fs_manager.load_frontmatter(skill_md)
-            for compiler in compilers:
-                compiler.compile(skill_folder.name, metadata, body, project_path)
+                metadata, body = fs_manager.load_frontmatter(skill_md)
+                for compiler in compilers:
+                    compiler.compile(skill_folder.name, metadata, body, project_path)
+    except OSError as err:
+        raise WorkflowSetupError(f"Failed to list skills during compilation: {err}")
 
 
 def main() -> None:
@@ -322,18 +380,22 @@ def main() -> None:
     skills_dir = repo_dir / "skills"
 
     if not skills_dir.exists() or not skills_dir.is_dir():
-        print(f"Error: skills directory not found at {skills_dir}")
+        Console.error(f"skills directory not found at {skills_dir}")
         sys.exit(1)
 
     config = AppConfig()
     fs_manager = FileSystemManager()
 
-    if args.command == "link":
-        install_global(skills_dir, config, fs_manager)
-    elif args.command == "unlink":
-        uninstall_global(skills_dir, config, fs_manager)
-    elif args.command == "project":
-        compile_project(skills_dir, Path(args.path), fs_manager, clean_only=args.clean)
+    try:
+        if args.command == "link":
+            install_global(skills_dir, config, fs_manager)
+        elif args.command == "unlink":
+            uninstall_global(skills_dir, config, fs_manager)
+        elif args.command == "project":
+            compile_project(skills_dir, Path(args.path), fs_manager, clean_only=args.clean)
+    except WorkflowSetupError as err:
+        Console.error(str(err))
+        sys.exit(1)
 
 
 if __name__ == "__main__":
