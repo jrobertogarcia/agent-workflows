@@ -1,14 +1,16 @@
-# Agent Workflows and Skills Repository
+# Agentic Engineering Workflows
 
-This repository contains a collection of developer agent workflows and skills. It provides standardized behavior rules, verification checks, and utility prompts for AI-assisted software development lifecycles (SDLC).
+This repository provides a reusable workflow system: a collection of skills, rules, and lifecycle practices for professional software engineering with coding agents.
 
-These workflows are designed to be run as utility rules under developer supervision (human-in-the-loop). Rather than fully automating the SDLC, developers invoke specific skills for planning, context gathering, verification, and code review as needed.
+Agentic engineering is the practice of delivering software through human-directed collaboration with coding agents, using explicit context gathering, planning, implementation, verification, review, and release gates.
+
+These lifecycle workflows keep coding-agent work structured and auditable. Instead of relying on a single "one-shot" generation pass, the repository breaks engineering work into phased steps where developers guide intent, approve transitions, and use specialized skills for planning, context gathering, verification, and review.
 
 ---
 
-## The Agentic Workflow Lifecycle
+## The Agentic Engineering Lifecycle
 
-To preserve context window capacity and ensure high-fidelity reviews, the software development lifecycle (SDLC) is split into discrete steps across thread boundaries. 
+To preserve context window capacity and ensure high-fidelity reviews, this lifecycle is split into discrete steps across thread boundaries.
 
 For a complete walkthrough of context decay strategies, sequential phases, and thread boundaries, see the detailed [LIFECYCLE.md](LIFECYCLE.md) playbook.
 
@@ -16,7 +18,7 @@ For a complete walkthrough of context decay strategies, sequential phases, and t
 
 ## Skills Index By Phase
 
-For detailed instructions on each skill, refer to [AGENTS.md](AGENTS.md) or inspect the individual `SKILL.md` rules inside the [skills/](skills/) folder.
+For a structured routing index of all skills and trigger scopes, refer to [AGENTS.md](AGENTS.md). For detailed prompt instructions, inspect the individual `SKILL.md` rules inside the [skills/](skills/) folder.
 
 ### 1. Analyzing (Pre-Coding Utilities)
 *   **`gather-context`**: Maps file hierarchies and system dependencies.
@@ -28,7 +30,7 @@ For detailed instructions on each skill, refer to [AGENTS.md](AGENTS.md) or insp
 *   **`create-branch`**: Standardizes feature branching using Conventional Commits patterns.
 *   **`phase-breakdown`**: Deconstructs large changes into atomic execution steps/phases.
 
-### 3. Execution & Verification Loop
+### 3. Implementation & Verification Loop
 *   **`plan-implementation`**: Creates detailed step-by-step blueprints (`implementation_plan.md`).
 *   **`check-alignment`**: Verifies that actual changes match the implementation plan.
 *   **`check-compliance`**: Ensures code satisfies relevant compliance and coding standards.
@@ -42,14 +44,14 @@ For detailed instructions on each skill, refer to [AGENTS.md](AGENTS.md) or insp
 *   **`review-pr`**: Conducts automated builds and checks on open PRs.
 
 ### 5. Ad-Hoc Utilities
-*   **`distill-lessons`**: Codifies high-leverage lessons and guidelines to optimize future workflows.
+*   **`distill-lessons`**: Codifies high-leverage lessons and guidelines to improve future workflows.
 *   **`validate-commit`**: Performs linting, styling auto-fixes, and test compilation prior to commit.
 
 ---
 
 ## Installation & Mechanics
 
-The repository uses [setup.py](setup.py) to link or compile skills dynamically depending on your environment.
+The repository uses [setup.py](setup.py) to link or compile skills dynamically depending on your agent environment.
 
 ### Global Installation (For Claude Code, Antigravity, Copilot, Codex)
 Symlinks target workflow files globally to machine-wide configuration directories (e.g. `~/.gemini/config/skills` or `~/.claude/skills`):
@@ -68,4 +70,3 @@ python setup.py project --path /path/to/project-directory
 ```
 *   **Cursor**: Compiles skills into Cursor rules (`.cursor/rules/<skill-name>.mdc`).
 *   **Windsurf**: Compiles skills into Windsurf rules (`.windsurf/rules/<skill-name>.md`).
-

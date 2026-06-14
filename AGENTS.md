@@ -1,23 +1,23 @@
-# Agent Capabilities Index
+# Agentic Engineering Capabilities Index
 
 <!-- Focus: AI Agent Parser Entry Point -->
-This file contains the structured skills registry and routing index for AI developer agents parsing this repository.
+This file contains the structured skills registry and routing index for coding agents using this repository.
 
 *   **For Human Onboarding & Installation**: Refer to [README.md](README.md).
-*   **For Workflow Lifecycle & Thread Boundary Guidelines**: Refer to [LIFECYCLE.md](LIFECYCLE.md).
+*   **For Agentic Engineering Lifecycle & Thread Boundary Guidelines**: Refer to [LIFECYCLE.md](LIFECYCLE.md).
 
 ---
 
 ## 1. Directory Structure
 
-*   `skills/`: Contain individual agent skill prompt manifests. Each subdirectory represents a skill and contains a `SKILL.md` file.
-*   `setup.py`: Compilation and linking script for the target IDE environments (Cursor rules `.cursor/rules/`, Windsurf rules `.windsurf/rules/`, and global agent configuration files).
+*   `skills/`: Contain individual coding-agent skill prompt manifests. Each subdirectory represents a skill and contains a `SKILL.md` file.
+*   `setup.py`: Platform-agnostic installation utility script (refer to [README.md](README.md) for execution commands).
 
 ---
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 17 core SDLC workflows managed by this repository. Agents should trigger these prompts when performing the corresponding tasks.
+Below is the structured list of the 17 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 | Skill Name (Identifier) | Target Globs | Focus & Prompt Trigger Condition | Prompt Manifest |
 | :--- | :--- | :--- | :--- |

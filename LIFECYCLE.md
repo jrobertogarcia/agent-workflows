@@ -1,12 +1,14 @@
-# Developer Agent Workflow Lifecycle Guide
+# Agentic Engineering Lifecycle Guide
 
-This guide describes the lifecycle of developer agent workflows in this repository. These workflows are designed to be executed as utility rules under developer supervision. The developer serves as the primary conductor, selecting and running individual workflows as needed rather than relying on a rigid, fully automated pipeline.
+This guide describes the agentic engineering lifecycle used by this repository. Agentic engineering is professional software delivery through human-directed collaboration with coding agents, supported by explicit context gathering, planning, implementation, verification, review, and release gates.
+
+Rather than relying on a single "one-shot" generation pass, this repository implements a structured, multi-stage pipeline where developers guide intent, approve transitions, and use specialized skills to keep coding-agent work auditable.
 
 ---
 
 ## 1. Lifecycle Phases
 
-The agentic software development lifecycle (SDLC) is structured into clear, independent phases to maintain code quality, ensure alignment, and prevent context fatigue.
+This lifecycle is structured into clear, independent phases to maintain code quality, ensure alignment, and prevent context fatigue.
 
 ```mermaid
 graph TD
@@ -22,7 +24,7 @@ graph TD
     CB["2. Branch Creation<br>create-branch"]
     PB["3. Phase Breakdown<br>phase-breakdown"]
     
-    subgraph Loop ["4. Implementation Loop (Human-in-the-Loop)"]
+    subgraph Loop ["4. Implementation Loop (Verification Gates)"]
         PI["plan-implementation"]
         Code["Execute Code Changes"]
         
@@ -73,7 +75,7 @@ graph TD
 ## 2. Deep Dive by Stage
 
 ### Stage 1: Analysis (Pre-Coding Utilities)
-Before checking out a branch or modifying files, developers use analysis utilities to define requirements and identify system constraints. Developers can select any combination of these utilities depending on the task:
+Before checking out a branch or modifying files, developers use analysis utilities to define requirements and identify system constraints. This gives coding agents the context needed to act deliberately. Developers can select any combination of these utilities depending on the task:
 *   **`gather-context`**: Explores directory structures, configurations, and system boundaries.
 *   **`research-web`**: Conducts lookup for modern standards and technical trade-offs.
 *   **`review-story`**: Performs logic and sanity-checking checks on user stories.
@@ -83,22 +85,27 @@ Before checking out a branch or modifying files, developers use analysis utiliti
 Once requirements are clear, execute **`create-branch`** to set up a clean Git branch following Conventional Commits formatting rules.
 
 ### Stage 3: Phase Breakdown & Planning
-For complex changes, do not write code immediately.
+For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
 1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable steps.
 2.  For each step in the breakdown, run **`plan-implementation`** to create an `implementation_plan.md` outlining the proposed edits.
 
-### Stage 4: Implementation Loop (Human-in-the-Loop)
-With the implementation plan established, the developer writes code. During this loop, the developer selects which verification utilities are needed:
+### Stage 4: Implementation Loop (Verification Gates)
+With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
 *   **`check-alignment`**: Verifies that actual edits are strictly aligned with the plan.
 *   **`check-compliance`**: Runs automated project-specific checks and standards audits.
 *   **`plan-testing`**: Details testing sequences.
 *   **`refactor-code`**: Refines code cleanly without changing system behavior.
 
+### Stage 5: Release
+Once the implementation is fully audited and finalized in the review thread, the changes are ready for packaging and launch:
+*   **`create-pr`**: Pushes the branch to origin and prepares the pull request template with AI metadata summaries.
+*   **`review-pr`**: Runs automated build validation and PR code reviews (typically performed in an independent PR review thread).
+
 ---
 
 ## 3. Thread Switching & Context Decay Mitigation
 
-Large language models experience quality degradation as conversation history grows (context window bloat). To counteract this, developers must actively manage thread boundaries.
+LLMs experience quality degradation as conversation history grows (context window bloat). To counteract this, these workflows actively manage thread boundaries.
 
 ### The Handover Protocol
 1.  **Wrap Up Coding**: Complete the changes and run **`prepare-handover`** within the **active implementation thread** to summarize the work and verification details.
@@ -114,7 +121,7 @@ Large language models experience quality degradation as conversation history gro
 
 ### Selective Lesson Distillation (`distill-lessons`)
 *   **Purpose**: To capture high-value patterns, solutions, or architectural guidelines and codify them into the repository documentation.
-*   **Constraint**: Use this utility selectively. Distilling lessons too frequently bloats the guidelines files, eventually inflating the context window of future agent sessions. Only run this skill when the underlying discovery is critical for future workflow runs.
+*   **Constraint**: Use this utility selectively. Distilling lessons too frequently bloats the guidelines files, eventually inflating the context window of future coding-agent sessions. Only run this skill when the underlying discovery is critical for future workflows.
 
 ### Pre-Commit Auditing (`validate-commit`)
 *   **Purpose**: Runs linting, compiler validation, and test checks locally.
