@@ -62,6 +62,11 @@ To remove all globally installed links:
 ```bash
 python setup.py unlink
 ```
+By default, global installation skips existing files or directories that were not created by this repository. To intentionally replace unmanaged collisions:
+```bash
+python setup.py link --force
+```
+Unlink removes only workflow-managed installed targets.
 
 ### Local Project Installation (For Cursor & Windsurf)
 Compiles source rules directly into the workspace config directory of a target project:

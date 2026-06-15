@@ -103,7 +103,7 @@ class FileSystemManager:
         except OSError as err:
             raise WorkflowSetupError(f"Failed to clean target {target}: {err}")
 
-    def link_or_copy(self, source: Path, target: Path, is_directory: bool = False) -> None:
+    def link_or_copy(self, source: Path, target: Path, repo_dir: Path, is_directory: bool = False, force: bool = False) -> bool:
         """Attempts to create a symlink; falls back to copying on OS permission restrictions."""
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -111,11 +111,15 @@ class FileSystemManager:
             raise WorkflowSetupError(f"Failed to create directory {target.parent}: {err}")
         
         if target.exists() or target.is_symlink():
+            if not force and not self.is_managed_target(target, repo_dir):
+                Console.warning(f"Skipped unmanaged existing target: {target}. Use --force to replace it.")
+                return False
             self.clean_target(target)
             
         try:
             os.symlink(source, target, target_is_directory=is_directory)
             Console.success("Linked", target.name, str(source))
+            return True
         except (OSError, PermissionError):
             # Fallback to copy (Crucial for non-developer mode Windows users)
             if is_directory:
@@ -126,6 +130,7 @@ class FileSystemManager:
                     except OSError as err:
                         Console.warning(f"Failed to write source signature to {target}: {err}")
                     Console.success("Copied (Fallback)", target.name, "Directory")
+                    return True
                 except OSError as err:
                     raise WorkflowSetupError(f"Failed to copy directory {source} to {target}: {err}")
             else:
@@ -133,10 +138,12 @@ class FileSystemManager:
                     content = source.read_text(encoding="utf-8")
                     target.write_text(self.SIGNATURE_COMMENT + content, encoding="utf-8")
                     Console.success("Copied (Fallback)", target.name, "File")
+                    return True
                 except (OSError, UnicodeDecodeError):
                     try:
                         shutil.copy2(source, target)
                         Console.success("Copied (Fallback)", target.name, "File via binary copy")
+                        return True
                     except OSError as copy_err:
                         raise WorkflowSetupError(f"Failed to copy file {source} to {target}: {copy_err}")
 
@@ -211,10 +218,11 @@ def sync_target_directory(skills_dir: Path, target_path: Path, fs_manager: FileS
                     Console.error(f"Failed to clean orphaned target {item.name}: {err}")
 
 
-def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager) -> None:
+def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> None:
     """Installs skills globally for detected agent tool folders."""
     Console.info("Scanning active agent configurations...")
     linked_any = False
+    repo_dir = skills_dir.parent.resolve()
 
     for target in config.targets:
         # Check if the parent configuration folder exists (indicates tool is active/installed)
@@ -234,12 +242,12 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
                     if skill_folder.is_dir():
                         if target.is_directory_based:
                             # Directory-based linking
-                            fs_manager.link_or_copy(skill_folder, target.path / skill_folder.name, is_directory=True)
+                            fs_manager.link_or_copy(skill_folder, target.path / skill_folder.name, repo_dir, is_directory=True, force=force)
                         else:
                             # Flat file-based linking with custom suffix
                             skill_file = skill_folder / "SKILL.md"
                             if skill_file.exists():
-                                fs_manager.link_or_copy(skill_file, target.path / f"{skill_folder.name}{target.file_suffix}", is_directory=False)
+                                fs_manager.link_or_copy(skill_file, target.path / f"{skill_folder.name}{target.file_suffix}", repo_dir, is_directory=False, force=force)
             except OSError as err:
                 raise WorkflowSetupError(f"Failed to read skills folder during installation: {err}")
             linked_any = True
@@ -374,7 +382,8 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Link command
-    subparsers.add_parser("link", help="Link skills globally to active agent config directories.")
+    link_parser = subparsers.add_parser("link", help="Link skills globally to active agent config directories.")
+    link_parser.add_argument("--force", action="store_true", help="Replace existing unmanaged target files or directories.")
 
     # Unlink command
     subparsers.add_parser("unlink", help="Unlink global skills from agent config directories.")
@@ -398,7 +407,7 @@ def main() -> None:
 
     try:
         if args.command == "link":
-            install_global(skills_dir, config, fs_manager)
+            install_global(skills_dir, config, fs_manager, force=args.force)
         elif args.command == "unlink":
             uninstall_global(skills_dir, config, fs_manager)
         elif args.command == "project":
