@@ -68,11 +68,23 @@ class ManagedTargetTests(SetupTestCase):
 
         self.assertTrue(self.fs.is_managed_target(target, self.repo_dir))
 
-    def test_broken_agent_workflows_symlink_is_managed(self):
+    def test_broken_symlink_inside_repo_is_managed(self):
         target = self.root / "broken-link"
-        os.symlink("/tmp/agent-workflows/missing", target)
+        os.symlink(self.repo_dir / "missing", target)
 
         self.assertTrue(self.fs.is_managed_target(target, self.repo_dir))
+
+    def test_relative_broken_symlink_inside_repo_is_managed(self):
+        target = self.root / "relative-broken-link"
+        os.symlink(Path("agent-workflows") / "missing", target)
+
+        self.assertTrue(self.fs.is_managed_target(target, self.repo_dir))
+
+    def test_broken_symlink_with_agent_workflows_name_outside_repo_is_unmanaged(self):
+        target = self.root / "lookalike-broken-link"
+        os.symlink(self.root / "my-agent-workflows-notes" / "missing", target)
+
+        self.assertFalse(self.fs.is_managed_target(target, self.repo_dir))
 
     def test_directory_marker_is_managed(self):
         target = self.root / "copied-skill"

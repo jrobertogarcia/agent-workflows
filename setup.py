@@ -57,6 +57,16 @@ class FileSystemManager:
     SIGNATURE_COMMENT = "<!-- Source: agent-workflows -->\n"
     MARKER_FILE = ".agent-workflows-source"
 
+    def _is_path_in_repo(self, path: Path, repo_dir: Path) -> bool:
+        """Checks whether a path is equal to or nested inside the repository directory."""
+        try:
+            resolved_path = path.resolve(strict=False)
+            resolved_repo = repo_dir.resolve(strict=False)
+        except (OSError, RuntimeError, ValueError):
+            return False
+
+        return resolved_path == resolved_repo or resolved_repo in resolved_path.parents
+
     def load_frontmatter(self, skill_md_path: Path) -> Tuple[Dict[str, str], str]:
         """Parses a SKILL.md file and extracts its frontmatter and markdown body."""
         empty_metadata: Dict[str, str] = {}
@@ -152,20 +162,23 @@ class FileSystemManager:
         # 1. Symlink check
         if item.is_symlink():
             try:
-                resolved = item.resolve()
-                if repo_dir in resolved.parents or resolved == repo_dir:
+                if self._is_path_in_repo(item.resolve(strict=False), repo_dir):
                     return True
                 if not item.exists():
-                    link_target = os.readlink(item)
-                    if "agent-workflows" in link_target:
+                    link_target = Path(os.readlink(item))
+                    if not link_target.is_absolute():
+                        link_target = item.parent / link_target
+                    if self._is_path_in_repo(link_target, repo_dir):
                         return True
-            except (OSError, ValueError):
-                # Broken symlink - check if link target text contains "agent-workflows"
+            except (OSError, RuntimeError, ValueError):
+                # Broken or malformed symlink - inspect the raw target path conservatively.
                 try:
-                    link_target = os.readlink(item)
-                    if "agent-workflows" in link_target:
+                    link_target = Path(os.readlink(item))
+                    if not link_target.is_absolute():
+                        link_target = item.parent / link_target
+                    if self._is_path_in_repo(link_target, repo_dir):
                         return True
-                except OSError:
+                except (OSError, RuntimeError, ValueError):
                     pass
         # 2. Directory Copy check (contains marker file)
         elif item.is_dir():
