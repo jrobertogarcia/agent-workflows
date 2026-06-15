@@ -41,6 +41,26 @@ class SetupTestCase(unittest.TestCase):
     def run_quiet(self, func, *args, **kwargs):
         return self.capture_stdout(func, *args, **kwargs)[0]
 
+    def can_create_directory_symlink(self):
+        source = self.root / "symlink-probe-source"
+        target = self.root / "symlink-probe-target"
+        source.mkdir(exist_ok=True)
+        try:
+            os.symlink(source, target, target_is_directory=True)
+            return target.is_symlink()
+        except (OSError, NotImplementedError):
+            return False
+        finally:
+            try:
+                if target.is_symlink() or target.exists():
+                    target.unlink()
+            except OSError:
+                pass
+
+    def requires_symlink_support(self):
+        if not self.can_create_directory_symlink():
+            self.skipTest("OS/user permissions do not allow creating directory symlinks")
+
 
 class FrontmatterTests(SetupTestCase):
     def test_load_frontmatter_parses_metadata_and_body(self):
@@ -62,6 +82,7 @@ class FrontmatterTests(SetupTestCase):
 
 class ManagedTargetTests(SetupTestCase):
     def test_symlink_into_repo_is_managed(self):
+        self.requires_symlink_support()
         source = self.add_skill("managed-skill")
         target = self.root / "target"
         os.symlink(source, target, target_is_directory=True)
@@ -69,18 +90,21 @@ class ManagedTargetTests(SetupTestCase):
         self.assertTrue(self.fs.is_managed_target(target, self.repo_dir))
 
     def test_broken_symlink_inside_repo_is_managed(self):
+        self.requires_symlink_support()
         target = self.root / "broken-link"
         os.symlink(self.repo_dir / "missing", target)
 
         self.assertTrue(self.fs.is_managed_target(target, self.repo_dir))
 
     def test_relative_broken_symlink_inside_repo_is_managed(self):
+        self.requires_symlink_support()
         target = self.root / "relative-broken-link"
         os.symlink(Path("agent-workflows") / "missing", target)
 
         self.assertTrue(self.fs.is_managed_target(target, self.repo_dir))
 
     def test_broken_symlink_with_agent_workflows_name_outside_repo_is_unmanaged(self):
+        self.requires_symlink_support()
         target = self.root / "lookalike-broken-link"
         os.symlink(self.root / "my-agent-workflows-notes" / "missing", target)
 
@@ -117,6 +141,7 @@ class ManagedTargetTests(SetupTestCase):
 
 class LinkOrCopyTests(SetupTestCase):
     def test_new_target_is_linked_successfully(self):
+        self.requires_symlink_support()
         source = self.add_skill("new-target")
         target = self.root / "target"
 
@@ -127,6 +152,7 @@ class LinkOrCopyTests(SetupTestCase):
         self.assertEqual(target.resolve(), source)
 
     def test_existing_managed_target_is_replaced(self):
+        self.requires_symlink_support()
         old_source = self.add_skill("old-source")
         new_source = self.add_skill("new-source")
         target = self.root / "target"
@@ -158,6 +184,7 @@ class LinkOrCopyTests(SetupTestCase):
         self.assertFalse(target.is_symlink())
 
     def test_force_replaces_unmanaged_target(self):
+        self.requires_symlink_support()
         source = self.add_skill("source")
         target = self.root / "target"
         target.mkdir()
@@ -210,6 +237,7 @@ class GlobalInstallTests(SetupTestCase):
         self.assertFalse((config.home / ".copilot" / "agents").exists())
 
     def test_install_and_uninstall_global_codex_targets(self):
+        self.requires_symlink_support()
         self.add_skills()
         config = self.make_config()
         (config.home / ".codex").mkdir(parents=True)
@@ -235,12 +263,31 @@ class GlobalInstallTests(SetupTestCase):
 
         _, output = self.capture_stdout(setup.install_global, self.skills_dir, config, self.fs)
 
-        installed = [item for item in codex_skills.iterdir() if item.is_symlink()]
+        installed = [
+            item
+            for item in codex_skills.iterdir()
+            if item.name != "skill-00" and self.fs.is_managed_target(item, self.repo_dir)
+        ]
         self.assertIn("Skipped unmanaged existing target", output)
         self.assertTrue((collision / "README.md").exists())
         self.assertEqual(len(installed), 16)
 
+    def test_global_install_symlink_failure_falls_back_to_copied_skills(self):
+        self.add_skills()
+        config = self.make_config()
+        codex_skills = config.home / ".codex" / "skills"
+        codex_skills.mkdir(parents=True)
+
+        with mock.patch("setup.os.symlink", side_effect=OSError("no symlink")):
+            self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+
+        installed = list(codex_skills.iterdir())
+        self.assertEqual(len(installed), 17)
+        self.assertTrue(all(item.is_dir() for item in installed))
+        self.assertTrue(all((item / setup.FileSystemManager.MARKER_FILE).exists() for item in installed))
+
     def test_global_install_force_replaces_unmanaged_collision(self):
+        self.requires_symlink_support()
         self.add_skills()
         config = self.make_config()
         codex_skills = config.home / ".codex" / "skills"
@@ -324,6 +371,7 @@ class ProjectCompilationTests(SetupTestCase):
 
 class OrphanCleanupTests(SetupTestCase):
     def test_sync_target_directory_removes_orphaned_managed_targets_only(self):
+        self.requires_symlink_support()
         active_skill = self.add_skill("active")
         target_dir = self.root / "target"
         target_dir.mkdir()
