@@ -155,6 +155,10 @@ class FileSystemManager:
                 resolved = item.resolve()
                 if repo_dir in resolved.parents or resolved == repo_dir:
                     return True
+                if not item.exists():
+                    link_target = os.readlink(item)
+                    if "agent-workflows" in link_target:
+                        return True
             except (OSError, ValueError):
                 # Broken symlink - check if link target text contains "agent-workflows"
                 try:
