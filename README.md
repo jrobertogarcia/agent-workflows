@@ -75,3 +75,9 @@ python setup.py project --path /path/to/project-directory
 ```
 *   **Cursor**: Compiles skills into Cursor rules (`.cursor/rules/<skill-name>.mdc`).
 *   **Windsurf**: Compiles skills into Windsurf rules (`.windsurf/rules/<skill-name>.md`).
+
+### Development Checks
+Run the installer regression suite with:
+```bash
+python -m unittest discover -s tests
+```
