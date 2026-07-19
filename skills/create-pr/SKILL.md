@@ -1,11 +1,11 @@
 ---
 name: create-pr
-description: Lean PR Creator with AI Metadata Synthesis, Automatic Push to Origin, and Workspace Cleanup
+description: Lean PR Creator with AI Metadata Synthesis and Automatic Push to Origin
 ---
 
 # Create Pull Request
 
-1. **Synthesize PR Metadata**: Analyze the branch diff and formulate a professional PR title following Conventional Commits (e.g., `feat(auth): implement user authentication`), adhering to standard English.
+1. **Synthesize PR Metadata**: Synthesize accurate PR metadata from the branch diff and formulate a professional title following Conventional Commits (e.g., `feat(auth): implement user authentication`), adhering to standard English.
 2. **Push & Create**: Push the active branch to origin and initiate the Pull Request targeting the base integration branch (e.g., `main` or `master`).
    * Run the appropriate git and platform-specific CLI command or submit via the web interface.
    * Example (GitHub CLI):
@@ -17,7 +17,4 @@ description: Lean PR Creator with AI Metadata Synthesis, Automatic Push to Origi
      ```bash
      gh pr view --web
      ```
-4. **Clean Workspace**: Delete any temporary handover files (e.g., `<handover-file>.md`) if they exist, ensuring the local workspace remains clean.
-   ```bash
-   rm -f <handover-file>.md
-   ```
+4. **Preserve Workspace**: Do not clean up unrelated files.
