@@ -31,8 +31,8 @@ For a structured routing index of all skills and trigger scopes, refer to [AGENT
 *   **`phase-breakdown`**: Deconstructs large changes into atomic execution steps/phases.
 
 ### 3. Implementation & Verification Loop
-*   **`plan-implementation`**: Creates detailed step-by-step blueprints (`implementation_plan.md`).
-*   **`check-alignment`**: Verifies that actual changes match the implementation plan.
+*   **`plan-implementation`**: Creates detailed step-by-step implementation plans.
+*   **`check-alignment`**: Verifies that actual changes match the agreed plan or requirements.
 *   **`check-compliance`**: Ensures code satisfies relevant compliance and coding standards.
 *   **`plan-testing`**: Formulates robust automated and manual test strategies.
 *   **`refactor-code`**: Cleans code patterns (SOLID/KISS) incrementally without regressions.
@@ -41,7 +41,7 @@ For a structured routing index of all skills and trigger scopes, refer to [AGENT
 *   **`prepare-handover`**: Packages context and verification results for review.
 *   **`review-branch`**: Audits local branch diffs for edge cases in a clean thread context.
 *   **`create-pr`**: Pushes code and initializes pull requests with rich, structured metadata.
-*   **`review-pr`**: Conducts automated builds and checks on open PRs.
+*   **`review-pr`**: Reviews open PRs and returns structured pass/fail verdicts.
 
 ### 5. Ad-Hoc Utilities
 *   **`distill-lessons`**: Codifies high-leverage lessons and guidelines to improve future workflows.

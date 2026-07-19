@@ -27,8 +27,8 @@ Below is the structured list of the 17 core skills managed by this repository. C
 | **`root-cause`** | `**/*` | Exploring evidence, stack traces, and logs to find bug root causes. | [SKILL.md](skills/root-cause/SKILL.md) |
 | **`create-branch`** | `**/*` | Creating and configuring clean feature Git branches. | [SKILL.md](skills/create-branch/SKILL.md) |
 | **`phase-breakdown`** | `**/*` | Breaking down large implementation tasks into phased roadmap milestones. | [SKILL.md](skills/phase-breakdown/SKILL.md) |
-| **`plan-implementation`** | `**/*` | Creating step-by-step technical blueprints (`implementation_plan.md`). | [SKILL.md](skills/plan-implementation/SKILL.md) |
-| **`check-alignment`** | `**/*` | Verifying actual implementation changes align 100% with the plan. | [SKILL.md](skills/check-alignment/SKILL.md) |
+| **`plan-implementation`** | `**/*` | Creating step-by-step technical implementation plans. | [SKILL.md](skills/plan-implementation/SKILL.md) |
+| **`check-alignment`** | `**/*` | Verifying actual implementation changes align with the agreed plan or requirements. | [SKILL.md](skills/check-alignment/SKILL.md) |
 | **`check-compliance`** | `**/*` | Validating code changes against project-wide coding standards. | [SKILL.md](skills/check-compliance/SKILL.md) |
 | **`plan-testing`** | `**/*` | Formulating automated and manual verification plans. | [SKILL.md](skills/plan-testing/SKILL.md) |
 | **`refactor-code`** | `**/*` | Improving structural design (SOLID/KISS) without functional changes. | [SKILL.md](skills/refactor-code/SKILL.md) |
