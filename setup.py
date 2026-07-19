@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
 import shutil
 import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Set
+
+INCLUDE_PATTERN = re.compile(r"<!--\s*include:\s*([^\s]+?)\s*-->")
 
 # Configuration registry class for developer tools/agents
 class AgentTarget:
@@ -200,6 +203,144 @@ class FileSystemManager:
         return False
 
 
+def has_includes(body: str) -> bool:
+    """Returns True when the skill body contains include directives."""
+    return INCLUDE_PATTERN.search(body) is not None
+
+
+def resolve_include_path(include_path: str, repo_dir: Path) -> Path:
+    """Resolves an include path to an absolute path within the repository."""
+    candidate = Path(include_path)
+    if candidate.is_absolute():
+        raise WorkflowSetupError(f"Include path must be relative to the repository: {include_path}")
+
+    resolved = (repo_dir / candidate).resolve()
+    repo_resolved = repo_dir.resolve()
+    if resolved != repo_resolved and repo_resolved not in resolved.parents:
+        raise WorkflowSetupError(f"Include path escapes repository: {include_path}")
+
+    return resolved
+
+
+def expand_includes(body: str, repo_dir: Path, _seen: Optional[Set[str]] = None) -> str:
+    """Expands include directives into the skill body."""
+    seen = set(_seen or [])
+
+    def replace_match(match: re.Match[str]) -> str:
+        include_path = match.group(1).strip()
+        resolved = resolve_include_path(include_path, repo_dir)
+        normalized = str(resolved)
+
+        if normalized in seen:
+            raise WorkflowSetupError(f"Circular include detected: {include_path}")
+
+        if not resolved.is_file():
+            raise WorkflowSetupError(f"Missing include file: {include_path}")
+
+        try:
+            included_content = resolved.read_text(encoding="utf-8")
+        except OSError as err:
+            raise WorkflowSetupError(f"Failed to read include file {include_path}: {err}")
+
+        return expand_includes(included_content, repo_dir, seen | {normalized})
+
+    return INCLUDE_PATTERN.sub(replace_match, body)
+
+
+def build_skill_md(metadata: Dict[str, str], body: str) -> str:
+    """Builds a SKILL.md file from metadata and body."""
+    frontmatter_lines = ["---"]
+    for key, value in metadata.items():
+        frontmatter_lines.append(f"{key}: {value}")
+    frontmatter_lines.append("---")
+    return "\n".join(frontmatter_lines) + "\n\n" + body.strip() + "\n"
+
+
+def load_skill_content(skill_folder: Path, repo_dir: Path) -> Tuple[Dict[str, str], str]:
+    """Loads and expands a skill manifest."""
+    skill_md = skill_folder / "SKILL.md"
+    metadata, body = FileSystemManager().load_frontmatter(skill_md)
+    if has_includes(body):
+        body = expand_includes(body, repo_dir)
+    return metadata, body
+
+
+def materialize_skill_directory(
+    skill_folder: Path,
+    target: Path,
+    metadata: Dict[str, str],
+    expanded_body: str,
+    repo_dir: Path,
+    fs_manager: FileSystemManager,
+    force: bool = False,
+) -> bool:
+    """Copies a skill directory with an expanded SKILL.md for include-based skills."""
+    if target.exists() or target.is_symlink():
+        if not force and not fs_manager.is_managed_target(target, repo_dir):
+            Console.warning(f"Skipped unmanaged existing target: {target}. Use --force to replace it.")
+            return False
+        fs_manager.clean_target(target)
+
+    try:
+        shutil.copytree(skill_folder, target)
+        (target / fs_manager.MARKER_FILE).touch()
+        (target / "SKILL.md").write_text(build_skill_md(metadata, expanded_body), encoding="utf-8")
+        Console.success("Materialized", target.name, "Directory with expanded includes")
+        return True
+    except OSError as err:
+        raise WorkflowSetupError(f"Failed to materialize skill directory {skill_folder.name}: {err}")
+
+
+def materialize_skill_file(
+    target: Path,
+    metadata: Dict[str, str],
+    expanded_body: str,
+    repo_dir: Path,
+    fs_manager: FileSystemManager,
+    force: bool = False,
+) -> bool:
+    """Writes a flat skill file with expanded includes for Copilot-style targets."""
+    if target.exists() or target.is_symlink():
+        if not force and not fs_manager.is_managed_target(target, repo_dir):
+            Console.warning(f"Skipped unmanaged existing target: {target}. Use --force to replace it.")
+            return False
+        fs_manager.clean_target(target)
+
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        content = fs_manager.SIGNATURE_COMMENT + build_skill_md(metadata, expanded_body)
+        target.write_text(content, encoding="utf-8")
+        Console.success("Materialized", target.name, "File with expanded includes")
+        return True
+    except OSError as err:
+        raise WorkflowSetupError(f"Failed to materialize skill file {target.name}: {err}")
+
+
+def install_skill(
+    skill_folder: Path,
+    target: Path,
+    repo_dir: Path,
+    fs_manager: FileSystemManager,
+    is_directory: bool = False,
+    force: bool = False,
+) -> bool:
+    """Installs a skill globally, materializing when includes must be expanded."""
+    skill_md = skill_folder / "SKILL.md"
+    if not skill_md.exists():
+        return False
+
+    metadata, body = fs_manager.load_frontmatter(skill_md)
+    if has_includes(body):
+        expanded_body = expand_includes(body, repo_dir)
+        if is_directory:
+            return materialize_skill_directory(
+                skill_folder, target, metadata, expanded_body, repo_dir, fs_manager, force=force
+            )
+        return materialize_skill_file(target, metadata, expanded_body, repo_dir, fs_manager, force=force)
+
+    return fs_manager.link_or_copy(skill_folder if is_directory else skill_md, target, repo_dir, is_directory=is_directory, force=force)
+
+
 def sync_target_directory(skills_dir: Path, target_path: Path, fs_manager: FileSystemManager, file_suffix: str = "", uninstall_all: bool = False) -> None:
     """Removes orphaned or stale rules in the target directory managed by this repository."""
     if not target_path.exists():
@@ -258,13 +399,23 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
                 for skill_folder in skills_dir.iterdir():
                     if skill_folder.is_dir():
                         if target.is_directory_based:
-                            # Directory-based linking
-                            fs_manager.link_or_copy(skill_folder, target.path / skill_folder.name, repo_dir, is_directory=True, force=force)
+                            install_skill(
+                                skill_folder,
+                                target.path / skill_folder.name,
+                                repo_dir,
+                                fs_manager,
+                                is_directory=True,
+                                force=force,
+                            )
                         else:
-                            # Flat file-based linking with custom suffix
-                            skill_file = skill_folder / "SKILL.md"
-                            if skill_file.exists():
-                                fs_manager.link_or_copy(skill_file, target.path / f"{skill_folder.name}{target.file_suffix}", repo_dir, is_directory=False, force=force)
+                            install_skill(
+                                skill_folder,
+                                target.path / f"{skill_folder.name}{target.file_suffix}",
+                                repo_dir,
+                                fs_manager,
+                                is_directory=False,
+                                force=force,
+                            )
             except OSError as err:
                 raise WorkflowSetupError(f"Failed to read skills folder during installation: {err}")
             linked_any = True
@@ -285,6 +436,9 @@ def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystem
 
 class RuleCompiler:
     """Base class defining the interface for rule compilers."""
+    def destination_path(self, skill_name: str, project_path: Path) -> Path:
+        raise NotImplementedError
+
     def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
         raise NotImplementedError
 
@@ -294,11 +448,14 @@ class RuleCompiler:
 
 class CursorRuleCompiler(RuleCompiler):
     """Compiles rules into Cursor's .mdc format."""
+    def destination_path(self, skill_name: str, project_path: Path) -> Path:
+        return project_path / ".cursor" / "rules" / f"{skill_name}.mdc"
+
     def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
         try:
             cursor_dir = project_path / ".cursor" / "rules"
             cursor_dir.mkdir(parents=True, exist_ok=True)
-            cursor_file = cursor_dir / f"{skill_name}.mdc"
+            cursor_file = self.destination_path(skill_name, project_path)
             desc = metadata.get("description", f"Behavior rule for {skill_name}")
             safe_desc = desc.replace('\\', '\\\\').replace('"', '\\"')
             cursor_content = f"---\ndescription: \"{safe_desc}\"\nglobs: [\"**/*\"]\nalwaysApply: false\nsource: agent-workflows\n---\n\n{body.strip()}\n"
@@ -325,11 +482,14 @@ class CursorRuleCompiler(RuleCompiler):
 
 class WindsurfRuleCompiler(RuleCompiler):
     """Compiles rules into Windsurf's .md rule format."""
+    def destination_path(self, skill_name: str, project_path: Path) -> Path:
+        return project_path / ".windsurf" / "rules" / f"{skill_name}.md"
+
     def compile(self, skill_name: str, metadata: Dict[str, str], body: str, project_path: Path) -> None:
         try:
             windsurf_dir = project_path / ".windsurf" / "rules"
             windsurf_dir.mkdir(parents=True, exist_ok=True)
-            windsurf_file = windsurf_dir / f"{skill_name}.md"
+            windsurf_file = self.destination_path(skill_name, project_path)
             title = skill_name.replace('-', ' ').title()
             with open(windsurf_file, "w", encoding="utf-8") as f:
                 f.write(f"<!-- Source: agent-workflows -->\n# {title}\n\n{body.strip()}\n")
@@ -352,7 +512,36 @@ class WindsurfRuleCompiler(RuleCompiler):
             raise WorkflowSetupError(f"Failed to list Windsurf rules directory for clean: {err}")
 
 
-def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystemManager, clean_only: bool = False) -> None:
+def preflight_project_compilation(
+    skills_to_compile: List[Tuple[str, Dict[str, str], str]],
+    compilers: List[RuleCompiler],
+    project_path: Path,
+    fs_manager: FileSystemManager,
+    repo_dir: Path,
+    force: bool = False,
+) -> None:
+    """Aborts before any writes when unmanaged destination collisions exist."""
+    collisions: List[Path] = []
+    for skill_name, _, _ in skills_to_compile:
+        for compiler in compilers:
+            destination = compiler.destination_path(skill_name, project_path)
+            if (destination.exists() or destination.is_symlink()) and not fs_manager.is_managed_target(destination, repo_dir):
+                collisions.append(destination)
+
+    if collisions and not force:
+        collision_list = ", ".join(str(path) for path in collisions)
+        raise WorkflowSetupError(
+            f"Refusing to overwrite unmanaged project rules: {collision_list}. Use --force to replace them."
+        )
+
+
+def compile_project(
+    skills_dir: Path,
+    project_path: Path,
+    fs_manager: FileSystemManager,
+    clean_only: bool = False,
+    force: bool = False,
+) -> None:
     """Compiles rules locally into the target project workspace for all registered compilers."""
     project_path = project_path.resolve()
     if not project_path.is_dir():
@@ -372,26 +561,34 @@ def compile_project(skills_dir: Path, project_path: Path, fs_manager: FileSystem
 
     Console.info(f"Configuring project-level rules at: {project_path}")
 
-    # Synchronize/clean rules first
-    for compiler in compilers:
-        compiler.clean(project_path, fs_manager, active_skills, repo_dir, uninstall_all=clean_only)
-
-    if clean_only:
-        return
-
-    # Process all skills
+    skills_to_compile: List[Tuple[str, Dict[str, str], str]] = []
     try:
         for skill_folder in skills_dir.iterdir():
             if skill_folder.is_dir():
                 skill_md = skill_folder / "SKILL.md"
                 if not skill_md.exists():
                     continue
-
-                metadata, body = fs_manager.load_frontmatter(skill_md)
-                for compiler in compilers:
-                    compiler.compile(skill_folder.name, metadata, body, project_path)
+                metadata, body = load_skill_content(skill_folder, repo_dir)
+                skills_to_compile.append((skill_folder.name, metadata, body))
     except OSError as err:
         raise WorkflowSetupError(f"Failed to list skills during compilation: {err}")
+
+    if not clean_only:
+        preflight_project_compilation(skills_to_compile, compilers, project_path, fs_manager, repo_dir, force=force)
+
+    # Synchronize/clean managed rules only after preflight passes
+    for compiler in compilers:
+        compiler.clean(project_path, fs_manager, active_skills, repo_dir, uninstall_all=clean_only)
+
+    if clean_only:
+        return
+
+    for skill_name, metadata, body in skills_to_compile:
+        for compiler in compilers:
+            destination = compiler.destination_path(skill_name, project_path)
+            if (destination.exists() or destination.is_symlink()) and not fs_manager.is_managed_target(destination, repo_dir):
+                fs_manager.clean_target(destination)
+            compiler.compile(skill_name, metadata, body, project_path)
 
 
 def main() -> None:
@@ -409,6 +606,7 @@ def main() -> None:
     proj_parser = subparsers.add_parser("project", help="Link/Compile skills locally for Cursor and Windsurf in a project.")
     proj_parser.add_argument("--path", default=".", help="Path to the local project workspace root (defaults to current directory).")
     proj_parser.add_argument("--clean", action="store_true", help="Remove all compiled rules in the project workspace.")
+    proj_parser.add_argument("--force", action="store_true", help="Replace existing unmanaged project rule files.")
 
     args = parser.parse_args()
 
@@ -428,7 +626,7 @@ def main() -> None:
         elif args.command == "unlink":
             uninstall_global(skills_dir, config, fs_manager)
         elif args.command == "project":
-            compile_project(skills_dir, Path(args.path), fs_manager, clean_only=args.clean)
+            compile_project(skills_dir, Path(args.path), fs_manager, clean_only=args.clean, force=args.force)
     except WorkflowSetupError as err:
         Console.error(str(err))
         sys.exit(1)

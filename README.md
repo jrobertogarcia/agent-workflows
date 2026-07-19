@@ -79,5 +79,5 @@ python setup.py project --path /path/to/project-directory
 ### Development Checks
 Run the installer regression suite with:
 ```bash
-python -m unittest discover -s tests
+python3 -m unittest discover -s tests
 ```

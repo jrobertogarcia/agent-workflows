@@ -50,6 +50,7 @@ graph TD
     Decide{"Audit Outcome"}
     FixSame["Small fixes: Tackle in review thread"]
     FixNew["Complex fixes: Spawn new implementation thread"]
+    Reverify["Re-verify changes<br>prepare-handover + review-branch"]
     
     %% PR Release Phase
     CPR["7. Pull Request<br>create-pr"]
@@ -65,8 +66,9 @@ graph TD
     RB --> Decide
     Decide --> FixSame
     Decide --> FixNew
-    FixSame --> CPR
-    FixNew --> CPR
+    FixSame --> Reverify
+    FixNew --> Loop
+    Reverify --> CPR
     CPR --> RPR
 ```
 
@@ -96,9 +98,11 @@ With the implementation plan established, coding-agent work proceeds through exp
 *   **`plan-testing`**: Details testing sequences.
 *   **`refactor-code`**: Refines code cleanly without changing system behavior.
 
-### Stage 5: Release
-Once the implementation is fully audited and finalized in the review thread, the changes are ready for packaging and launch:
-*   **`create-pr`**: Pushes the branch to origin and prepares the pull request template with AI metadata summaries.
+### Stage 5: Handover, Audit, and Release
+After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**. Audit findings must be resolved before release:
+*   *Small Issues*: Fix them in the review thread, then re-run **`prepare-handover`** and **`review-branch`** in a fresh thread to confirm the fixes.
+*   *Major Issues*: Close the review thread and return to the implementation loop. After the fixes are complete, repeat handover and branch audit before release.
+*   **`create-pr`**: Once the branch audit passes, push the branch to origin and prepare the pull request template with AI metadata summaries.
 *   **`review-pr`**: Runs automated build validation and PR code reviews (typically performed in an independent PR review thread).
 
 ---
@@ -112,8 +116,8 @@ LLMs experience quality degradation as conversation history grows (context windo
 2.  **Migrate Threads**: Immediately open a **new conversation thread**.
 3.  **Run the Audit**: In the fresh thread, run **`review-branch`** to audit the diff. This guarantees that code review is performed by a model with a clean context window, ensuring high review fidelity.
 4.  **Tackle Audit Findings**:
-    *   *Small Issues*: Fix them directly in the review thread.
-    *   *Major Issues*: Close the thread and spawn a new implementation thread to isolate the complex edits.
+    *   *Small Issues*: Fix them directly in the review thread, then re-run **`prepare-handover`** and **`review-branch`** in a fresh thread before opening a PR.
+    *   *Major Issues*: Close the thread and spawn a new implementation thread to isolate the complex edits. After implementation completes, repeat handover and branch audit before release.
 
 ---
 

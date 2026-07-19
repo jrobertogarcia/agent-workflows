@@ -61,6 +61,9 @@ class SetupTestCase(unittest.TestCase):
         if not self.can_create_directory_symlink():
             self.skipTest("OS/user permissions do not allow creating directory symlinks")
 
+    def assert_same_path(self, left, right):
+        self.assertEqual(os.path.realpath(left), os.path.realpath(right))
+
 
 class FrontmatterTests(SetupTestCase):
     def test_load_frontmatter_parses_metadata_and_body(self):
@@ -149,7 +152,7 @@ class LinkOrCopyTests(SetupTestCase):
 
         self.assertTrue(installed)
         self.assertTrue(target.is_symlink())
-        self.assertEqual(target.resolve(), source)
+        self.assert_same_path(target.resolve(), source)
 
     def test_existing_managed_target_is_replaced(self):
         self.requires_symlink_support()
@@ -162,7 +165,7 @@ class LinkOrCopyTests(SetupTestCase):
 
         self.assertTrue(installed)
         self.assertTrue(target.is_symlink())
-        self.assertEqual(target.resolve(), new_source)
+        self.assert_same_path(target.resolve(), new_source)
 
     def test_existing_unmanaged_target_is_skipped_by_default(self):
         source = self.add_skill("source")
@@ -194,7 +197,7 @@ class LinkOrCopyTests(SetupTestCase):
 
         self.assertTrue(installed)
         self.assertTrue(target.is_symlink())
-        self.assertEqual(target.resolve(), source)
+        self.assert_same_path(target.resolve(), source)
 
     def test_symlink_failure_falls_back_to_directory_copy_with_marker(self):
         source = self.add_skill("copy-source")
@@ -367,6 +370,154 @@ class ProjectCompilationTests(SetupTestCase):
 
         self.assertTrue(cursor_user_file.exists())
         self.assertTrue(windsurf_user_file.exists())
+
+    def test_compile_project_aborts_on_unmanaged_collision_without_changes(self):
+        self.add_skill("skill-00")
+        project = self.root / "project"
+        cursor_dir = project / ".cursor" / "rules"
+        windsurf_dir = project / ".windsurf" / "rules"
+        cursor_dir.mkdir(parents=True)
+        windsurf_dir.mkdir(parents=True)
+        cursor_collision = cursor_dir / "skill-00.mdc"
+        windsurf_collision = windsurf_dir / "skill-00.md"
+        cursor_collision.write_text("user-owned", encoding="utf-8")
+        windsurf_collision.write_text("user-owned", encoding="utf-8")
+
+        with self.assertRaises(setup.WorkflowSetupError):
+            setup.compile_project(self.skills_dir, project, self.fs)
+
+        self.assertEqual(cursor_collision.read_text(encoding="utf-8"), "user-owned")
+        self.assertEqual(windsurf_collision.read_text(encoding="utf-8"), "user-owned")
+
+    def test_compile_project_force_replaces_unmanaged_collision(self):
+        self.add_skill("skill-00")
+        project = self.root / "project"
+        cursor_dir = project / ".cursor" / "rules"
+        windsurf_dir = project / ".windsurf" / "rules"
+        cursor_dir.mkdir(parents=True)
+        windsurf_dir.mkdir(parents=True)
+        cursor_collision = cursor_dir / "skill-00.mdc"
+        windsurf_collision = windsurf_dir / "skill-00.md"
+        cursor_collision.write_text("user-owned", encoding="utf-8")
+        windsurf_collision.write_text("user-owned", encoding="utf-8")
+
+        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs, force=True)
+
+        cursor_content = cursor_collision.read_text(encoding="utf-8")
+        windsurf_content = windsurf_collision.read_text(encoding="utf-8")
+        self.assertIn("source: agent-workflows", cursor_content)
+        self.assertTrue(windsurf_content.startswith("<!-- Source: agent-workflows -->"))
+        self.assertNotIn("user-owned", cursor_content)
+        self.assertNotIn("user-owned", windsurf_content)
+
+    def test_compile_project_refreshes_managed_rules(self):
+        self.add_skill("skill-00", "Original description")
+        project = self.root / "project"
+        project.mkdir()
+
+        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
+        cursor_file = project / ".cursor" / "rules" / "skill-00.mdc"
+        self.assertIn('description: "Original description"', cursor_file.read_text(encoding="utf-8"))
+
+        skill_file = self.skills_dir / "skill-00" / "SKILL.md"
+        skill_file.write_text(
+            "---\nname: skill-00\ndescription: Updated description\n---\n\n# skill-00\n\nUpdated body\n",
+            encoding="utf-8",
+        )
+
+        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
+        updated_content = cursor_file.read_text(encoding="utf-8")
+        self.assertIn('description: "Updated description"', updated_content)
+        self.assertIn("Updated body", updated_content)
+
+
+class IncludeExpansionTests(SetupTestCase):
+    def add_shared_fragment(self, relative_path, content):
+        fragment = self.repo_dir / relative_path
+        fragment.parent.mkdir(parents=True, exist_ok=True)
+        fragment.write_text(content, encoding="utf-8")
+        return fragment
+
+    def add_skill_with_include(self, name, include_path, description="Included skill"):
+        skill_dir = self.skills_dir / name
+        skill_dir.mkdir(parents=True)
+        skill_file = skill_dir / "SKILL.md"
+        skill_file.write_text(
+            f"---\nname: {name}\ndescription: {description}\n---\n\n# {name}\n\n"
+            f"<!-- include: {include_path} -->\n",
+            encoding="utf-8",
+        )
+        return skill_dir
+
+    def test_expand_includes_renders_shared_fragment(self):
+        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
+        skill = self.add_skill_with_include("review-branch", "shared/review-guidelines.md")
+
+        _, body = load_skill_content(skill, self.repo_dir)
+        self.assertIn("Shared review rubric", body)
+        self.assertNotIn("<!-- include:", body)
+
+    def test_expand_includes_rejects_missing_file(self):
+        skill = self.add_skill_with_include("review-branch", "shared/missing.md")
+
+        with self.assertRaises(setup.WorkflowSetupError):
+            load_skill_content(skill, self.repo_dir)
+
+    def test_expand_includes_rejects_repo_escape(self):
+        skill = self.add_skill_with_include("review-branch", "../outside.md")
+
+        with self.assertRaises(setup.WorkflowSetupError):
+            load_skill_content(skill, self.repo_dir)
+
+    def test_compile_project_expands_review_skills(self):
+        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
+        self.add_skill_with_include("review-branch", "shared/review-guidelines.md")
+        self.add_skill_with_include("review-pr", "shared/review-guidelines.md")
+        project = self.root / "project"
+        project.mkdir()
+
+        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
+
+        branch_content = (project / ".cursor" / "rules" / "review-branch.mdc").read_text(encoding="utf-8")
+        pr_content = (project / ".cursor" / "rules" / "review-pr.mdc").read_text(encoding="utf-8")
+        self.assertIn("Shared review rubric", branch_content)
+        self.assertIn("Shared review rubric", pr_content)
+        self.assertIn("# review-branch", branch_content)
+        self.assertIn("# review-pr", pr_content)
+        self.assertNotIn("<!-- include:", branch_content)
+        self.assertNotIn("<!-- include:", pr_content)
+
+    def test_install_global_materializes_directory_skill_with_includes(self):
+        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
+        self.add_skill_with_include("review-branch", "shared/review-guidelines.md")
+        config = setup.AppConfig(home_dir=self.root / "home")
+        (config.home / ".codex").mkdir(parents=True)
+
+        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+
+        installed = config.home / ".codex" / "skills" / "review-branch"
+        content = (installed / "SKILL.md").read_text(encoding="utf-8")
+        self.assertTrue((installed / setup.FileSystemManager.MARKER_FILE).exists())
+        self.assertIn("Shared review rubric", content)
+        self.assertNotIn("<!-- include:", content)
+
+    def test_install_global_materializes_flat_file_skill_with_includes(self):
+        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
+        self.add_skill_with_include("review-pr", "shared/review-guidelines.md")
+        config = setup.AppConfig(home_dir=self.root / "home")
+        (config.home / ".copilot").mkdir(parents=True)
+
+        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+
+        installed = config.home / ".copilot" / "agents" / "review-pr.agent.md"
+        content = installed.read_text(encoding="utf-8")
+        self.assertTrue(content.startswith(setup.FileSystemManager.SIGNATURE_COMMENT))
+        self.assertIn("Shared review rubric", content)
+        self.assertNotIn("<!-- include:", content)
+
+
+def load_skill_content(skill_folder, repo_dir):
+    return setup.load_skill_content(skill_folder, repo_dir)
 
 
 class OrphanCleanupTests(SetupTestCase):
