@@ -89,7 +89,7 @@ Once requirements are clear, execute **`create-branch`** to set up a clean Git b
 ### Stage 3: Phase Breakdown & Planning
 For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
 1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable steps.
-2.  For each step in the breakdown, run **`plan-implementation`** to create an `implementation_plan.md` outlining the proposed edits.
+2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits.
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
@@ -103,7 +103,7 @@ After implementation completes, run **`prepare-handover`** in the active impleme
 *   *Small Issues*: Fix them in the review thread, then re-run **`prepare-handover`** and **`review-branch`** in a fresh thread to confirm the fixes.
 *   *Major Issues*: Close the review thread and return to the implementation loop. After the fixes are complete, repeat handover and branch audit before release.
 *   **`create-pr`**: Once the branch audit passes, push the branch to origin and prepare the pull request template with AI metadata summaries.
-*   **`review-pr`**: Runs automated build validation and PR code reviews (typically performed in an independent PR review thread).
+*   **`review-pr`**: Reviews the PR and returns structured pass/fail verdicts (typically performed in an independent PR review thread).
 
 ---
 
