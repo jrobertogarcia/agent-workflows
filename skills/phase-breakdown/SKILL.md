@@ -1,11 +1,13 @@
 ---
 name: phase-breakdown
-description: Recommends an iterative implementation roadmap to keep changes small, testable, and low-risk.
+description: Divide a large change into small, independently verifiable phases. Use before planning implementation of a complex task.
+model: opus
+effort: medium
 ---
 
-# Phasing Strategy
+# Phase Breakdown
 
-Analyze and systematically divide a complex implementation into logical, independent, and incrementally testable phases.
+Analyze and systematically divide a complex implementation into logical, independent, and incrementally testable phases. Reuse context already gathered in this thread rather than re-reading it.
 
 ## Principles
 * **Atomicity**: Each phase must be logically complete and independently verifiable.
@@ -15,4 +17,4 @@ Analyze and systematically divide a complex implementation into logical, indepen
 ## Outcome
 * **Phase-Only**: Focus exclusively on proposing the execution sequence. Do not write source code or draft final implementation plans.
 
-Propose a prioritized, evidence-based sequence of execution phases, detailing the **Rationale** for the sequence, key **Deliverables**, and **Verification methods** to prove stability at each step.
+Propose a prioritized, evidence-based sequence of execution phases, detailing the **Rationale** for the sequence, key **Deliverables**, and **Verification methods** to prove stability at each step. Create a file only when requested.

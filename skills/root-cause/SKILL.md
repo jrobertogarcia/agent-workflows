@@ -1,6 +1,8 @@
 ---
 name: root-cause
-description: Evidence-based investigation to identify the root cause without premature solutioning.
+description: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
+model: opus
+effort: medium
 ---
 
 # Root Cause Analysis
@@ -16,4 +18,4 @@ Uncover the "How" and "Why" of the problem. Do not propose fixes or plans until 
 - **Deep Trace**: Look beyond the symptom to find the systemic cause.
 
 ## Outcome
-Identify the **Definitive Root Cause** and the **Evidence Chain** leading to it. Wait for user approval before proceeding to any solution.
+Identify the **Definitive Root Cause** and the **Evidence Chain** leading to it. Wait for user approval before proceeding to any solution. Create a file only when requested.

@@ -1,12 +1,20 @@
 ---
 name: plan-implementation
-description: Create a comprehensive implementation plan.
+description: Create a detailed implementation plan for a change, surfacing open questions and assumptions. Use before writing code.
+model: opus
+effort: medium
 ---
 
-# Strategic Planning
+# Plan Implementation
 
-1. **Discovery**: Systematically read all relevant project documentation, developer standards, and guidelines in depth to align with project requirements.
-2. **Plan**: Create or update a detailed, comprehensive implementation plan. Follow project conventions and create a file only when requested.
-   - Group all changes logically by module or layer.
-   - Include a robust **Verification Plan** (automated + manual).
-3. **Approval**: Present the plan for user review before execution.
+1. **Ground the Plan**: Read the code you intend to change and the standards that govern it. Reuse context already gathered in this thread rather than re-reading it.
+2. **Resolve Uncertainty**: Settle open questions from the codebase first. Ask only what you cannot settle yourself and where different answers would change the plan. Record the rest as explicit assumptions.
+3. **Write the Plan**: Cover at minimum:
+   - **Goal**: the problem being solved and what "done" looks like.
+   - **Changes**: files to add or modify, grouped by module or layer, with the specific edit intended for each.
+   - **Sequence**: order of work and dependencies between steps.
+   - **Verification**: automated and manual checks that prove it works.
+   - **Out of Scope**: what this plan deliberately does not do.
+   - **Open Questions & Assumptions**: from step 2.
+   Follow project conventions. Create a file only when requested.
+4. **Stop for Approval**: Present the plan and explicitly wait for approval. Do not write implementation code.

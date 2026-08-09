@@ -1,6 +1,8 @@
 ---
 name: distill-lessons
-description: Reflect on recent work and codify generic lessons into project guidelines or documentation.
+description: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
+model: sonnet
+effort: medium
 ---
 
 # Distill Lessons

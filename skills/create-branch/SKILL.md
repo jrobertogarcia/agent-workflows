@@ -1,6 +1,8 @@
 ---
 name: create-branch
-description: Automatically check out the latest default branch and create a new feature branch using Conventional Commits.
+description: Check out the latest default branch and create a new feature branch using Conventional Commits. Use when starting new work.
+model: sonnet
+effort: low
 ---
 
 # Create Feature Branch

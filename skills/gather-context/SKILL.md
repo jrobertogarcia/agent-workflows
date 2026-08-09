@@ -1,11 +1,13 @@
 ---
 name: gather-context
-description: Context Discovery Phase
+description: Gather and organize context for a given file, folder, or component before planning or coding. Use when starting work on unfamiliar code.
+model: sonnet
+effort: low
 ---
 
 # Gather Context
 
-1. **File Context**: Collect comprehensive contextual information for the target files.
-2. **Dependency Mapping**: Systematically map all directly and indirectly related components, dependencies, imported modules, invoked services, configurations, and data models necessary to fully understand how these files interact with the system.
-3. **Strict Rule**: Do not perform analysis, evaluation, or suggestions at this stage. Only gather and organize the relevant context.
-4. **No Modification**: Do not modify code or generate implementation plans during this discovery stage.
+1. **Target**: Establish the file, folder, or component in scope. Ask if it is ambiguous.
+2. **Read**: Read the target in full, then whatever it references and whatever references it (e.g. imports, callers, configs, schemas, tests, docs).
+3. **Expand Only As Needed**: Go one hop further only where it is required to understand the target. Note what you skipped rather than crawling the full graph.
+4. **Report**: Output an organized summary in the response. Do not analyze, evaluate, suggest, plan, modify code, or write files.
