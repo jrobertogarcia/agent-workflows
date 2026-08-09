@@ -1,6 +1,6 @@
 ---
 name: validate-commit
-description: Comprehensive verification workflow to ensure code is ready for commit and passes all commit checks and hooks.
+description: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
 ---
 
 # Validation Workflow

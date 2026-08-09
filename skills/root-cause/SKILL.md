@@ -1,6 +1,6 @@
 ---
 name: root-cause
-description: Evidence-based investigation to identify the root cause without premature solutioning.
+description: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
 ---
 
 # Root Cause Analysis

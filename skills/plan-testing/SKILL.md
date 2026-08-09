@@ -1,6 +1,6 @@
 ---
 name: plan-testing
-description: Create a thorough and comprehensive testing plan.
+description: Create a risk-based testing plan for a change. Use before writing tests.
 ---
 
 # Generate Test Plan

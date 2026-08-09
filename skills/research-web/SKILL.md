@@ -1,6 +1,6 @@
 ---
 name: research-web
-description: Search the web for current best practices and provide a deep, high-level analysis.
+description: Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence.
 ---
 
 # Web Research Workflow

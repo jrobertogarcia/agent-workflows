@@ -1,6 +1,6 @@
 ---
 name: prepare-handover
-description: Synthesizes completed implementation work, key technical decisions, and verification results into a structured handover package for review.
+description: Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread.
 ---
 
 # Prepare Handover

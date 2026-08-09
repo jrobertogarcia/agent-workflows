@@ -1,6 +1,6 @@
 ---
 name: phase-breakdown
-description: Recommends an iterative implementation roadmap to keep changes small, testable, and low-risk.
+description: Divide a large change into small, independently verifiable phases. Use before planning implementation of a complex task.
 ---
 
 # Phasing Strategy

@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: Robust PR Review with Checkout, Build Verification, and AI Audit
+description: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 ---
 
 # PR Review Workflow

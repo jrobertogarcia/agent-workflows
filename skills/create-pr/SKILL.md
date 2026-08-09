@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: Lean PR Creator with AI Metadata Synthesis and Automatic Push to Origin
+description: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
 ---
 
 # Create Pull Request

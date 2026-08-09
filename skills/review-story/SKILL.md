@@ -1,6 +1,6 @@
 ---
 name: review-story
-description: Pre-Implementation Gap Analysis
+description: Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement.
 ---
 
 # Review Story

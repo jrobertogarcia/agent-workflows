@@ -1,6 +1,6 @@
 ---
 name: check-alignment
-description: Verify that implementation changes align with the agreed plan or requirements.
+description: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
 ---
 
 # Alignment Check

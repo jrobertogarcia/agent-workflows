@@ -1,6 +1,6 @@
 ---
 name: check-compliance
-description: Thoroughly validate the implementation against all relevant project standards, guidelines, and compliance rules.
+description: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
 ---
 
 # Standards Compliance

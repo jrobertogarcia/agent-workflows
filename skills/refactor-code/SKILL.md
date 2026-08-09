@@ -1,6 +1,6 @@
 ---
 name: refactor-code
-description: In-depth analysis of code design violations, presenting a refactoring plan before executing behavior-preserving cleanup.
+description: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
 ---
 
 # Clean Design & Refactoring
