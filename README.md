@@ -21,31 +21,31 @@ For a complete walkthrough of context decay strategies, sequential phases, and t
 For a structured routing index of all skills and trigger scopes, refer to [AGENTS.md](AGENTS.md). For detailed prompt instructions, inspect the individual `SKILL.md` rules inside the [skills/](skills/) folder.
 
 ### 1. Analyzing (Pre-Coding Utilities)
-*   **`gather-context`**: Maps file hierarchies and system dependencies.
-*   **`research-web`**: Gathers authoritative documentation and real-world trade-offs.
-*   **`review-story`**: Audits user stories for logical conflicts or system gaps.
-*   **`root-cause`**: Conducts evidence-based debugging of errors without assuming quick-fixes.
+*   **`gather-context`**: Gather and organize context for a given file, folder, or component before planning or coding. Use when starting work on unfamiliar code.
+*   **`research-web`**: Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence.
+*   **`review-story`**: Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement.
+*   **`root-cause`**: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
 
 ### 2. Branch & Breakdown
-*   **`create-branch`**: Standardizes feature branching using Conventional Commits patterns.
-*   **`phase-breakdown`**: Deconstructs large changes into atomic execution steps/phases.
+*   **`create-branch`**: Check out the latest default branch and create a new feature branch using Conventional Commits. Use when starting new work.
+*   **`phase-breakdown`**: Divide a large change into small, independently verifiable phases. Use before planning implementation of a complex task.
 
 ### 3. Implementation & Verification Loop
-*   **`plan-implementation`**: Creates detailed step-by-step implementation plans.
-*   **`check-alignment`**: Verifies that actual changes match the agreed plan or requirements.
-*   **`check-compliance`**: Ensures code satisfies relevant compliance and coding standards.
-*   **`plan-testing`**: Formulates robust automated and manual test strategies.
-*   **`refactor-code`**: Cleans code patterns (SOLID/KISS) incrementally without regressions.
+*   **`plan-implementation`**: Create a detailed implementation plan for a change, surfacing open questions and assumptions. Use before writing code.
+*   **`check-alignment`**: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
+*   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
+*   **`plan-testing`**: Create a risk-based testing plan for a change. Use before writing tests.
+*   **`refactor-code`**: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
 
 ### 4. Handover & Release
-*   **`prepare-handover`**: Packages context and verification results for review.
-*   **`review-branch`**: Audits local branch diffs for edge cases in a clean thread context.
-*   **`create-pr`**: Pushes code and initializes pull requests with rich, structured metadata.
-*   **`review-pr`**: Reviews open PRs and returns structured pass/fail verdicts.
+*   **`prepare-handover`**: Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread.
+*   **`review-branch`**: Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request.
+*   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
+*   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 
 ### 5. Ad-Hoc Utilities
-*   **`distill-lessons`**: Codifies high-leverage lessons and guidelines to improve future workflows.
-*   **`validate-commit`**: Performs linting, styling auto-fixes, and test compilation prior to commit.
+*   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
+*   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
 
 ---
 
