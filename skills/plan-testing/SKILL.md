@@ -3,7 +3,7 @@ name: plan-testing
 description: Create a risk-based testing plan for a change. Use before writing tests.
 ---
 
-# Generate Test Plan
+# Plan Testing
 
 1. **Ground the Plan**: Reuse context already gathered in this thread rather than re-reading it.
 2. **Define Scenarios**: Outline test scenarios proportional to risk, covering happy paths, boundary conditions, edge cases, negative/error-handling paths, and integration points. State explicitly what was deliberately not tested.

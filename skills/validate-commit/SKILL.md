@@ -3,7 +3,7 @@ name: validate-commit
 description: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
 ---
 
-# Validation Workflow
+# Validate Commit
 
 Run this workflow before concluding a task or when validation is requested to prevent commit hooks from failing.
 

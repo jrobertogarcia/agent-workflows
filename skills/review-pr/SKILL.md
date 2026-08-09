@@ -3,7 +3,7 @@ name: review-pr
 description: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 ---
 
-# PR Review Workflow
+# Review PR
 
 1. **Prepare & Sync**: Synchronize the local workspace with the target Pull Request or Merge Request branch using the project's version control integration. 
 2. **Quality & Design Audit**: Perform a deep cognitive and design audit of the changes following the principles and checklist below.

@@ -3,7 +3,7 @@ name: check-compliance
 description: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
 ---
 
-# Standards Compliance
+# Check Compliance
 
 Systematically audit the implementation against project standards:
 

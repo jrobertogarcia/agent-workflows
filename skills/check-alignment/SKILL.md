@@ -3,7 +3,7 @@ name: check-alignment
 description: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
 ---
 
-# Alignment Check
+# Check Alignment
 
 Systematically verify the implementation against the agreed plan or requirements:
 
