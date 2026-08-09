@@ -26,6 +26,7 @@ graph TD
     
     subgraph Loop ["4. Implementation Loop (Verification Gates)"]
         PI["plan-implementation"]
+        DP["delegate-plan (optional)"]
         Code["Execute Code Changes"]
         
         %% Loop Utilities
@@ -36,7 +37,8 @@ graph TD
             RF["refactor-code"]
         end
         
-        PI --> Code
+        PI --> DP
+        DP --> Code
         Code --> Utilities
         Utilities --> PI
     end
@@ -90,6 +92,7 @@ Once requirements are clear, execute **`create-branch`** to set up a clean Git b
 For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
 1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable steps.
 2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits.
+3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** against the actual diff, not its self-reported summary, before trusting the result.
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
