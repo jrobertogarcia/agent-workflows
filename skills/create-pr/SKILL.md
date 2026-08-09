@@ -20,4 +20,5 @@ Follow the repository's PR template when one exists (e.g. `.github/pull_request_
 2. **Synthesize Metadata**: Draft the title and body following the structure above. Match the title convention of recent merged pull requests in the repository, defaulting to Conventional Commits (e.g. `feat(auth): implement user authentication`) when none is established.
 3. **Push & Create**: Push the active branch to origin and open the pull request against the base integration branch, using the platform CLI or web interface (e.g. `git push origin HEAD && gh pr create --title "[TITLE]" --body "[BODY]" --base <default-branch>`).
 4. **Verify Creation**: Verify the pull request on the hosting platform (e.g. `gh pr view --web`).
-5. **Preserve Workspace**: Do not clean up unrelated files.
+5. **Release the Worktree**: When the working directory is a linked worktree (`git rev-parse --git-dir` and `git rev-parse --git-common-dir` return different paths), run `git checkout --detach` so the pushed branch can be checked out elsewhere for review. This preserves the directory and its ignored and uncommitted files. Report the reattach command (`git checkout <branch>`). Skip in a normal checkout.
+6. **Preserve Workspace**: Do not delete unrelated files or remove the worktree.
