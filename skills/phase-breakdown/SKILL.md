@@ -5,7 +5,7 @@ description: Divide a large change into small, independently verifiable phases. 
 
 # Phasing Strategy
 
-Analyze and systematically divide a complex implementation into logical, independent, and incrementally testable phases.
+Analyze and systematically divide a complex implementation into logical, independent, and incrementally testable phases. Reuse context already gathered in this thread rather than re-reading it.
 
 ## Principles
 * **Atomicity**: Each phase must be logically complete and independently verifiable.

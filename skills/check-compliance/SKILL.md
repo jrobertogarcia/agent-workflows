@@ -7,7 +7,7 @@ description: Audit changed code against the project's standards and guidelines. 
 
 Systematically audit the implementation against project standards:
 
-1. **Identify**: Identify all relevant guidelines, design standards, and requirements for the modified files.
-2. **Read**: Review the relevant rules and documentation for those standards.
-3. **Verify**: Ensure the code strictly adheres to every pattern, rule, and constraint defined in those standards without exception.
+1. **Identify**: Identify the guidelines, design standards, and requirements that govern the files you changed.
+2. **Read**: Reuse standards already read in this thread rather than re-reading them. Review only what you have not yet seen.
+3. **Verify**: Verify the changed code against those rules. Name any standard you could not evaluate rather than silently assuming a pass.
 4. **No Premature Fixes**: If compliance violations are found, do not fix them directly. Document the issues and propose the fixes as part of a formal implementation plan.
