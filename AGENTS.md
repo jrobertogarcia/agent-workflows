@@ -19,7 +19,7 @@ Frontmatter `model` and `effort` in each SKILL.md are Claude Code extensions, no
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 17 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
+Below is the structured list of the 18 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
@@ -35,6 +35,7 @@ Frontmatter `description` in each SKILL.md is authoritative; keep this table and
 | **`check-alignment`** | `**/*` | Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change. | [SKILL.md](skills/check-alignment/SKILL.md) |
 | **`check-compliance`** | `**/*` | Audit changed code against the project's standards and guidelines. Use after changes are written and before review. | [SKILL.md](skills/check-compliance/SKILL.md) |
 | **`plan-testing`** | `**/*` | Create a risk-based testing plan for a change. Use before writing tests. | [SKILL.md](skills/plan-testing/SKILL.md) |
+| **`audit-tests`** | `**/*` | Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change. | [SKILL.md](skills/audit-tests/SKILL.md) |
 | **`refactor-code`** | `**/*` | Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior. | [SKILL.md](skills/refactor-code/SKILL.md) |
 | **`prepare-handover`** | `**/*` | Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread. | [SKILL.md](skills/prepare-handover/SKILL.md) |
 | **`review-branch`** | `**/*` | Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request. | [SKILL.md](skills/review-branch/SKILL.md) |

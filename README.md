@@ -35,6 +35,7 @@ For a structured routing index of all skills and trigger scopes, refer to [AGENT
 *   **`check-alignment`**: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
 *   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
 *   **`plan-testing`**: Create a risk-based testing plan for a change. Use before writing tests.
+*   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`refactor-code`**: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
 
 ### 4. Handover & Release
