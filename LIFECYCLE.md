@@ -33,6 +33,7 @@ graph TD
             CA["check-alignment"]
             CC["check-compliance"]
             PT["plan-testing"]
+            AT["audit-tests"]
             RF["refactor-code"]
         end
         
@@ -96,6 +97,7 @@ With the implementation plan established, coding-agent work proceeds through exp
 *   **`check-alignment`**: Verifies that actual edits are strictly aligned with the plan.
 *   **`check-compliance`**: Runs automated project-specific checks and standards audits.
 *   **`plan-testing`**: Details testing sequences.
+*   **`audit-tests`**: Audits an existing test suite for quality anti-patterns and produces a prioritized improvement plan.
 *   **`refactor-code`**: Refines code cleanly without changing system behavior.
 
 ### Stage 5: Handover, Audit, and Release
