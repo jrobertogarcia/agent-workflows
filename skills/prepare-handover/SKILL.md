@@ -1,6 +1,8 @@
 ---
 name: prepare-handover
 description: Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread.
+model: sonnet
+effort: medium
 ---
 
 # Prepare Handover

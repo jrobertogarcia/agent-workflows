@@ -1,6 +1,8 @@
 ---
 name: validate-commit
 description: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
+model: sonnet
+effort: low
 ---
 
 # Validate Commit

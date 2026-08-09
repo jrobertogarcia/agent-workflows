@@ -1,6 +1,8 @@
 ---
 name: plan-implementation
 description: Create a detailed implementation plan for a change, surfacing open questions and assumptions. Use before writing code.
+model: opus
+effort: medium
 ---
 
 # Plan Implementation

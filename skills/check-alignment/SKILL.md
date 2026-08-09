@@ -1,6 +1,8 @@
 ---
 name: check-alignment
 description: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
+model: sonnet
+effort: medium
 ---
 
 # Check Alignment

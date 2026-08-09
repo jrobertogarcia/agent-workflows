@@ -1,6 +1,8 @@
 ---
 name: phase-breakdown
 description: Divide a large change into small, independently verifiable phases. Use before planning implementation of a complex task.
+model: opus
+effort: medium
 ---
 
 # Phase Breakdown

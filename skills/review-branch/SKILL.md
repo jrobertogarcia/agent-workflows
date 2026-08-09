@@ -1,6 +1,8 @@
 ---
 name: review-branch
 description: Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request.
+model: opus
+effort: medium
 ---
 
 # Review Branch
