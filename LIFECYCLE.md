@@ -35,6 +35,7 @@ graph TD
             CC["check-compliance"]
             PT["plan-testing"]
             AT["audit-tests"]
+            SD["simplify-diff"]
             RF["refactor-code"]
         end
         
@@ -101,7 +102,8 @@ With the implementation plan established, coding-agent work proceeds through exp
 *   **`check-compliance`**: Runs automated project-specific checks and standards audits.
 *   **`plan-testing`**: Details testing sequences.
 *   **`audit-tests`**: Audits an existing test suite for quality anti-patterns and produces a prioritized improvement plan.
-*   **`refactor-code`**: Refines code cleanly without changing system behavior.
+*   **`simplify-diff`**: Reports what should be cut from the work in flight and modifies nothing.
+*   **`refactor-code`**: Restructures a target area and applies changes after approval.
 
 ### Stage 5: Handover, Audit, and Release
 After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**. Audit findings must be resolved before release:

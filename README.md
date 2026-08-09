@@ -37,6 +37,7 @@ For a structured routing index of all skills and trigger scopes, refer to [AGENT
 *   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
 *   **`plan-testing`**: Create a risk-based testing plan for a change. Use before writing tests.
 *   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
+*   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
 
 ### 4. Handover & Release
