@@ -14,6 +14,6 @@ effort: medium
 - **Readability**: Self-documenting naming, clean control flows.
 
 ## Execution
-1. **Audit & Plan**: Audit code smells in the target scope and present a structured refactoring plan. **Wait for user approval before modifying code.**
+1. **Audit & Plan**: Switch the session into plan mode (or the host's read-only planning equivalent) before reading anything, and stay in it through the audit. If the host has no such mode, treat the audit as read-only. Audit code smells in the target scope and present a structured refactoring plan. **Wait for user approval before modifying code**, then leave plan mode before applying any restructure.
 2. **Refactor**: Apply behavior-preserving restructures incrementally to the files under development or modification. Do not add new features or unrelated fixes.
 3. **Verify**: Run build, lint, and test commands (e.g., running the project's standard compilation, linting, and testing suites) to confirm no behavioral regressions.
