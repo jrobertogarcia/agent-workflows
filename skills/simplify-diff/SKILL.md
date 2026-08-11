@@ -18,9 +18,10 @@ effort: medium
 - **Incidental Scope** — reformatting, renames, and unrelated fixes inflating a diff whose stated purpose is something else.
 
 ## Execution
-1. **Scope** — default to the branch diff against its target plus uncommitted changes; narrow if the user names a target. Reuse context already gathered in this thread rather than re-reading it.
-2. **Read for Invariants** — read enough of the surrounding code, call sites, and type definitions to know what is already guaranteed. A check is only redundant if you have seen the guarantee.
-3. **Audit** — record concrete instances of the anti-patterns above with file and line references, each with the specific cut and the code that remains. Report the absence of a problem as readily as its presence, and name any area you could not assess rather than implying it passed.
-4. **Protect What Is Load-Bearing** — do not propose cutting validation at genuine system boundaries (user input, I/O, network, external APIs), handling for failure modes that actually occur, or anything the project's standards require. Say explicitly when a check that looks redundant is in fact carrying weight.
-5. **Prioritize** — group findings by impact: Safe Cuts (removable with no behavioral question), Simplifications (same behavior, less structure), and Scope Reductions (changes that belong in a separate change entirely). Omit any group with no findings.
-6. **Report Only** — do not modify code, delete anything, or write files. Route accepted cuts through `plan-implementation`.
+1. **Enter Plan Mode**: Switch the session into plan mode (or the host's read-only planning equivalent) before reading anything, and stay in it until the plan is approved. If the host has no such mode, treat this run as read-only.
+2. **Scope** — default to the branch diff against its target plus uncommitted changes; narrow if the user names a target. Reuse context already gathered in this thread rather than re-reading it.
+3. **Read for Invariants** — read enough of the surrounding code, call sites, and type definitions to know what is already guaranteed. A check is only redundant if you have seen the guarantee.
+4. **Audit** — record concrete instances of the anti-patterns above with file and line references, each with the specific cut and the code that remains. Report the absence of a problem as readily as its presence, and name any area you could not assess rather than implying it passed.
+5. **Protect What Is Load-Bearing** — do not propose cutting validation at genuine system boundaries (user input, I/O, network, external APIs), handling for failure modes that actually occur, or anything the project's standards require. Say explicitly when a check that looks redundant is in fact carrying weight.
+6. **Prioritize** — group findings by impact: Safe Cuts (removable with no behavioral question), Simplifications (same behavior, less structure), and Scope Reductions (changes that belong in a separate change entirely). Omit any group with no findings.
+7. **Report Only** — do not modify code, delete anything, or write files. Route accepted cuts through `plan-implementation`.

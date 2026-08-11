@@ -7,7 +7,7 @@ effort: medium
 
 # Phase Breakdown
 
-Analyze and systematically divide a complex implementation into logical, independent, and incrementally testable phases. Reuse context already gathered in this thread rather than re-reading it.
+Analyze and systematically divide a complex implementation into logical, independent, and incrementally testable phases. Reuse context already gathered in this thread rather than re-reading it. **Enter Plan Mode**: Switch the session into plan mode (or the host's read-only planning equivalent) before reading anything, and stay in it until the plan is approved. If the host has no such mode, treat this run as read-only.
 
 ## Principles
 * **Atomicity**: Each phase must be logically complete and independently verifiable.
