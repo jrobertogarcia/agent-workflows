@@ -1,8 +1,6 @@
 ---
 name: create-pr
 description: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
-model: sonnet
-effort: medium
 ---
 
 # Create Pull Request

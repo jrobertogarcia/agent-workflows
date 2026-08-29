@@ -1,8 +1,6 @@
 ---
 name: simplify-diff
 description: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff. Use when a change is correct but larger than it needs to be.
-model: opus
-effort: medium
 ---
 
 # Simplify Diff

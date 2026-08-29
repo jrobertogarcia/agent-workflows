@@ -1,8 +1,6 @@
 ---
 name: distill-lessons
 description: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
-model: sonnet
-effort: medium
 ---
 
 # Distill Lessons

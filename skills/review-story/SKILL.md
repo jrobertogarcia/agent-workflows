@@ -1,8 +1,6 @@
 ---
 name: review-story
 description: Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement.
-model: opus
-effort: medium
 ---
 
 # Review Story

@@ -1,8 +1,6 @@
 ---
 name: review-pr
 description: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
-model: opus
-effort: medium
 ---
 
 # Review PR

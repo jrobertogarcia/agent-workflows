@@ -1,8 +1,6 @@
 ---
 name: check-compliance
 description: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
-model: sonnet
-effort: medium
 ---
 
 # Check Compliance
