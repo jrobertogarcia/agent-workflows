@@ -1,8 +1,6 @@
 ---
 name: audit-tests
 description: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
-model: opus
-effort: medium
 ---
 
 # Audit Tests

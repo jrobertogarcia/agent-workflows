@@ -13,7 +13,7 @@ This file contains the structured skills registry and routing index for coding a
 *   `skills/`: Contain individual coding-agent skill prompt manifests. Each subdirectory represents a skill and contains a `SKILL.md` file.
 *   `setup.py`: Platform-agnostic installation utility script (refer to [README.md](README.md) for execution commands).
 
-Frontmatter `model` and `effort` in each SKILL.md are Claude Code extensions, not part of the portable Agent Skills spec. The Cursor and Windsurf compilers strip them by design; Copilot, Codex, and Gemini receive them via symlink passthrough but do not define them. Plan-mode direction in plan-producing skills is prose, not frontmatter, and is expected to no-op on hosts without such a mode.
+Plan-mode direction in plan-producing skills is prose, not frontmatter, and is expected to no-op on hosts without such a mode.
 
 ---
 

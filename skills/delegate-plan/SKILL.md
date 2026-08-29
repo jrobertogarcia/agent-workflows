@@ -1,8 +1,6 @@
 ---
 name: delegate-plan
 description: Generate a self-contained prompt for another agent to execute an approved implementation plan. Use after a plan is approved and before implementation.
-model: sonnet
-effort: low
 ---
 
 # Delegate Plan

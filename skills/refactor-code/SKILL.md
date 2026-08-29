@@ -1,8 +1,6 @@
 ---
 name: refactor-code
 description: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
-model: opus
-effort: medium
 ---
 
 # Refactor Code

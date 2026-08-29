@@ -1,8 +1,6 @@
 ---
 name: research-web
 description: Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence.
-model: sonnet
-effort: medium
 ---
 
 # Web Research

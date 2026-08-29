@@ -1,8 +1,6 @@
 ---
 name: gather-context
 description: Gather and organize context for a given file, folder, or component before planning or coding. Use when starting work on unfamiliar code.
-model: sonnet
-effort: low
 ---
 
 # Gather Context

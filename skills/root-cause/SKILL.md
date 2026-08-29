@@ -1,8 +1,6 @@
 ---
 name: root-cause
 description: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
-model: opus
-effort: medium
 ---
 
 # Root Cause Analysis

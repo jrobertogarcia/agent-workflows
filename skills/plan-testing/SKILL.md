@@ -1,8 +1,6 @@
 ---
 name: plan-testing
 description: Create a risk-based testing plan for a change. Use before writing tests.
-model: opus
-effort: medium
 ---
 
 # Plan Testing
