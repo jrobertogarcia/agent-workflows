@@ -421,7 +421,7 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
             linked_any = True
 
     if not linked_any:
-        Console.info("\nNo active agent config directories (e.g. ~/.claude or ~/.gemini/antigravity) were detected.")
+        Console.info("\nNo active agent config directories (e.g. ~/.claude/skills or ~/.gemini/config/skills) were detected.")
         Console.info("Please run your agent tools at least once to initialize their default paths.")
 
 

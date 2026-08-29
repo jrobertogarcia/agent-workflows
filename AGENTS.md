@@ -11,6 +11,7 @@ This file contains the structured skills registry and routing index for coding a
 ## 1. Directory Structure
 
 *   `skills/`: Contain individual coding-agent skill prompt manifests. Each subdirectory represents a skill and contains a `SKILL.md` file.
+*   `shared/`: Shared markdown fragments included by skill manifests (e.g. review rubric used by `review-branch` and `review-pr`).
 *   `setup.py`: Platform-agnostic installation utility script (refer to [README.md](README.md) for execution commands).
 
 Plan-mode direction in plan-producing skills is prose, not frontmatter, and is expected to no-op on hosts without such a mode.

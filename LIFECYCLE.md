@@ -82,10 +82,13 @@ graph TD
 
 ### Stage 1: Analysis (Pre-Coding Utilities)
 Before checking out a branch or modifying files, developers use analysis utilities to define requirements and identify system constraints. This gives coding agents the context needed to act deliberately. Developers can select any combination of these utilities depending on the task:
-*   **`gather-context`**: Explores directory structures, configurations, and system boundaries.
-*   **`research-web`**: Conducts lookup for modern standards and technical trade-offs.
-*   **`review-story`**: Performs logic and sanity-checking checks on user stories.
-*   **`root-cause`**: Gathers evidence to debug existing issues without rushing into solutions.
+
+Skill trigger descriptions below match the authoritative frontmatter in each `SKILL.md`; keep them in sync when editing descriptions (see [AGENTS.md](AGENTS.md)).
+
+*   **`gather-context`**: Gather and organize context for a given file, folder, or component before planning or coding. Use when starting work on unfamiliar code.
+*   **`research-web`**: Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence.
+*   **`review-story`**: Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement.
+*   **`root-cause`**: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
 
 ### Stage 2: Branching
 Once requirements are clear, execute **`create-branch`** to set up a clean Git branch following Conventional Commits formatting rules.
@@ -98,19 +101,19 @@ For complex changes, do not write code immediately. Planning creates an explicit
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
-*   **`check-alignment`**: Verifies that actual edits are strictly aligned with the plan.
-*   **`check-compliance`**: Runs automated project-specific checks and standards audits.
-*   **`plan-testing`**: Details testing sequences.
-*   **`audit-tests`**: Audits an existing test suite for quality anti-patterns and produces a prioritized improvement plan.
-*   **`simplify-diff`**: Reports what should be cut from the work in flight and modifies nothing.
-*   **`refactor-code`**: Restructures a target area and applies changes after approval.
+*   **`check-alignment`**: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
+*   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
+*   **`plan-testing`**: Create a risk-based testing plan for a change. Use before writing tests.
+*   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
+*   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff. Use when a change is correct but larger than it needs to be.
+*   **`refactor-code`**: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
 
 ### Stage 5: Handover, Audit, and Release
 After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**. Audit findings must be resolved before release:
 *   *Small Issues*: Fix them in the review thread, then re-run **`prepare-handover`** and **`review-branch`** in a fresh thread to confirm the fixes.
 *   *Major Issues*: Close the review thread and return to the implementation loop. After the fixes are complete, repeat handover and branch audit before release.
-*   **`create-pr`**: Once the branch audit passes, push the branch to origin and prepare the pull request template with AI metadata summaries.
-*   **`review-pr`**: Reviews the PR and returns structured pass/fail verdicts (typically performed in an independent PR review thread).
+*   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
+*   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 
 ---
 
