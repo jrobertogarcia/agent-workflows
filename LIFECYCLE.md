@@ -50,11 +50,9 @@ graph TD
     Switch["Switch to New Thread<br>(Prevents Context Decay)"]
     RB["6. Branch Audit<br>review-branch (New Thread)"]
     
-    %% Branch Review Fixes Decisions
+    %% Branch Review Outcome
     Decide{"Audit Outcome"}
-    FixSame["Small fixes: Tackle in review thread"]
-    FixNew["Complex fixes: Spawn new implementation thread"]
-    Reverify["Re-verify changes<br>prepare-handover + review-branch"]
+    Fix["Resolve findings<br>(routing per review-branch)"]
     
     %% PR Release Phase
     CPR["7. Pull Request<br>create-pr"]
@@ -68,11 +66,9 @@ graph TD
     PH --> Switch
     Switch --> RB
     RB --> Decide
-    Decide --> FixSame
-    Decide --> FixNew
-    FixSame --> Reverify
-    FixNew --> Loop
-    Reverify --> CPR
+    Decide -->|Findings| Fix
+    Decide -->|Clean| CPR
+    Fix --> PH
     CPR --> RPR
 ```
 
@@ -109,7 +105,9 @@ With the implementation plan established, coding-agent work proceeds through exp
 *   **`refactor-code`**: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
 
 ### Stage 5: Handover, Audit, and Release
-After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**, which routes its findings to the thread that should fix them. Resolve every finding before release:
+After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**, which routes its findings to the thread that should fix them. Resolve every finding before release.
+
+Once the audit is clean, release proceeds with:
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
 *   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 
