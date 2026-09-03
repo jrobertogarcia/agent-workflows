@@ -15,5 +15,9 @@ description: Create a detailed implementation plan for a change, surfacing open 
    - **Verification**: automated and manual checks that prove it works.
    - **Out of Scope**: what this plan deliberately does not do.
    - **Open Questions & Assumptions**: from step 3.
-   Follow project conventions. Create a file only when requested.
+   Follow project conventions.
+   - **Make It Addressable**: `delegate-plan` consumes the plan by path, so the plan must end up addressable. It is addressable only if you can state an absolute filesystem path to it; if you cannot, it is not addressable regardless of how complete it looks in the conversation.
+   - When the session's plan mode persists the plan to disk, that file is the artifact. Do not copy it anywhere. Report its absolute path in the output.
+   - When the host does not persist plans, say so explicitly and note that delegation is unavailable on this host.
+   - Exactly one plan artifact exists. Never create a second copy.
 5. **Stop for Approval**: Present the plan and explicitly wait for approval. Do not write implementation code.
