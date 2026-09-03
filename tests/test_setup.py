@@ -1,6 +1,7 @@
 import contextlib
 import io
 import os
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -575,6 +576,52 @@ class HandoverConventionTests(unittest.TestCase):
         self.assertIn(branch_expression, consumer)
         self.assertIn(tip_label, producer)
         self.assertIn(tip_label, consumer)
+
+
+class RegistryDescriptionSyncTests(unittest.TestCase):
+    """AGENTS.md declares frontmatter `description` authoritative; these guard the mirrors of it."""
+
+    AGENTS_ROW = re.compile(r"^\|\s*\*\*`([a-z0-9-]+)`\*\*\s*\|[^|]*\|\s*(.+?)\s*\|[^|]*\|\s*$")
+    BULLET = re.compile(r"^\*\s+\*\*`([a-z0-9-]+)`\*\*:\s*(.+?)\s*$")
+
+    def setUp(self):
+        self.repo = Path(setup.__file__).resolve().parent
+
+    def read_lines(self, filename):
+        return (self.repo / filename).read_text(encoding="utf-8").splitlines()
+
+    def frontmatter_descriptions(self):
+        fs = setup.FileSystemManager()
+        descriptions = {}
+        for skill_dir in sorted((self.repo / "skills").iterdir()):
+            if skill_dir.is_dir():
+                metadata, _ = fs.load_frontmatter(skill_dir / "SKILL.md")
+                descriptions[skill_dir.name] = metadata.get("description")
+        return descriptions
+
+    def matched_descriptions(self, filename, pattern):
+        matches = (pattern.match(line) for line in self.read_lines(filename))
+        return {match.group(1): match.group(2) for match in matches if match}
+
+    def test_frontmatter_description_matches_agents_table_and_readme_index(self):
+        frontmatter = self.frontmatter_descriptions()
+        agents = self.matched_descriptions("AGENTS.md", self.AGENTS_ROW)
+        readme = self.matched_descriptions("README.md", self.BULLET)
+
+        self.assertEqual(sorted(agents), sorted(frontmatter))
+        self.assertEqual(sorted(readme), sorted(frontmatter))
+        self.assertEqual(agents, frontmatter)
+        self.assertEqual(readme, frontmatter)
+
+    def test_lifecycle_describes_every_skill_by_bullet_or_by_name(self):
+        frontmatter = self.frontmatter_descriptions()
+        lifecycle = self.matched_descriptions("LIFECYCLE.md", self.BULLET)
+        prose = (self.repo / "LIFECYCLE.md").read_text(encoding="utf-8")
+
+        self.assertEqual([name for name in lifecycle if name not in frontmatter], [])
+        self.assertEqual(lifecycle, {name: frontmatter[name] for name in lifecycle})
+        unbulleted = sorted(set(frontmatter) - set(lifecycle))
+        self.assertEqual([name for name in unbulleted if f"**`{name}`**" not in prose], [])
 
 
 if __name__ == "__main__":
