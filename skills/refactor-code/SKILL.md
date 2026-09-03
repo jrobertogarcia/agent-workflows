@@ -1,6 +1,6 @@
 ---
 name: refactor-code
-description: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
+description: Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction.
 ---
 
 # Refactor Code
@@ -8,7 +8,6 @@ description: Audit design problems and apply behavior-preserving cleanup after a
 ## Design Principles
 - **SOLID**: Single responsibility, extension points, decoupled layers.
 - **Coupling & Cohesion**: High internal cohesion, low external coupling.
-- **Simplicity**: Eliminate dead code, premature abstractions (YAGNI/KISS).
 - **Readability**: Self-documenting naming, clean control flows.
 
 ## Execution
