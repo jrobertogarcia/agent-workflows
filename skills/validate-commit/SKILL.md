@@ -5,7 +5,7 @@ description: Run formatters, linters, build, and tests to confirm code is ready 
 
 # Validate Commit
 
-Run this workflow before concluding a task or when validation is requested to prevent commit hooks from failing.
+Run this workflow before concluding a task or when validation is requested to prevent commit hooks from failing. It is optional when the project relies on remote CI to validate pull requests; run it locally to catch failures earlier.
 
 1. **Automated Fixes**: Fix automated violations within the requested scope.
    - Run the project's formatting and linting auto-fixers (e.g., linters, formatters, code cleaners).

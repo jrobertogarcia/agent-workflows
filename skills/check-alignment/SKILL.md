@@ -5,7 +5,7 @@ description: Verify that implementation changes match the agreed plan or require
 
 # Check Alignment
 
-Systematically verify the implementation against the agreed plan or requirements:
+Systematically verify the implementation against the agreed plan or requirements. Verify against the actual diff, never against an executing agent's self-reported summary of what it did:
 
 1. **Scope**: Do the changes match the agreed scope?
 2. **Logic**: Does the implementation follow the planned design?
