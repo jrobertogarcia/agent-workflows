@@ -6,10 +6,9 @@ description: Stage the in-scope changes and commit them with a message matching 
 # Create Commit
 
 1. **Read the Convention**: Inspect recent commits (`git log`) to infer the repository's message convention: prefix style, scope usage, and whether bodies and trailers are customary. Default to Conventional Commits (e.g. `feat(auth): add session refresh`) when none is established.
-2. **Scope the Change**: Review the working tree and stage only the files belonging to this logical piece. Leave unrelated modifications unstaged rather than sweeping them in, and name what you deliberately left out.
-3. **Write the Message**: Follow the detected convention. Describe the outcome, not the process, and do not reference the task or conversation that produced the change.
+2. **Scope the Change**: Review the working tree and stage only the files belonging to this logical piece. Leave unrelated modifications unstaged rather than sweeping them in, and name what you deliberately left out. When the tree holds more than one logical piece, commit them in sequence, repeating these steps for each.
+3. **Write the Message**: Follow the detected convention. Describe the outcome, not the process, and do not reference the prompt or the agent conversation that produced the change. When the convention uses a body, compose the whole message in a temp file outside the repository and commit it with `-F` instead of `-m`.
 4. **Commit and Read Back**: Commit, then confirm the message and the file list are what you intended.
    ```bash
-   git commit -m "<message>" && git log -1 --stat
+   git commit -m "<subject>" && git log -1 --stat
    ```
-5. **One Piece Per Commit**: When the working tree holds more than one logical change, commit them in sequence rather than together. Do not stage everything and split it afterward.
