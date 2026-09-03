@@ -9,6 +9,7 @@ description: Review the active branch diff against its target branch. Use in a f
    - A handover is the implementing agent's self-report. Treat it as context to verify against the diff, never as evidence to accept.
    - Its `Branch tip:` SHA must prefix-match `git rev-parse HEAD`. Treat a mismatch or a missing line as stale and discard the handover's verification claims.
    - Review from the diff alone when the file is absent or `git branch --show-current` is empty, and say which.
+   - Read the branch tip's check status through the hosting platform's integration, or note that none has run yet. Report failing or pending checks in the verdict, and do not re-litigate what the checks already cover.
 2. **Quality & Design Audit**: Perform a deep cognitive and design audit of the isolated changes following the principles and checklist below.
 3. **Submit Feedback**: Output a structured review report highlighting implementation strengths, potential issues, and improvement opportunities. Cast a final verdict (Approve vs. Request Changes) based on the strict verdict mapping rules below.
 4. **Audit Without Fixing**: Do not modify any codebase file while auditing; fixing is in scope only after the verdict is delivered. Limit the audit's own output to review comments and the final verdict.
