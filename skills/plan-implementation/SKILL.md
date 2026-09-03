@@ -16,8 +16,8 @@ description: Create a detailed implementation plan for a change, surfacing open 
    - **Out of Scope**: what this plan deliberately does not do.
    - **Open Questions & Assumptions**: from step 3.
    Follow project conventions.
-   - **Make It Addressable**: `delegate-plan` consumes the plan by path, so the plan must end up addressable. It is addressable only if you can state an absolute filesystem path to it; if you cannot, it is not addressable regardless of how complete it looks in the conversation.
-   - When the session's plan mode persists the plan to disk, that file is the artifact. Do not copy it anywhere. Report its absolute path in the output.
-   - When the host does not persist plans, say so explicitly and note that delegation is unavailable on this host.
-   - Exactly one plan artifact exists. Never create a second copy.
 5. **Stop for Approval**: Present the plan and explicitly wait for approval. Do not write implementation code.
+6. **Report the Plan Artifact**: `delegate-plan` consumes the approved plan by path, so make it addressable. Host plan filenames are machine-generated, so find the file the host wrote rather than deriving its name: search the host's plan storage for the most recently written entry, read it back, and confirm it holds this plan. Report that absolute path.
+   - Addressability is what you read back, not what you assert. A path you have not read is a self-report.
+   - Do not copy the host's file. Exactly one plan artifact exists.
+   - When no file holding this plan can be read back, say so and note that delegation is unavailable on this host. Write a plan file yourself only when asked to, at the path the user names; that file is then the single artifact.
