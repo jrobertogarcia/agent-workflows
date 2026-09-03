@@ -14,5 +14,5 @@ description: Summarize completed work, key decisions, and verification evidence 
    - `<repo>` is `basename(dirname(git rev-parse --path-format=absolute --git-common-dir))`, so a repository and all of its worktrees share one key.
    - `<branch>` is `git branch --show-current`. When that is empty the checkout is on a detached HEAD, so ask where to write instead of keying on an ambiguous value.
    - One handover per branch: overwrite it on re-run rather than accumulating versions.
-   - Record the branch tip the handover describes (`git rev-parse HEAD`) in the file, so a later reader can prefix-match it against the current tip. The verification evidence in step 3 is only valid for that tip.
+   - Record the branch tip the handover describes on its own line, as `Branch tip:` followed by the full `git rev-parse HEAD` SHA, so a later reader can prefix-match it against the current tip. The verification evidence in step 3 is only valid for that tip.
    - Report the absolute path written.
