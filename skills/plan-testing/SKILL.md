@@ -13,4 +13,4 @@ description: Create a risk-based testing plan for a change. Use before writing t
    - **Scenarios**: the cases to run, grouped by risk or area.
    - **Approach**: automated vs manual, tools, and data setup.
    - **Not Tested**: what was deliberately left out and why.
-5. **Approval**: Present the plan to the user for feedback and explicitly stop to wait for approval before implementing any tests.
+5. **Approval**: Present the plan to the user for feedback and explicitly stop to wait for approval before implementing any tests. Create a file only when requested.
