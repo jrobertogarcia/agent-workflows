@@ -37,6 +37,7 @@ graph TD
             AT["audit-tests"]
             SD["simplify-diff"]
             RF["refactor-code"]
+            VC["validate-commit"]
         end
         
         PI --> DP
@@ -57,6 +58,7 @@ graph TD
     %% PR Release Phase
     CPR["7. Pull Request<br>create-pr"]
     RPR["8. PR Review (Optional)<br>review-pr"]
+    DL["9. Lesson Distillation (As needed)<br>distill-lessons"]
 
     %% Flow connections
     Analyzing --> CB
@@ -68,9 +70,10 @@ graph TD
     RB --> Decide
     Decide -->|Findings| Fix
     Decide -->|Clean| CPR
-    Fix -->|Non-architectural| PH
-    Fix -->|Architectural| Loop
+    Fix --> PH
+    Fix --> Loop
     CPR --> RPR
+    RPR --> DL
 ```
 
 ---
