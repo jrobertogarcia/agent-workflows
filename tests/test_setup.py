@@ -564,11 +564,17 @@ class HandoverConventionTests(unittest.TestCase):
 
         path_literal = "~/.agent-workflows/<repo>/<branch>/handover.md"
         repo_expression = "basename(dirname(git rev-parse --path-format=absolute --git-common-dir))"
+        branch_expression = "git branch --show-current"
+        tip_label = "Branch tip:"
 
         self.assertIn(path_literal, producer)
         self.assertIn(path_literal, consumer)
         self.assertIn(repo_expression, producer)
         self.assertIn(repo_expression, consumer)
+        self.assertIn(branch_expression, producer)
+        self.assertIn(branch_expression, consumer)
+        self.assertIn(tip_label, producer)
+        self.assertIn(tip_label, consumer)
 
 
 if __name__ == "__main__":
