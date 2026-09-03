@@ -69,6 +69,7 @@ graph TD
     Decide -->|Findings| Fix
     Decide -->|Clean| CPR
     Fix --> PH
+    Fix --> Loop
     CPR --> RPR
 ```
 
@@ -128,7 +129,7 @@ LLMs experience quality degradation as conversation history grows (context windo
 ## 4. Operational Best Practices
 
 ### Selective Lesson Distillation (`distill-lessons`)
-Captures high-value patterns, solutions, or architectural guidelines and codifies them into the repository documentation. The skill defines when a discovery warrants a run.
+Captures high-value patterns, solutions, or architectural guidelines and codifies them into the repository documentation.
 
 ### Pre-Commit Auditing (`validate-commit`)
-Runs linting, compiler validation, and test checks locally. The skill defines when a project can rely on remote CI instead.
+Runs linting, compiler validation, and test checks locally.
