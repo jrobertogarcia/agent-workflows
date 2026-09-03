@@ -68,8 +68,8 @@ graph TD
     RB --> Decide
     Decide -->|Findings| Fix
     Decide -->|Clean| CPR
-    Fix --> PH
-    Fix --> Loop
+    Fix -->|Non-architectural| PH
+    Fix -->|Architectural| Loop
     CPR --> RPR
 ```
 
@@ -104,6 +104,7 @@ With the implementation plan established, coding-agent work proceeds through exp
 *   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
+*   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
 
 ### Stage 5: Handover, Audit, and Release
 After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**, which routes its findings to the thread that should fix them. Blocking findings must be resolved before release.
@@ -111,6 +112,7 @@ After implementation completes, run **`prepare-handover`** in the active impleme
 Once the audit is clean, release proceeds with:
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
 *   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
+*   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
 
 ---
 
@@ -119,17 +121,7 @@ Once the audit is clean, release proceeds with:
 LLMs experience quality degradation as conversation history grows (context window bloat). To counteract this, these workflows actively manage thread boundaries.
 
 ### The Handover Protocol
-1.  **Wrap Up Coding**: Complete the changes and run **`prepare-handover`** within the **active implementation thread** to summarize the work and verification details.
+1.  **Wrap Up Coding**: Complete the changes and run **`prepare-handover`** within the **active implementation thread** to summarize the work and verification details, which it writes to a conventional path outside the repository.
 2.  **Migrate Threads**: Immediately open a **new conversation thread**.
-3.  **Run the Audit**: In the fresh thread, run **`review-branch`** to audit the diff. This guarantees that code review is performed by a model with a clean context window, ensuring high review fidelity.
+3.  **Run the Audit**: In the fresh thread, run **`review-branch`** to audit the diff, reading the handover from that same path. This guarantees that code review is performed by a model with a clean context window, ensuring high review fidelity.
 4.  **Tackle Audit Findings**: Resolve blocking findings before release. **`review-branch`** routes each finding to the thread that should fix it.
-
----
-
-## 4. Operational Best Practices
-
-### Selective Lesson Distillation (`distill-lessons`)
-Captures high-value patterns, solutions, or architectural guidelines and codifies them into the repository documentation.
-
-### Pre-Commit Auditing (`validate-commit`)
-Runs linting, compiler validation, and test checks locally.
