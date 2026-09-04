@@ -15,5 +15,6 @@ description: Create a detailed implementation plan for a change, surfacing open 
    - **Verification**: automated and manual checks that prove it works.
    - **Out of Scope**: what this plan deliberately does not do.
    - **Open Questions & Assumptions**: from step 3.
-   Follow project conventions. Create a file only when requested.
+   Follow project conventions.
 5. **Stop for Approval**: Present the plan and explicitly wait for approval. Do not write implementation code.
+6. **Report the Plan Artifact**: Only when delegation has been requested, report the absolute path of the host's own plan file, since `delegate-plan` consumes it by path. Exactly one plan artifact exists, so never write a second copy, and ask rather than guessing which file holds this plan. When the host does not persist plans, say that delegation is unavailable, and write a plan file yourself only when asked, at the path the user names.

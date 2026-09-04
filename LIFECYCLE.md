@@ -37,6 +37,7 @@ graph TD
             AT["audit-tests"]
             SD["simplify-diff"]
             RF["refactor-code"]
+            VC["validate-commit"]
         end
         
         PI --> DP
@@ -50,15 +51,14 @@ graph TD
     Switch["Switch to New Thread<br>(Prevents Context Decay)"]
     RB["6. Branch Audit<br>review-branch (New Thread)"]
     
-    %% Branch Review Fixes Decisions
+    %% Branch Review Outcome
     Decide{"Audit Outcome"}
-    FixSame["Small fixes: Tackle in review thread"]
-    FixNew["Complex fixes: Spawn new implementation thread"]
-    Reverify["Re-verify changes<br>prepare-handover + review-branch"]
+    Fix["Resolve findings<br>(routing per review-branch)"]
     
     %% PR Release Phase
     CPR["7. Pull Request<br>create-pr"]
     RPR["8. PR Review (Optional)<br>review-pr"]
+    DL["9. Lesson Distillation (As needed)<br>distill-lessons"]
 
     %% Flow connections
     Analyzing --> CB
@@ -68,12 +68,12 @@ graph TD
     PH --> Switch
     Switch --> RB
     RB --> Decide
-    Decide --> FixSame
-    Decide --> FixNew
-    FixSame --> Reverify
-    FixNew --> Loop
-    Reverify --> CPR
+    Decide -->|Findings| Fix
+    Decide -->|Clean| CPR
+    Fix --> PH
+    Fix --> Loop
     CPR --> RPR
+    RPR --> DL
 ```
 
 ---
@@ -97,7 +97,7 @@ Once requirements are clear, execute **`create-branch`** to set up a clean Git b
 For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
 1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable steps.
 2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits.
-3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** against the actual diff, not its self-reported summary, before trusting the result.
+3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** before trusting the result.
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
@@ -107,13 +107,15 @@ With the implementation plan established, coding-agent work proceeds through exp
 *   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit design problems and apply behavior-preserving cleanup after approval. Use when code needs restructuring without new behavior.
+*   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
 
 ### Stage 5: Handover, Audit, and Release
-After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**. Audit findings must be resolved before release:
-*   *Small Issues*: Fix them in the review thread, then re-run **`prepare-handover`** and **`review-branch`** in a fresh thread to confirm the fixes.
-*   *Major Issues*: Close the review thread and return to the implementation loop. After the fixes are complete, repeat handover and branch audit before release.
+After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**, which routes its findings to the thread that should fix them. Blocking findings must be resolved before release.
+
+Once the audit is clean, release proceeds with:
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
 *   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
+*   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
 
 ---
 
@@ -122,21 +124,7 @@ After implementation completes, run **`prepare-handover`** in the active impleme
 LLMs experience quality degradation as conversation history grows (context window bloat). To counteract this, these workflows actively manage thread boundaries.
 
 ### The Handover Protocol
-1.  **Wrap Up Coding**: Complete the changes and run **`prepare-handover`** within the **active implementation thread** to summarize the work and verification details.
+1.  **Wrap Up Coding**: Complete the changes and run **`prepare-handover`** within the **active implementation thread** to summarize the work and verification details, which it writes to a conventional path outside the repository.
 2.  **Migrate Threads**: Immediately open a **new conversation thread**.
-3.  **Run the Audit**: In the fresh thread, run **`review-branch`** to audit the diff. This guarantees that code review is performed by a model with a clean context window, ensuring high review fidelity.
-4.  **Tackle Audit Findings**:
-    *   *Small Issues*: Fix them directly in the review thread, then re-run **`prepare-handover`** and **`review-branch`** in a fresh thread before opening a PR.
-    *   *Major Issues*: Close the thread and spawn a new implementation thread to isolate the complex edits. After implementation completes, repeat handover and branch audit before release.
-
----
-
-## 4. Operational Best Practices
-
-### Selective Lesson Distillation (`distill-lessons`)
-*   **Purpose**: To capture high-value patterns, solutions, or architectural guidelines and codify them into the repository documentation.
-*   **Constraint**: Use this utility selectively. Distilling lessons too frequently bloats the guidelines files, eventually inflating the context window of future coding-agent sessions. Only run this skill when the underlying discovery is critical for future workflows.
-
-### Pre-Commit Auditing (`validate-commit`)
-*   **Purpose**: Runs linting, compiler validation, and test checks locally.
-*   **Constraint**: This utility is optional if the codebase already relies on remote CI/CD pipelines to validate pull requests. Use it locally to catch errors early before pushing.
+3.  **Run the Audit**: In the fresh thread, run **`review-branch`** to audit the diff, reading the handover from that same path. This guarantees that code review is performed by a model with a clean context window, ensuring high review fidelity.
+4.  **Tackle Audit Findings**: Resolve blocking findings before release. **`review-branch`** routes each finding to the thread that should fix it.

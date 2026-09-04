@@ -556,5 +556,26 @@ class OrphanCleanupTests(SetupTestCase):
         self.assertFalse(orphan_file.exists())
 
 
+class HandoverConventionTests(unittest.TestCase):
+    def test_handover_path_convention_is_identical_in_producer_and_consumer(self):
+        skills = Path(setup.__file__).resolve().parent / "skills"
+        producer = (skills / "prepare-handover" / "SKILL.md").read_text(encoding="utf-8")
+        consumer = (skills / "review-branch" / "SKILL.md").read_text(encoding="utf-8")
+
+        path_literal = "~/.agent-workflows/<repo>/<branch>/handover.md"
+        repo_expression = "basename(dirname(git rev-parse --path-format=absolute --git-common-dir))"
+        branch_expression = "git branch --show-current"
+        tip_label = "Branch tip:"
+
+        self.assertIn(path_literal, producer)
+        self.assertIn(path_literal, consumer)
+        self.assertIn(repo_expression, producer)
+        self.assertIn(repo_expression, consumer)
+        self.assertIn(branch_expression, producer)
+        self.assertIn(branch_expression, consumer)
+        self.assertIn(tip_label, producer)
+        self.assertIn(tip_label, consumer)
+
+
 if __name__ == "__main__":
     unittest.main()
