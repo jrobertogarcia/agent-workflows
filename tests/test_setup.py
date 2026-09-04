@@ -1,6 +1,7 @@
 import contextlib
 import io
 import os
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -575,6 +576,69 @@ class HandoverConventionTests(unittest.TestCase):
         self.assertIn(branch_expression, consumer)
         self.assertIn(tip_label, producer)
         self.assertIn(tip_label, consumer)
+
+
+class RegistryDescriptionSyncTests(unittest.TestCase):
+    """AGENTS.md declares frontmatter `description` authoritative; these guard the mirrors of it."""
+
+    AGENTS_ROW = re.compile(r"^\|\s*\*\*`([a-z0-9-]+)`\*\*\s*\|[^|]*\|\s*(.+?)\s*\|[^|]*\|\s*$")
+    BULLET = re.compile(r"^\*\s+\*\*`([a-z0-9-]+)`\*\*:\s*(.+?)\s*$")
+    STATED_COUNT = re.compile(r"the (\d+) core skills")
+
+    def setUp(self):
+        self.repo = Path(setup.__file__).resolve().parent
+
+    def read_text(self, filename):
+        return (self.repo / filename).read_text(encoding="utf-8")
+
+    def read_lines(self, filename):
+        return self.read_text(filename).splitlines()
+
+    def frontmatter_descriptions(self):
+        fs = setup.FileSystemManager()
+        descriptions = {}
+        for skill_dir in sorted((self.repo / "skills").iterdir()):
+            if skill_dir.is_dir():
+                metadata, _ = fs.load_frontmatter(skill_dir / "SKILL.md")
+                descriptions[skill_dir.name] = metadata.get("description")
+        return descriptions
+
+    def matched_descriptions(self, filename, pattern):
+        matches = (pattern.match(line) for line in self.read_lines(filename))
+        return {match.group(1): match.group(2) for match in matches if match}
+
+    def assert_mirror_matches(self, mirror, mirrored, expected):
+        """Compares one skill per subTest so a failure names the skill and prints both strings."""
+        for name, description in expected.items():
+            with self.subTest(skill=name, mirror=mirror):
+                self.assertEqual(mirrored[name], description)
+
+    def test_frontmatter_description_matches_agents_table_and_readme_index(self):
+        frontmatter = self.frontmatter_descriptions()
+        agents = self.matched_descriptions("AGENTS.md", self.AGENTS_ROW)
+        readme = self.matched_descriptions("README.md", self.BULLET)
+
+        self.assertEqual(sorted(agents), sorted(frontmatter))
+        self.assertEqual(sorted(readme), sorted(frontmatter))
+        self.assert_mirror_matches("AGENTS.md", agents, frontmatter)
+        self.assert_mirror_matches("README.md", readme, frontmatter)
+
+    def test_lifecycle_describes_every_skill_by_bullet_or_by_name(self):
+        frontmatter = self.frontmatter_descriptions()
+        lifecycle = self.matched_descriptions("LIFECYCLE.md", self.BULLET)
+        prose = self.read_text("LIFECYCLE.md")
+
+        self.assertEqual([name for name in lifecycle if name not in frontmatter], [])
+        self.assert_mirror_matches("LIFECYCLE.md", lifecycle, {name: frontmatter[name] for name in lifecycle})
+        # Skills carried by narrative prose rather than a bullet count either emphasis form.
+        unbulleted = sorted(set(frontmatter) - set(lifecycle))
+        self.assertEqual([name for name in unbulleted if f"`{name}`" not in prose], [])
+
+    def test_agents_registry_states_the_actual_skill_count(self):
+        skill_count = len(self.frontmatter_descriptions())
+        stated = [int(match.group(1)) for match in self.STATED_COUNT.finditer(self.read_text("AGENTS.md"))]
+
+        self.assertEqual(stated, [skill_count])
 
 
 if __name__ == "__main__":

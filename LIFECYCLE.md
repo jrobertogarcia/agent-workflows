@@ -38,6 +38,7 @@ graph TD
             SD["simplify-diff"]
             RF["refactor-code"]
             VC["validate-commit"]
+            CM["create-commit"]
         end
         
         PI --> DP
@@ -108,6 +109,7 @@ With the implementation plan established, coding-agent work proceeds through exp
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction.
 *   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
+*   **`create-commit`**: Stage the in-scope changes and commit them with a message matching the repository's convention. Use after a logical piece of work is complete and verified.
 
 ### Stage 5: Handover, Audit, and Release
 After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**, which routes its findings to the thread that should fix them. Blocking findings must be resolved before release.
