@@ -610,6 +610,7 @@ class RegistryDescriptionSyncTests(unittest.TestCase):
         self.assertEqual([name for name in lifecycle if name not in frontmatter], [])
         self.assert_mirror_matches("LIFECYCLE.md", lifecycle, {name: frontmatter[name] for name in lifecycle})
         # Skills carried by narrative prose rather than a bullet count either emphasis form.
+        unbulleted = sorted(set(frontmatter) - set(lifecycle))
         self.assertEqual([name for name in unbulleted if f"`{name}`" not in prose], [])
 
     def test_agents_registry_states_the_actual_skill_count(self):
