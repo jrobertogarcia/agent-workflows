@@ -5,7 +5,7 @@ description: Review the active branch diff against its target branch. Use in a f
 
 # Review Branch
 
-1. **Prepare & Sync**: Compare the active branch with its target branch to isolate the diff, then read the handover at `~/.agent-workflows/<repo>/<branch>/handover.md`, where `<repo>` is `basename(dirname(git rev-parse --path-format=absolute --git-common-dir))` and `<branch>` is `git branch --show-current`.
+1. **Prepare & Sync**: Compare the active branch with its target branch to isolate the diff, and read the branch tip's check status through the hosting platform's integration. Then read the handover at `~/.agent-workflows/<repo>/<branch>/handover.md`, where `<repo>` is `basename(dirname(git rev-parse --path-format=absolute --git-common-dir))` and `<branch>` is `git branch --show-current`.
    - A handover is the implementing agent's self-report. Treat it as context to verify against the diff, never as evidence to accept.
    - Its `Branch tip:` SHA must prefix-match `git rev-parse HEAD`. Treat a mismatch or a missing line as stale and discard the handover's verification claims.
    - Review from the diff alone when the file is absent or `git branch --show-current` is empty, and say which.
