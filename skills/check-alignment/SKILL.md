@@ -9,5 +9,5 @@ Systematically check the implementation against the agreed plan or requirements.
 
 1. **Scope**: Do the changes match the agreed scope?
 2. **Logic**: Does the implementation follow the planned design?
-3. **Tests**: Did the planned verification run and pass? Confirm from its actual output, never a claim that it ran, and run it yourself when no such output exists. Report the command and its result. When the plan named no verification, say so rather than substituting one.
+3. **Tests**: Did the planned verification run and pass? Confirm from its output rather than a claim that it ran, and run it yourself when no output exists. Report the command and result, or say the plan named no verification.
 4. **Resolution**: Report specific alignment gaps with evidence before modifying code or the plan.
