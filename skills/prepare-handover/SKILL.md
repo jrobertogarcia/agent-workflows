@@ -9,4 +9,7 @@ description: Summarize completed work, key decisions, and verification evidence 
 2. **Document Key Decisions & Trade-offs**: Detail the non-obvious engineering choices made during development. Explain *why* certain approaches were chosen over alternatives, noting any assumptions or constraints that influenced the design.
 3. **Record Verification Evidence**: Document how the changes were validated. Provide clear evidence of correctness, including the results of automated test runs, linting checks, and manual verification scenarios.
 4. **Identify Review Focus Areas**: Highlight complex modules, high-risk code paths, or specific files that the peer reviewer should inspect with extra attention.
-5. **Output Handover Package**: Present a structured, evidence-backed handover in the requested format. Create or commit a file only when asked.
+5. **Output Handover Package**: Present a structured, evidence-backed handover in the response, and write the same handover to `~/.agent-workflows/<repo>/<branch>/handover.md`, creating directories as needed.
+   - Record the branch tip SHA that the verification evidence covers.
+   - Overwrite on re-run and report the absolute path written.
+
