@@ -32,7 +32,6 @@ graph TD
         %% Loop Utilities
         subgraph Utilities ["Verification Utilities (As needed)"]
             CA["check-alignment"]
-            CC["check-compliance"]
             AT["audit-tests"]
             SD["simplify-diff"]
             RF["refactor-code"]
@@ -98,8 +97,7 @@ For complex changes, do not write code immediately. Planning creates an explicit
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
-*   **`check-alignment`**: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
-*   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
+*   **`check-alignment`**: Verify the actual diff against the agreed plan and the project's standards, and report ALIGNED or GAPS without editing. Use after implementing a change and before review.
 *   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction.

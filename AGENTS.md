@@ -20,7 +20,7 @@ Plan-mode direction in plan-producing skills is prose, not frontmatter, and is e
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 19 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
+Below is the structured list of the 18 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
@@ -34,8 +34,7 @@ Frontmatter `description` in each SKILL.md is authoritative; keep this table and
 | **`phase-breakdown`** | `**/*` | Divide a large change into small, independently verifiable phases. Use before planning implementation of a complex task. | [SKILL.md](skills/phase-breakdown/SKILL.md) |
 | **`plan-implementation`** | `**/*` | Create a detailed implementation plan for a change, including risk-based test scenarios, and surface open questions and assumptions. Use before writing code or tests. | [SKILL.md](skills/plan-implementation/SKILL.md) |
 | **`delegate-plan`** | `**/*` | Generate a self-contained prompt for another agent to execute an approved implementation plan. Use after a plan is approved and before implementation. | [SKILL.md](skills/delegate-plan/SKILL.md) |
-| **`check-alignment`** | `**/*` | Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change. | [SKILL.md](skills/check-alignment/SKILL.md) |
-| **`check-compliance`** | `**/*` | Audit changed code against the project's standards and guidelines. Use after changes are written and before review. | [SKILL.md](skills/check-compliance/SKILL.md) |
+| **`check-alignment`** | `**/*` | Verify the actual diff against the agreed plan and the project's standards, and report ALIGNED or GAPS without editing. Use after implementing a change and before review. | [SKILL.md](skills/check-alignment/SKILL.md) |
 | **`create-commit`** | `**/*` | Stage the in-scope changes and commit them with a message matching the repository's convention. Use after a logical piece of work is complete and verified. | [SKILL.md](skills/create-commit/SKILL.md) |
 | **`audit-tests`** | `**/*` | Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change. | [SKILL.md](skills/audit-tests/SKILL.md) |
 | **`simplify-diff`** | `**/*` | Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be. | [SKILL.md](skills/simplify-diff/SKILL.md) |

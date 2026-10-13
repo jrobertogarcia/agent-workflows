@@ -33,8 +33,7 @@ For a structured routing index of all skills and trigger scopes, refer to [AGENT
 ### 3. Implementation & Verification Loop
 *   **`plan-implementation`**: Create a detailed implementation plan for a change, including risk-based test scenarios, and surface open questions and assumptions. Use before writing code or tests.
 *   **`delegate-plan`**: Generate a self-contained prompt for another agent to execute an approved implementation plan. Use after a plan is approved and before implementation.
-*   **`check-alignment`**: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
-*   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
+*   **`check-alignment`**: Verify the actual diff against the agreed plan and the project's standards, and report ALIGNED or GAPS without editing. Use after implementing a change and before review.
 *   **`create-commit`**: Stage the in-scope changes and commit them with a message matching the repository's convention. Use after a logical piece of work is complete and verified.
 *   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be.
