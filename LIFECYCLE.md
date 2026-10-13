@@ -92,8 +92,8 @@ Once requirements are clear, execute **`create-branch`** to set up a clean Git b
 ### Stage 3: Phase Breakdown & Planning
 For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
 1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable steps.
-2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits and test scenarios.
-3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** before trusting the result. Save the approved plan to `~/.agent-workflows/<repo>/<branch>/plan.md`, where `delegate-plan` and `check-alignment` look for it by default.
+2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits and test scenarios. Once a plan is approved, save it to `~/.agent-workflows/<repo>/<branch>/plan.md`, where `delegate-plan` and `check-alignment` look for it by default. The file holds the current phase's plan; each phase's plan replaces the previous one.
+3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** before trusting the result.
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:

@@ -7,6 +7,8 @@ description: Verify the actual diff against the agreed plan and the project's st
 
 One read-only pass over the actual diff, never a self-reported summary of what changed. Do not modify code or the plan.
 
+Audit the changes the plan covers: by default the branch diff against its target plus uncommitted changes; when the plan covers only the current phase of a longer branch, only the changes made since that phase began. Ask for the starting commit when it is unclear.
+
 1. **Locate the Plan**: Use the plan given, else `~/.agent-workflows/<repo>/<branch>/plan.md`, where `<repo>` is `basename(dirname(git rev-parse --path-format=absolute --git-common-dir))` and `<branch>` is `git branch --show-current`. Ask when it is absent. When there is no plan, skip Plan Fidelity and say so.
 2. **Plan Fidelity**:
    - **Scope**: Do the changes match the agreed scope, adding nothing and dropping nothing?
