@@ -16,7 +16,7 @@ description: Audit the work in flight for over-engineering and unnecessary code,
 - **Incidental Scope** — reformatting, renames, and unrelated fixes inflating a diff whose stated purpose is something else.
 
 ## Execution
-1. **Enter Plan Mode**: Switch the session into plan mode (or the host's read-only planning equivalent) before reading anything, and stay in it until the plan is approved. If the host has no such mode, treat this run as read-only.
+1. **Enter Plan Mode**: Switch the session into plan mode (or the host's read-only planning equivalent) before reading anything, and stay in it until the report is delivered. If the host has no such mode, treat this run as read-only.
 2. **Scope** — default to the branch diff against its target plus uncommitted changes; narrow if the user names a target. Reuse context already gathered in this thread rather than re-reading it.
 3. **Read for Invariants** — read enough of the surrounding code, call sites, and type definitions to know what is already guaranteed. A check is only redundant if you have seen the guarantee.
 4. **Audit** — record concrete instances of the anti-patterns above with file and line references, each with the specific cut and the code that remains. Report the absence of a problem as readily as its presence, and name any area you could not assess rather than implying it passed.

@@ -9,7 +9,7 @@ description: Push the current branch and open a pull request with a synthesized 
 
 Takes an optional base branch and an optional keep-checkout flag.
 
-1. **Read the Diff**: Read the branch diff against the given base, else its base integration branch. Reuse handover or review context already gathered in this thread rather than re-reading it.
+1. **Read the Diff**: Read the branch diff against the given base, else the repository's default branch. Reuse handover or review context already gathered in this thread rather than re-reading it.
 2. **Draft the Title**: Match the title convention of recent merged pull requests in the repository, defaulting to Conventional Commits (e.g. `feat(auth): implement user authentication`) when none is established.
 3. **Write the Body**: Write for a busy reviewer: short, plain, specific. Every body carries this content:
    ```markdown
