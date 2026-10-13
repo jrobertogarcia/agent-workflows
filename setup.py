@@ -341,18 +341,25 @@ def install_skill(
     return fs_manager.link_or_copy(skill_folder if is_directory else skill_md, target, repo_dir, is_directory=is_directory, force=force)
 
 
-def sync_target_directory(skills_dir: Path, target_path: Path, fs_manager: FileSystemManager, file_suffix: str = "", uninstall_all: bool = False) -> None:
+def list_skill_names(skills_dir: Path) -> Set[str]:
+    """Returns the names of the skill folders in the repository."""
+    try:
+        return {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
+    except OSError as err:
+        raise WorkflowSetupError(f"Failed to read skills folder {skills_dir}: {err}")
+
+
+def sync_target_directory(
+    target_path: Path,
+    active_names: Set[str],
+    repo_dir: Path,
+    fs_manager: FileSystemManager,
+    file_suffix: str = "",
+    uninstall_all: bool = False,
+) -> None:
     """Removes orphaned or stale rules in the target directory managed by this repository."""
     if not target_path.exists():
         return
-
-    # Get active skills in repository
-    try:
-        active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
-    except OSError as err:
-        raise WorkflowSetupError(f"Failed to read skills folder {skills_dir}: {err}")
-        
-    repo_dir = skills_dir.parent.resolve()
 
     try:
         items = list(target_path.iterdir())
@@ -368,7 +375,7 @@ def sync_target_directory(skills_dir: Path, target_path: Path, fs_manager: FileS
                 skill_name = skill_name[:-len(file_suffix)]
 
             # Remove if uninstalling or skill no longer active
-            if uninstall_all or skill_name not in active_skills:
+            if uninstall_all or skill_name not in active_names:
                 try:
                     fs_manager.clean_target(item)
                     Console.success("Cleaned Orphaned", item.name)
@@ -381,6 +388,7 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
     Console.info("Scanning active agent configurations...")
     linked_any = False
     repo_dir = skills_dir.parent.resolve()
+    skill_names = list_skill_names(skills_dir)
 
     for target in config.targets:
         # Check if the parent configuration folder exists (indicates tool is active/installed)
@@ -393,7 +401,7 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
                 raise WorkflowSetupError(f"Failed to create target directory {target.path}: {err}")
             
             # Sync target path to clean up any orphaned rules first!
-            sync_target_directory(skills_dir, target.path, fs_manager, file_suffix=target.file_suffix, uninstall_all=False)
+            sync_target_directory(target.path, skill_names, repo_dir, fs_manager, file_suffix=target.file_suffix)
             
             try:
                 for skill_folder in skills_dir.iterdir():
@@ -428,10 +436,11 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
 def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager) -> None:
     """Cleans up all globally linked/copied skills."""
     Console.info("Cleaning global agent configurations...")
+    repo_dir = skills_dir.parent.resolve()
     for target in config.targets:
         if target.path.exists():
             Console.info(f"\nCleaning {target.name.upper()} skills at: {target.path}")
-            sync_target_directory(skills_dir, target.path, fs_manager, file_suffix=target.file_suffix, uninstall_all=True)
+            sync_target_directory(target.path, set(), repo_dir, fs_manager, file_suffix=target.file_suffix, uninstall_all=True)
 
 
 class RuleCompiler:
@@ -552,11 +561,7 @@ def compile_project(
         WindsurfRuleCompiler()
     ]
 
-    try:
-        active_skills = {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
-    except OSError as err:
-        raise WorkflowSetupError(f"Failed to read skills directory: {err}")
-        
+    active_skills = list_skill_names(skills_dir)
     repo_dir = skills_dir.parent.resolve()
 
     Console.info(f"Configuring project-level rules at: {project_path}")

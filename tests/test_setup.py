@@ -536,13 +536,27 @@ class OrphanCleanupTests(SetupTestCase):
         unmanaged_target.mkdir()
         (unmanaged_target / "README.md").write_text("user-owned", encoding="utf-8")
 
-        self.run_quiet(setup.sync_target_directory, self.skills_dir, target_dir, self.fs)
+        self.run_quiet(setup.sync_target_directory, target_dir, {"active"}, self.repo_dir, self.fs)
 
         self.assertTrue(active_target.exists())
         self.assertFalse(orphan_target.exists())
         self.assertTrue((unmanaged_target / "README.md").exists())
 
-    def test_sync_target_directory_handles_copilot_suffix(self):
+    def test_sync_target_directory_uses_explicit_names_not_skills_folder(self):
+        self.add_skill("active")
+        self.add_skill("orphan")
+        target_dir = self.root / "target"
+        target_dir.mkdir()
+        for name in ("active", "orphan"):
+            (target_dir / name).mkdir()
+            (target_dir / name / setup.FileSystemManager.MARKER_FILE).touch()
+
+        self.run_quiet(setup.sync_target_directory, target_dir, {"active"}, self.repo_dir, self.fs)
+
+        self.assertTrue((target_dir / "active").exists())
+        self.assertFalse((target_dir / "orphan").exists())
+
+    def test_sync_target_directory_strips_suffix_against_explicit_names(self):
         self.add_skill("active")
         target_dir = self.root / "copilot"
         target_dir.mkdir()
@@ -551,7 +565,7 @@ class OrphanCleanupTests(SetupTestCase):
         active_file.write_text(setup.FileSystemManager.SIGNATURE_COMMENT + "active", encoding="utf-8")
         orphan_file.write_text(setup.FileSystemManager.SIGNATURE_COMMENT + "orphan", encoding="utf-8")
 
-        self.run_quiet(setup.sync_target_directory, self.skills_dir, target_dir, self.fs, file_suffix=".agent.md")
+        self.run_quiet(setup.sync_target_directory, target_dir, {"active"}, self.repo_dir, self.fs, file_suffix=".agent.md")
 
         self.assertTrue(active_file.exists())
         self.assertFalse(orphan_file.exists())
