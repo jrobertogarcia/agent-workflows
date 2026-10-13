@@ -33,7 +33,6 @@ graph TD
         subgraph Utilities ["Verification Utilities (As needed)"]
             CA["check-alignment"]
             CC["check-compliance"]
-            PT["plan-testing"]
             AT["audit-tests"]
             SD["simplify-diff"]
             RF["refactor-code"]
@@ -94,14 +93,13 @@ Once requirements are clear, execute **`create-branch`** to set up a clean Git b
 ### Stage 3: Phase Breakdown & Planning
 For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
 1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable steps.
-2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits.
-3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** before trusting the result.
+2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits and test scenarios.
+3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** before trusting the result. Save the approved plan to `~/.agent-workflows/<repo>/<branch>/plan.md`, where `delegate-plan` and `check-alignment` look for it by default.
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
 *   **`check-alignment`**: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
 *   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
-*   **`plan-testing`**: Create a risk-based testing plan for a change. Use before writing tests.
 *   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction.

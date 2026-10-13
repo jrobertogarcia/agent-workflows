@@ -1,6 +1,6 @@
 ---
 name: plan-implementation
-description: Create a detailed implementation plan for a change, surfacing open questions and assumptions. Use before writing code.
+description: Create a detailed implementation plan for a change, including risk-based test scenarios, and surface open questions and assumptions. Use before writing code or tests.
 ---
 
 # Plan Implementation
@@ -12,10 +12,10 @@ description: Create a detailed implementation plan for a change, surfacing open 
    - **Goal**: the problem being solved and what "done" looks like.
    - **Changes**: files to add or modify, grouped by module or layer, with the specific edit intended for each.
    - **Sequence**: order of work and dependencies between steps.
-   - **Verification**: automated and manual checks that prove it works.
-   - **Out of Scope**: what this plan deliberately does not do.
+   - **Verification**: automated and manual checks that prove it works, with test scenarios proportional to risk: happy paths, boundary conditions, edge cases, error handling, and integration points.
+   - **Out of Scope**: what this plan deliberately does not do, including what is deliberately not tested and why.
    - **Open Questions & Assumptions**: from step 3.
    Follow project conventions.
 5. **Stop for Approval**: Present the plan and explicitly wait for approval. Do not write implementation code.
-6. **Report the Plan Artifact**: When delegation is requested, report the absolute path of the plan file.
+6. **Return the Plan**: Return the complete plan text in the response, not a path to a plan file.
 
