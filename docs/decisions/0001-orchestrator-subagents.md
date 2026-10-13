@@ -241,6 +241,19 @@ Prompts sent to subagents point at `skills/<name>/SKILL.md` rather than copying 
 
 The human acts as technical lead at five touchpoints: define intent and scope (`review-story`), approve the plan (Gate 1), resolve `BLOCKED`, approve the release (Gate 2), and codify lessons (`distill-lessons`). The human also owns stack maintenance after release (ADR 0002), which runs only while no orchestrator run is acting on the stack. The orchestrator re-anchors on its next boot (D10 step 3b).
 
+## Implementation order
+
+Each step ships on its own. Steps 1 to 3 are independent. Step 4 needs all three. Steps 4 to 8 run in order.
+
+1. **Skill set** (D1): remove `review-pr`, fold `plan-testing` into `plan-implementation`, merge `check-compliance` into `check-alignment` with an `ALIGNED` or `GAPS` result, and sync AGENTS.md, README.md and LIFECYCLE.md.
+2. **Skill contracts**: `create-pr` takes an optional base and a keep-checkout option (D3). `plan-implementation` returns the plan text (D4). `prepare-handover` writes `Branch tip: <full 40-char SHA>` as its first line (D7).
+3. **Installer** (D2): `agents/orchestrate-step`, per-host install including the generated Codex TOML, per-target orphan cleanup, and the Copilot skills path, with tests.
+4. **Single-branch `orchestrate`**: D4 to D10 for one branch, without the D10 step 4 stack rebase and without D3.
+5. **Dogfood** on real single-PR work. Git handling beyond this ADR is added only when a trial shows it is needed. Anything else unexpected halts to the human.
+6. **Stacks**: D3 and the D10 step 4 stack rebase.
+7. **Dogfood** one stack end to end, including manual maintenance per ADR 0002.
+8. **Clean up**: rewrite LIFECYCLE.md and README.md to describe what was built, then delete ADRs 0001 and 0002.
+
 ## Consequences
 
 - gh-stack v0.2.1+ and github.com are required.
