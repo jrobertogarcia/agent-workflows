@@ -375,12 +375,8 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
             # Sync target path to clean up any orphaned rules first!
             sync_target_directory(target.path, skill_names, repo_dir, fs_manager)
             
-            try:
-                for skill_folder in skills_dir.iterdir():
-                    if skill_folder.is_dir():
-                        install_skill(skill_folder, target.path / skill_folder.name, repo_dir, fs_manager, force=force)
-            except OSError as err:
-                raise WorkflowSetupError(f"Failed to read skills folder during installation: {err}")
+            for name in sorted(skill_names):
+                install_skill(skills_dir / name, target.path / name, repo_dir, fs_manager, force=force)
             linked_any = True
 
     # Remove flat agent files written by earlier versions; no-op when the directory is absent.
