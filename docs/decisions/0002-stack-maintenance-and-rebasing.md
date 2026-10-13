@@ -41,3 +41,4 @@ The cap on released-but-unmerged layers is defined in 0001 D3 and is not repeate
 | :-- | :-- | :-- | :-- |
 | 1 | `gh stack rebase --upstack` after a parent was squash-merged | Unverified | Scratch-repo trial |
 | 2 | Review-comment automation | Deferred | Port `pr-address-comments` (dropping its host-specific tools and using `gh stack push`) if needed |
+| 3 | `gh stack rebase --upstack` rebases the current layer onto its parent (step 2), not only the layers above it | Unverified | Scratch-repo trial |
