@@ -58,8 +58,7 @@ graph TD
     
     %% PR Release Phase
     CPR["7. Pull Request<br>create-pr"]
-    RPR["8. PR Review (Optional)<br>review-pr"]
-    DL["9. Lesson Distillation (As needed)<br>distill-lessons"]
+    DL["8. Lesson Distillation (As needed)<br>distill-lessons"]
 
     %% Flow connections
     Analyzing --> CB
@@ -72,8 +71,7 @@ graph TD
     Decide -->|Request Changes| Fix
     Decide -->|Approve| CPR
     Fix --> Loop
-    CPR --> RPR
-    RPR --> DL
+    CPR --> DL
 ```
 
 ---
@@ -115,7 +113,6 @@ After implementation completes, run **`prepare-handover`** in the active impleme
 
 Once the audit is clean, release proceeds with:
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
-*   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
 
 ---

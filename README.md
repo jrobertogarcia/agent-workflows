@@ -45,7 +45,6 @@ For a structured routing index of all skills and trigger scopes, refer to [AGENT
 *   **`prepare-handover`**: Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread.
 *   **`review-branch`**: Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request.
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
-*   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 
 ### 5. Ad-Hoc Utilities
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.

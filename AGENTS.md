@@ -11,7 +11,7 @@ This file contains the structured skills registry and routing index for coding a
 ## 1. Directory Structure
 
 *   `skills/`: Contain individual coding-agent skill prompt manifests. Each subdirectory represents a skill and contains a `SKILL.md` file.
-*   `shared/`: Shared markdown fragments included by skill manifests (e.g. review rubric used by `review-branch` and `review-pr`).
+*   `shared/`: Shared markdown fragments included by skill manifests (e.g. review rubric used by `review-branch`).
 *   `setup.py`: Platform-agnostic installation utility script (refer to [README.md](README.md) for execution commands).
 
 Plan-mode direction in plan-producing skills is prose, not frontmatter, and is expected to no-op on hosts without such a mode.
@@ -20,7 +20,7 @@ Plan-mode direction in plan-producing skills is prose, not frontmatter, and is e
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 21 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
+Below is the structured list of the 20 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
@@ -44,6 +44,5 @@ Frontmatter `description` in each SKILL.md is authoritative; keep this table and
 | **`prepare-handover`** | `**/*` | Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread. | [SKILL.md](skills/prepare-handover/SKILL.md) |
 | **`review-branch`** | `**/*` | Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request. | [SKILL.md](skills/review-branch/SKILL.md) |
 | **`create-pr`** | `**/*` | Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit. | [SKILL.md](skills/create-pr/SKILL.md) |
-| **`review-pr`** | `**/*` | Review an open pull request and return a structured verdict. Use when auditing submitted changes. | [SKILL.md](skills/review-pr/SKILL.md) |
 | **`distill-lessons`** | `**/*` | Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery. | [SKILL.md](skills/distill-lessons/SKILL.md) |
 | **`validate-commit`** | `**/*` | Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing. | [SKILL.md](skills/validate-commit/SKILL.md) |
