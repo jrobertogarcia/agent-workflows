@@ -29,7 +29,7 @@ The design keeps individual skills as the atomic building blocks and adds one co
 - The orchestrator sends one self-contained prompt per step to a shipped agent definition, `orchestrate-step`: a generic worker that executes the prompt it is given. Its Markdown source lives in a new `agents/` directory.
 - `setup.py` installs it per host:
   - Claude Code: `~/.claude/agents/orchestrate-step.md`.
-  - Cursor: reads `~/.cursor/agents/`, `~/.claude/agents/` and `~/.codex/agents/`, and uses the Claude Code file. Whether it errors on or double-lists the Codex TOML is unverified (open item 1).
+  - Cursor: reads `~/.cursor/agents/`, `~/.claude/agents/` and `~/.codex/agents/`, and uses the Claude Code file.
   - Antigravity: `~/.gemini/config/agents/orchestrate-step/agent.md` (directory layout).
   - Codex: `~/.codex/agents/orchestrate-step.toml` with `name`, `description` and `developer_instructions`, generated from the Markdown source.
   - Copilot CLI and VS Code: `~/.copilot/agents/orchestrate-step.agent.md`. The Copilot cloud agent has no user-level path and is out of scope.
@@ -38,7 +38,7 @@ The design keeps individual skills as the atomic building blocks and adds one co
   - Install Copilot user-level skills to `~/.copilot/skills` (directory-based), not as `.agent.md` files in `~/.copilot/agents`, which makes each skill a custom agent.
   - Clean orphans with a per-target name set (agent names for agent directories, skill names for skill directories), because `sync_target_directory` deletes any managed item whose name is not a folder under `skills/`.
   - Put a `# source: agent-workflows` line in the first 5 lines of the Codex TOML so it counts as managed.
-- Each step starts fresh. A step is never forked from the orchestrator's context. Fresh context is documented on Claude Code (invoking `orchestrate-step` by name starts fresh; Claude Code forks only for the `fork` subagent type, which interactive sessions request by default), Cursor, and Antigravity. It is unverified on Codex (openai/codex#20077 reports `spawn_agent` defaults to a full-history fork unless `fork_turns: "none"`) and on Copilot CLI (open item 1).
+- Each step starts fresh. A step is never forked from the orchestrator's context. Every host is assumed to start a named `orchestrate-step` fresh. On Claude Code the orchestrator invokes `orchestrate-step` by name, never the `fork` subagent type. On Codex it always passes `fork_turns: "none"` to `spawn_agent`, because openai/codex#20077 reports a full-history fork by default.
 - Fallback: if the host has no subagent support or `orchestrate-step` is not installed, the orchestrator prints the prompt in a fenced block and stops, so a person can run it in a fresh thread.
 - Skills name no host and no host tools. Host specifics live only in `setup.py` and this ADR.
 - `review-branch` always runs in a fresh subagent so the reviewer shares no context with the implementer.
@@ -71,12 +71,15 @@ stacks/<name>/requirements.md
 ```
 
 - `stack.json` is the roadmap: the phase, the ordered layers, and the active layer. `orchestrate` creates it at start with phase `ANALYSIS`, `layers: []` and `active_layer_index: null`.
+- **Stack name**: at stack start, `orchestrate` proposes a slug of the requirement's title, and the human confirms or replaces it at the `review-story` touchpoint. The name matches `^[a-z0-9][a-z0-9-]{0,39}$`. If `stacks/<name>/` already exists, the run stops and asks whether to resume that stack or choose another name.
+- **Resume**: the orchestrator uses the stack whose `layers[].branch` contains the current branch, or else the name the human gives.
 - `requirements.md` holds the human's `review-story` answers, written by the orchestrator so a re-run of `ANALYSIS` does not lose them.
 - `state.json` is the ledger for one branch. It has a fixed shape of scalars and fixed keys, with no arrays that grow.
-- `plan.md` and `handover.md` are the human-readable evidence. Who writes `plan.md` is unresolved (open item 2).
+- `plan.md` and `handover.md` are the human-readable evidence.
+- `orchestrate` writes `plan.md` verbatim from the text the `plan-implementation` step returns (the planner runs read-only), with the atomic write below, before setting `WAITING_PLAN_APPROVAL`. Gate 1 approves that file, and `delegate-plan` and `check-alignment` read it. It is written only in `PLANNING`. On a re-plan the next planning prompt points at the previous `plan.md` and carries the human's feedback verbatim, and the new plan overwrites it.
 - `roadblocks.md` is append-only. Each entry records a timestamp, the failing skill, the tip SHA, and the root cause.
 - Branch directories are `<branch>/` with every `/` in the name a nested directory. Git forbids `feat` alongside `feat/x`, so branch directories do not collide. A branch named `stacks` or starting `stacks/` stops the run.
-- Single writer: the `orchestrate` thread writes `stack.json` and every `state.json`. Workers write only evidence files (such as `handover.md`). Everything else reads. If a second writer is ever added, guard the file with an `mkdir` lock, because `flock` is not available on macOS.
+- Single writer: the `orchestrate` thread writes `stack.json`, `requirements.md`, `plan.md`, and every `state.json`. Workers write only evidence files (such as `handover.md`). Everything else reads. If a second writer is ever added, guard the file with an `mkdir` lock, because `flock` is not available on macOS.
 - All SHAs are full 40-character values.
 - Writes go to a temp file in the same directory, then a rename:
 
@@ -89,11 +92,11 @@ EOF
 mv -f "$tmp" "$dir/state.json"
 ```
 
-- **Lifecycle**: a branch's state is read-only after `RELEASED`. `orchestrate` deletes the branch directory when its PR merges or closes, and deletes `stack.json` when the last layer merges or when the stack is abandoned before any layer exists. It detects both from the live read at resume or at the open-layer cap check.
+- **Lifecycle**: a branch's state is read-only after `RELEASED`. `orchestrate` deletes the branch directory when its PR merges or closes, and deletes the whole `stacks/<name>/` directory when the last layer merges or when the stack is abandoned before any layer exists, so an existing stack directory always means a live stack. It detects both from the live read at resume or at the open-layer cap check.
 
 ### D5. Schemas
 
-Stack manifest, `stacks/<name>/stack.json`. `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, or `LAYERS`. A layer's `status` is `PENDING`, `ACTIVE`, or `RELEASED`. There is no `MERGED` value, because merge state is read live from GitHub.
+Stack manifest, `stacks/<name>/stack.json`. `stack_name` equals `<name>`. `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, or `LAYERS`. A layer's `status` is `PENDING`, `ACTIVE`, or `RELEASED`. There is no `MERGED` value, because merge state is read live from GitHub.
 
 ```json
 {
@@ -171,6 +174,7 @@ stateDiagram-v2
 - A phase is written only after its action succeeds. A handoff that is still waiting, or a failed `create-pr` or link, leaves the phase unchanged.
 - On resume, the orchestrator reconciles the ledger against git and PR evidence before acting (D10).
 - A return from Gate 2 because `HEAD` moved or maintenance was adopted is not a counted retry.
+- Every entry to `PLANNING` (Gate 1 rejected, or a human re-plan from `BLOCKED`) sets `gate_1_plan_approved` to `false`.
 
 ### D7. Verification loop
 
@@ -245,12 +249,5 @@ The human acts as technical lead at five touchpoints: define intent and scope (`
 - The orchestrator edits no code and is the only writer of `stack.json` and `state.json`. Every tip it records was read from git by the orchestrator.
 - A step interrupted after committing is recovered at the next boot (D10 step 3a). A branch moved by maintenance is adopted only when its patches are unchanged (D10 step 3b), and approval is never carried over.
 - The open-layer cap resume keeps `git fetch origin`, the remote-only-commit check, then `gh stack rebase --upstack`, consistent with #512 not reproducing.
-- `setup.py` and `create-pr` need changes before this design is implementable (D2, D3).
-
-## Open items
-
-| # | Item | Status | What closes it |
-| :-- | :-- | :-- | :-- |
-| 1 | Fresh context on Codex and Copilot CLI, and Cursor's handling of the Codex TOML | Unverified | Canary trial: tell the caller a code word, then ask the named `orchestrate-step` to report any it knows |
-| 2 | Who writes `plan.md` | Unresolved | A decision |
-| 3 | How `stack_name` is derived (filesystem-safe, unique) | Unresolved | A decision |
+- `setup.py` and `create-pr` need changes before this design is implementable (D2, D3). `plan-implementation` returns the plan text under orchestration instead of reporting a file path (D4).
+- Fresh context is assumed on every host, not trial-tested (D2).
