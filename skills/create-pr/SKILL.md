@@ -7,7 +7,9 @@ description: Push the current branch and open a pull request with a synthesized 
 
 ## Execution
 
-1. **Read the Diff**: Read the branch diff against its base integration branch. Reuse handover or review context already gathered in this thread rather than re-reading it.
+Takes an optional base branch and an optional keep-checkout flag.
+
+1. **Read the Diff**: Read the branch diff against the given base, else its base integration branch. Reuse handover or review context already gathered in this thread rather than re-reading it.
 2. **Draft the Title**: Match the title convention of recent merged pull requests in the repository, defaulting to Conventional Commits (e.g. `feat(auth): implement user authentication`) when none is established.
 3. **Write the Body**: Write for a busy reviewer: short, plain, specific. Every body carries this content:
    ```markdown
@@ -25,10 +27,10 @@ description: Push the current branch and open a pull request with a synthesized 
    - Leave out shell commands, merge instructions, and test inventories.
    - Compose the body into a temp file outside the repository.
 4. **Check Before Creating**: Re-read the drafted body. Confirm Why and What are both covered, the headings match the template when one exists and the schema when it does not, and nothing was added beyond them.
-5. **Push & Create**: Push the active branch to origin and open the pull request using the drafted body file.
+5. **Push & Create**: When a base is given, confirm it exists on origin (`git ls-remote --exit-code --heads origin <base>`) and stop if it does not. Push the active branch to origin and open the pull request using the drafted body file, passing `--base <base>` only when a base is given; otherwise omit it.
    ```bash
-   git push origin HEAD && gh pr create --title "<TITLE>" --body-file <body-file> --base <default-branch>
+   git push origin HEAD && gh pr create --title "<TITLE>" --body-file <body-file> [--base <base>]
    ```
-6. **Verify Creation**: Verify the pull request on the hosting platform (e.g. `gh pr view --web`).
-7. **Release the Worktree**: When the working directory is a linked worktree (`git rev-parse --git-dir` and `git rev-parse --git-common-dir` return different paths), run `git checkout --detach` so the pushed branch can be checked out elsewhere for review. This preserves the directory and its ignored and uncommitted files. Report the reattach command (`git checkout <branch>`). Skip in a normal checkout.
+6. **Verify Creation**: Read the PR back with `gh pr view --json url,baseRefName` and report its URL. When a base was given, stop and report if `baseRefName` differs.
+7. **Release the Worktree**: Skip when keep-checkout is requested. When the working directory is a linked worktree (`git rev-parse --git-dir` and `git rev-parse --git-common-dir` return different paths), run `git checkout --detach` so the pushed branch can be checked out elsewhere for review. This preserves the directory and its ignored and uncommitted files. Report the reattach command (`git checkout <branch>`). Skip in a normal checkout.
 8. **Preserve Workspace**: Keep unrelated files and existing worktrees intact.

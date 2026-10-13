@@ -22,4 +22,4 @@ description: Audit the work in flight for over-engineering and unnecessary code,
 4. **Audit** — record concrete instances of the anti-patterns above with file and line references, each with the specific cut and the code that remains. Report the absence of a problem as readily as its presence, and name any area you could not assess rather than implying it passed.
 5. **Protect What Is Load-Bearing** — do not propose cutting validation at genuine system boundaries (user input, I/O, network, external APIs), handling for failure modes that actually occur, or anything the project's standards require. Say explicitly when a check that looks redundant is in fact carrying weight.
 6. **Prioritize** — group findings by impact: Safe Cuts (removable with no behavioral question), Simplifications (same behavior, less structure), and Scope Reductions (changes that belong in a separate change entirely). Omit any group with no findings.
-7. **Report Only** — do not modify code, delete anything, or write files. Route accepted cuts through `plan-implementation`.
+7. **Report Only** — do not modify code, delete anything, or write files.
