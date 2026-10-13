@@ -7,7 +7,7 @@
 
 Today the skills run by hand across thread boundaries. `prepare-handover` writes a handover file that `review-branch` reads in a fresh thread, and `plan-implementation` stops for approval. Large changes need a stack of small PRs, and a person coordinating many layers by hand is the bottleneck.
 
-This ADR covers authoring: from a requirement to each layer being `RELEASED`, meaning that layer's PR is open with the correct base. Maintenance after release (review comments, upstream rebases) is covered in [ADR 0002](0002-stack-maintenance-and-rebasing.md).
+This ADR covers authoring: from a requirement to each layer being `RELEASED`, meaning that layer's PR is open with the correct base and, from the second layer on, listed in the remote stack. Maintenance after release (review comments, upstream rebases) is covered in [ADR 0002](0002-stack-maintenance-and-rebasing.md).
 
 The design keeps individual skills as the atomic building blocks and adds one coordinating skill, `orchestrate`, that drives them, owns the state on disk, and stops at two human gates.
 
@@ -26,21 +26,31 @@ The design keeps individual skills as the atomic building blocks and adds one co
 
 `orchestrate` is the only dispatcher. `delegate-plan` stays prompt-only: it produces a self-contained prompt and runs nothing.
 
-- The orchestrator sends one self-contained prompt per step to a shipped agent definition, `orchestrate-step`: a generic worker that executes the prompt it is given. It lives in a new `agents/` directory. `setup.py` installs it to `~/.claude/agents/` and `~/.agents/agents/`. Cursor reads `~/.claude/agents/`.
-- Each step starts fresh. A step is never forked from the orchestrator's context.
+- The orchestrator sends one self-contained prompt per step to a shipped agent definition, `orchestrate-step`: a generic worker that executes the prompt it is given. Its Markdown source lives in a new `agents/` directory.
+- `setup.py` installs it per host:
+  - `~/.claude/agents/`: Claude Code and Cursor (docs-confirmed).
+  - `~/.gemini/config/agents/`: Antigravity (docs-confirmed).
+  - `~/.codex/agents/`: Codex, as TOML generated from the Markdown source.
+  - Copilot: user-level path unverified (open item 1).
+  - Windsurf has no subagents and uses the printed-prompt fallback.
+- Each step starts fresh. A step is never forked from the orchestrator's context. Fresh context is documented on Claude Code, Cursor, and Antigravity, and unverified on Codex and Copilot (open item 1). On Claude Code, interactive sessions fork by default, so the orchestrator always invokes `orchestrate-step` by name.
 - Fallback: if the host has no subagent support or `orchestrate-step` is not installed, the orchestrator prints the prompt in a fenced block and stops, so a person can run it in a fresh thread.
-- Skills name no host tools, and the docs name no host as an example of either mode.
+- Skills name no host and no host tools. Host specifics live only in `setup.py` and this ADR.
 - `review-branch` always runs in a fresh subagent so the reviewer shares no context with the implementer.
 
 ### D3. Stack and release
 
 Large work is split into small, independently reviewable diffs, authored bottom to top.
 
-- **Tracking**: the stack is tracked locally from the start. Layer 0 is created with `gh stack init`, later layers with `gh stack add`.
-- **Open-layer cap**: at most 3 layers may be released but unmerged. `PENDING` layers do not count, and there is no limit on total layers. Before branching the next layer, if 3 are open, the orchestrator halts with "waiting on merge of <bottom PR>" and resumes with `gh stack sync` after that PR merges. Merge state is read live with `gh pr view --json state`. The number 3 is a judgment call (open item 7).
-- **Release**: at Gate 2, `create-pr` opens the layer's PR with base `git_anchor.target_branch` (the trunk for layer 0). Once two or more PRs exist, `gh stack sync` links them into the native stack. Neither `gh stack link` nor `gh stack submit` is used. `RELEASED` is confirmed by `gh stack view` and `gh pr view --json state,baseRefName`, which must show the PR open with the right base.
-- **Failure**: a failed push or sync is re-run unchanged, and the phase does not advance until the check above passes. `gh stack init <branches>` re-adopts branches if local tracking is lost.
-- **gh-stack**: the official `github/gh-stack` extension, v0.2.x, in public preview. It is a hard dependency with no plain-git fallback. If it is missing, the orchestrator stops and tells the user to install it. Known limits: linear history, same-repository branches, no auto-merge yet, at most 100 PRs. Per-repository enablement cannot be read from the API, so the first stack command is the check, and an error stops the run with a message to the user. No merge method is required: GitHub supports all three, and for merged layers the rebase uses `--onto`.
+- **Scope**: github.com only. GitHub Enterprise Server is unsupported until GitHub ships stacked PRs there. Stacked PRs are generally available on github.com since 2026-10-06 (GitHub changelog). Auto-merge for stacks is still rolling out (changelog; not trial-tested).
+- **gh-stack**: the official `github/gh-stack` extension, minimum v0.2.1. It is a hard dependency with no plain-git fallback. If it is missing or older, the orchestrator stops and tells the user to install or upgrade it. Documented limits, not trial-tested: linear history, same-repository branches, at most 100 PRs. All three merge methods work (observed, see ADR 0002 D1 step 7).
+- **Availability**: before the first stack command, `gh api repos/<o>/<r>/stacks` must return 200 (observed on a repository with stacks available). Anything else stops the run. The response when stacks are unavailable is unverified (open item 2).
+- **Tracking**: every layer is created with `gh stack init` (layer 0) or `gh stack add` (later layers). A plain-git branch that is linked later is not tracked locally, and `gh stack sync` then fails (observed).
+- **Open-layer cap**: at most 3 layers may be released but unmerged. `PENDING` layers do not count, and there is no limit on total layers. Before branching the next layer, if 3 are open, the orchestrator halts with "waiting on merge of <bottom PR>" and resumes with `gh stack sync` after that PR merges. Merge state is read live with `gh pr view --json state`. The cap is fixed at 3 and is revisited only if a human reports it as a bottleneck.
+- **Release**: at Gate 2, `create-pr` opens the layer's PR with base `git_anchor.target_branch` (the trunk for layer 0). `create-pr` takes an optional base argument. With no base it omits `--base`. It stops if the base is missing on origin and verifies `baseRefName` after creating the PR. Once two or more PRs exist, `gh stack link <every open layer PR, bottom to top>` creates or updates the remote stack and repairs wrong bases. `gh stack sync` and `gh stack submit` are not used for release.
+- **Link facts** (observed): `gh stack link` creates a new stack from unstacked PRs. It pushes with `git push --atomic` and no force, so a non-fast-forward is rejected, nothing is pushed, and the exit code is 1. A failed link is re-run after resolving the cause. A locally amended or rebased layer with no divergent remote is expected to be rejected the same way (unverified).
+- **RELEASED**: `gh pr view --json state,baseRefName` shows the PR open with the right base, and `gh api 'repos/<o>/<r>/stacks?pull_request=<N>'` lists the PR. Layer 0 alone needs only the base check. Exit codes are not evidence of success for `gh stack sync` or `gh stack view`.
+- **Failure**: a failed `create-pr` or link is re-run after the cause is resolved, and the phase does not advance until the RELEASED check passes. If local tracking is lost, `gh stack init <every unmerged layer, bottom to top>` re-adopts the branches and finds their PRs (observed). A partial list leaves the stack unreconciled with exit 0. A list that includes a merged layer makes `gh stack sync` fail on a conflict.
 
 ### D4. State on disk
 
@@ -147,7 +157,7 @@ stateDiagram-v2
 ```
 
 - The phase enum is the set of states above. A branch's `lifecycle.phase` holds one of them.
-- A phase is written only after its action succeeds. A handoff that is still waiting, or a failed push or sync, leaves the phase unchanged.
+- A phase is written only after its action succeeds. A handoff that is still waiting, or a failed `create-pr` or link, leaves the phase unchanged.
 - On resume, the orchestrator reconciles the ledger against git and PR evidence before acting (D10).
 - A return from Gate 2 because `HEAD` moved is not a counted retry.
 
@@ -163,7 +173,7 @@ Polishing happens before review, so the reviewer sees the diff that will ship.
 4. `simplify-diff`.
 5. The orchestrator applies the Safe Cuts and Simplifications that stay within the Gate 1 plan scope. Scope Reductions are not applied; they are listed for Gate 2.
 6. `validate-commit`, then `check-alignment` again.
-7. `prepare-handover`.
+7. `prepare-handover`, which writes `Branch tip: <full 40-char SHA>` as the first line of the handover. `review-branch` prefix-matches it against `HEAD`.
 
 **Stage B**: `review-branch` in a fresh subagent. `APPROVE` records `approved_sha`. `REQUEST CHANGES` returns to implementing (D9).
 
@@ -196,6 +206,8 @@ On every boot, before any edit:
 
 After a rebase, set `base_sha` to the target tip and `branch_tip_sha` to `HEAD`, then re-run `validate-commit`. A conflict sets `BLOCKED`.
 
+Plain-git rebases leave gh-stack's recorded SHAs stale. The next `gh stack rebase` refreshes them without moving any branch (observed locally, with no push in between).
+
 ### D11. Reference, don't duplicate
 
 Prompts sent to subagents point at `skills/<name>/SKILL.md` rather than copying it. `agents/` holds only the generic `orchestrate-step`.
@@ -206,21 +218,13 @@ The human acts as technical lead at five touchpoints: define intent and scope (`
 
 ## Consequences
 
-- `gh stack` is a hard dependency, and it is in preview.
+- gh-stack v0.2.1+ and github.com are required.
 - Each stint allows 3 attempts before the human is involved.
-- Skills and docs change when this is implemented:
-  - Skills: `create-pr` accepts a base branch, `check-compliance` merges into `check-alignment`, `orchestrate` is added, `agents/orchestrate-step` is added, and `setup.py` installs the agent.
-  - Docs to update: the `AGENTS.md` skill count, table rows, and rubric reference at line 14; the `README.md` skill list; the `LIFECYCLE.md` diagram nodes and list; and the directory structure in `README.md` and `AGENTS.md` for `agents/`.
+- Every stack step is confirmed by reading GitHub state, not by exit code.
 
 ## Open items
 
 | # | Item | Status | What closes it |
 | :-- | :-- | :-- | :-- |
-| 1 | Automating stack maintenance | Open, manual by design | ADR 0002, or porting `pr-address-comments` later |
-| 2 | `create-pr` takes a base branch | Follow-up | Skill change before release works |
-| 3 | `orchestrate-step` starts fresh, not forked; install paths (Cursor reads `~/.claude/agents/`, Antigravity reads `~/.agents/agents/`) | Unverified | Try on each host |
-| 4 | `gh stack sync` links PRs opened by `create-pr`; `gh stack init` re-adopts branches with non-default bases | Unverified | Scratch-repo trial |
-| 5 | gh-stack public preview (v0.2.x); per-repo enablement not readable via API | Risk | First command is the check; revisit at GA |
-| 6 | Plain-git drift rebase keeps gh-stack tracking consistent | Unverified | Scratch-repo trial |
-| 7 | Open-layer cap of 3 is a judgment call | Open | Revisit if halts are frequent |
-| 8 | `prepare-handover` doesn't name the `Branch tip:` label `review-branch` parses | Follow-up | Separate PR off main |
+| 1 | Copilot user-level agent path, and fresh context on Codex and Copilot | Unverified | Host docs or per-host trial |
+| 2 | Stacks API response when stacks are unavailable | Unverified (200 observed when available) | Probe a repository without stacks |
