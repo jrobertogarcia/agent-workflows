@@ -238,7 +238,7 @@ class GlobalInstallTests(SetupTestCase):
 
         self.assertTrue((config.home / ".codex" / "skills").exists())
         self.assertFalse((config.home / ".claude" / "skills").exists())
-        self.assertFalse((config.home / ".copilot" / "agents").exists())
+        self.assertFalse((config.home / ".copilot" / "skills").exists())
 
     def test_install_and_uninstall_global_codex_targets(self):
         self.requires_symlink_support()
@@ -305,6 +305,69 @@ class GlobalInstallTests(SetupTestCase):
         installed = list(codex_skills.iterdir())
         self.assertEqual(len(installed), 17)
         self.assertTrue((codex_skills / "skill-00").is_symlink())
+
+    def make_copilot_home(self):
+        config = self.make_config()
+        (config.home / ".copilot").mkdir(parents=True)
+        return config
+
+    def add_legacy_copilot_agent_files(self, config):
+        """Creates a managed signature file, a managed symlink (when supported) and a user-owned agent file."""
+        agents = config.copilot_agents_path
+        agents.mkdir(parents=True)
+        managed = [agents / "skill-00.agent.md"]
+        managed[0].write_text(setup.FileSystemManager.SIGNATURE_COMMENT + "legacy", encoding="utf-8")
+        if self.can_create_directory_symlink():
+            managed.append(agents / "skill-01.agent.md")
+            os.symlink(self.skills_dir / "skill-01" / "SKILL.md", managed[1])
+        unmanaged = agents / "mine.agent.md"
+        unmanaged.write_text("user-owned", encoding="utf-8")
+        return managed, unmanaged
+
+    def test_install_global_copilot_installs_skill_directories(self):
+        self.add_skills()
+        config = self.make_copilot_home()
+
+        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+
+        installed = list((config.home / ".copilot" / "skills").iterdir())
+        self.assertEqual(len(installed), 17)
+        self.assertTrue(all(self.fs.is_managed_target(item, self.repo_dir) for item in installed))
+        self.assertFalse(config.copilot_agents_path.exists())
+
+    def test_link_removes_legacy_managed_copilot_agent_files_and_preserves_unmanaged(self):
+        self.add_skills()
+        config = self.make_copilot_home()
+        managed, unmanaged = self.add_legacy_copilot_agent_files(config)
+
+        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+
+        self.assertFalse(any(item.exists() or item.is_symlink() for item in managed))
+        self.assertEqual(unmanaged.read_text(encoding="utf-8"), "user-owned")
+
+    def test_unlink_removes_legacy_managed_copilot_agent_files_and_preserves_unmanaged(self):
+        self.add_skills()
+        config = self.make_copilot_home()
+        managed, unmanaged = self.add_legacy_copilot_agent_files(config)
+
+        self.run_quiet(setup.uninstall_global, self.skills_dir, config, self.fs)
+
+        self.assertFalse(any(item.exists() or item.is_symlink() for item in managed))
+        self.assertEqual(unmanaged.read_text(encoding="utf-8"), "user-owned")
+
+    def test_link_and_unlink_preserve_unmanaged_copilot_skill_directory(self):
+        self.add_skills()
+        config = self.make_copilot_home()
+        user_skill = config.home / ".copilot" / "skills" / "gh-stack"
+        user_skill.mkdir(parents=True)
+        (user_skill / "SKILL.md").write_text("user-owned", encoding="utf-8")
+
+        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+        self.assertEqual((user_skill / "SKILL.md").read_text(encoding="utf-8"), "user-owned")
+        self.run_quiet(setup.uninstall_global, self.skills_dir, config, self.fs)
+
+        self.assertEqual((user_skill / "SKILL.md").read_text(encoding="utf-8"), "user-owned")
+        self.assertEqual(list((config.home / ".copilot" / "skills").iterdir()), [user_skill])
 
     def test_uninstall_global_preserves_unmanaged_files(self):
         self.add_skills()
@@ -502,7 +565,7 @@ class IncludeExpansionTests(SetupTestCase):
         self.assertIn("Shared review rubric", content)
         self.assertNotIn("<!-- include:", content)
 
-    def test_install_global_materializes_flat_file_skill_with_includes(self):
+    def test_install_global_materializes_copilot_skill_directory_with_includes(self):
         self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
         self.add_skill_with_include("review-pr", "shared/review-guidelines.md")
         config = setup.AppConfig(home_dir=self.root / "home")
@@ -510,11 +573,12 @@ class IncludeExpansionTests(SetupTestCase):
 
         self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
 
-        installed = config.home / ".copilot" / "agents" / "review-pr.agent.md"
-        content = installed.read_text(encoding="utf-8")
-        self.assertTrue(content.startswith(setup.FileSystemManager.SIGNATURE_COMMENT))
+        installed = config.home / ".copilot" / "skills" / "review-pr"
+        content = (installed / "SKILL.md").read_text(encoding="utf-8")
+        self.assertTrue((installed / setup.FileSystemManager.MARKER_FILE).exists())
         self.assertIn("Shared review rubric", content)
         self.assertNotIn("<!-- include:", content)
+        self.assertFalse(config.copilot_agents_path.exists())
 
 
 def load_skill_content(skill_folder, repo_dir):

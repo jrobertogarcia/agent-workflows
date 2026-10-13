@@ -11,11 +11,9 @@ INCLUDE_PATTERN = re.compile(r"<!--\s*include:\s*([^\s]+?)\s*-->")
 
 # Configuration registry class for developer tools/agents
 class AgentTarget:
-    def __init__(self, name: str, path: Path, is_directory_based: bool, file_suffix: str = ""):
+    def __init__(self, name: str, path: Path):
         self.name: str = name
         self.path: Path = path
-        self.is_directory_based: bool = is_directory_based
-        self.file_suffix: str = file_suffix
 
 
 class WorkflowSetupError(Exception):
@@ -48,11 +46,13 @@ class AppConfig:
     def __init__(self, home_dir: Optional[Path] = None):
         self.home: Path = home_dir or Path.home()
         self.targets: List[AgentTarget] = [
-            AgentTarget("claude", self.home / ".claude" / "skills", is_directory_based=True),
-            AgentTarget("gemini", self.home / ".gemini" / "config" / "skills", is_directory_based=True),
-            AgentTarget("copilot", self.home / ".copilot" / "agents", is_directory_based=False, file_suffix=".agent.md"),
-            AgentTarget("codex", self.home / ".codex" / "skills", is_directory_based=True),
+            AgentTarget("claude", self.home / ".claude" / "skills"),
+            AgentTarget("gemini", self.home / ".gemini" / "config" / "skills"),
+            AgentTarget("copilot", self.home / ".copilot" / "skills"),
+            AgentTarget("codex", self.home / ".codex" / "skills"),
         ]
+        # Legacy location of flat Copilot agent files written by earlier versions of this installer.
+        self.copilot_agents_path: Path = self.home / ".copilot" / "agents"
 
 
 class FileSystemManager:
@@ -291,37 +291,11 @@ def materialize_skill_directory(
         raise WorkflowSetupError(f"Failed to materialize skill directory {skill_folder.name}: {err}")
 
 
-def materialize_skill_file(
-    target: Path,
-    metadata: Dict[str, str],
-    expanded_body: str,
-    repo_dir: Path,
-    fs_manager: FileSystemManager,
-    force: bool = False,
-) -> bool:
-    """Writes a flat skill file with expanded includes for Copilot-style targets."""
-    if target.exists() or target.is_symlink():
-        if not force and not fs_manager.is_managed_target(target, repo_dir):
-            Console.warning(f"Skipped unmanaged existing target: {target}. Use --force to replace it.")
-            return False
-        fs_manager.clean_target(target)
-
-    try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        content = fs_manager.SIGNATURE_COMMENT + build_skill_md(metadata, expanded_body)
-        target.write_text(content, encoding="utf-8")
-        Console.success("Materialized", target.name, "File with expanded includes")
-        return True
-    except OSError as err:
-        raise WorkflowSetupError(f"Failed to materialize skill file {target.name}: {err}")
-
-
 def install_skill(
     skill_folder: Path,
     target: Path,
     repo_dir: Path,
     fs_manager: FileSystemManager,
-    is_directory: bool = False,
     force: bool = False,
 ) -> bool:
     """Installs a skill globally, materializing when includes must be expanded."""
@@ -332,13 +306,11 @@ def install_skill(
     metadata, body = fs_manager.load_frontmatter(skill_md)
     if has_includes(body):
         expanded_body = expand_includes(body, repo_dir)
-        if is_directory:
-            return materialize_skill_directory(
-                skill_folder, target, metadata, expanded_body, repo_dir, fs_manager, force=force
-            )
-        return materialize_skill_file(target, metadata, expanded_body, repo_dir, fs_manager, force=force)
+        return materialize_skill_directory(
+            skill_folder, target, metadata, expanded_body, repo_dir, fs_manager, force=force
+        )
 
-    return fs_manager.link_or_copy(skill_folder if is_directory else skill_md, target, repo_dir, is_directory=is_directory, force=force)
+    return fs_manager.link_or_copy(skill_folder, target, repo_dir, is_directory=True, force=force)
 
 
 def list_skill_names(skills_dir: Path) -> Set[str]:
@@ -401,32 +373,18 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
                 raise WorkflowSetupError(f"Failed to create target directory {target.path}: {err}")
             
             # Sync target path to clean up any orphaned rules first!
-            sync_target_directory(target.path, skill_names, repo_dir, fs_manager, file_suffix=target.file_suffix)
+            sync_target_directory(target.path, skill_names, repo_dir, fs_manager)
             
             try:
                 for skill_folder in skills_dir.iterdir():
                     if skill_folder.is_dir():
-                        if target.is_directory_based:
-                            install_skill(
-                                skill_folder,
-                                target.path / skill_folder.name,
-                                repo_dir,
-                                fs_manager,
-                                is_directory=True,
-                                force=force,
-                            )
-                        else:
-                            install_skill(
-                                skill_folder,
-                                target.path / f"{skill_folder.name}{target.file_suffix}",
-                                repo_dir,
-                                fs_manager,
-                                is_directory=False,
-                                force=force,
-                            )
+                        install_skill(skill_folder, target.path / skill_folder.name, repo_dir, fs_manager, force=force)
             except OSError as err:
                 raise WorkflowSetupError(f"Failed to read skills folder during installation: {err}")
             linked_any = True
+
+    # Remove flat agent files written by earlier versions; no-op when the directory is absent.
+    sync_target_directory(config.copilot_agents_path, set(), repo_dir, fs_manager, file_suffix=".agent.md")
 
     if not linked_any:
         Console.info("\nNo active agent config directories (e.g. ~/.claude/skills or ~/.gemini/config/skills) were detected.")
@@ -440,7 +398,10 @@ def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystem
     for target in config.targets:
         if target.path.exists():
             Console.info(f"\nCleaning {target.name.upper()} skills at: {target.path}")
-            sync_target_directory(target.path, set(), repo_dir, fs_manager, file_suffix=target.file_suffix, uninstall_all=True)
+            sync_target_directory(target.path, set(), repo_dir, fs_manager, uninstall_all=True)
+    if config.copilot_agents_path.exists():
+        Console.info(f"\nCleaning legacy COPILOT agent files at: {config.copilot_agents_path}")
+        sync_target_directory(config.copilot_agents_path, set(), repo_dir, fs_manager, file_suffix=".agent.md", uninstall_all=True)
 
 
 class RuleCompiler:
