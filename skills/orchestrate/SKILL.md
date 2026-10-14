@@ -50,27 +50,30 @@ S/stacks/<name>/requirements.md S/<branch>/plan.md
                     "base_sha": "<sha>", "branch_tip_sha": "<sha>", "pending_step": null },
     "lifecycle": { "phase": "PLANNING", "active_skill": "plan-implementation" },
     "gates": { "gate_1_plan_approved": false, "gate_2_release_approved": false },
-    "retries": { "count": 0, "max_allowed": 2 },
+    "retries": { "count": 0, "max_allowed": 2, "gaps_fix_used": false },
     "artifacts": { "plan_file": "plan.md", "handover_file": "handover.md", "roadblocks_file": "roadblocks.md",
                    "last_verdict": null, "approved_sha": null },
     "updated_at": "<time>"
   }
   ```
   - `base_sha`: the trunk tip the branch was last based on. `branch_tip_sha`: the last `HEAD` you verified.
-  - `pending_step`: `null` or `{ "step_id", "skill", "from_tip_sha" }`.
-  - `active_skill`: the skill last dispatched. `last_verdict`: the last `check-alignment` or `review-branch` verdict. `approved_sha`: `HEAD` at `APPROVE`.
+  - `pending_step`: `null` or `{ "step_id", "skill", "from_tip_sha" }`; `step_id` `A1-fix` is `A1` on a fix pass.
+  - `active_skill`: the skill last dispatched; `pending_step.skill`: the pending step's. Both are `implement` for `A1` and `simplify-diff` for `A5`. `gaps_fix_used`: `A3`'s uncounted `GAPS` fix pass is spent.
+  - `last_verdict`: the last `check-alignment` or `review-branch` verdict. `approved_sha`: `HEAD` at `APPROVE`.
   - Every entry to `PLANNING` sets `gate_1_plan_approved` false. Every entry to `IMPLEMENTING` sets `approved_sha` null and `gate_2_release_approved` false.
+
+Until the layer has `state.json`, `stack.json` `phase` drives the next action; after, `state.json` `lifecycle.phase` does.
 
 ## Dispatch
 
 Send each step as one prompt, built from the template, to the `orchestrate-step` agent as a fresh subagent with no conversation history, never a fork or copy of this context. `review-branch` is no exception.
 
-- **Pending step**: before a step marked ✎, write `pending_step` = `{ step_id, skill, from_tip_sha: branch_tip_sha }`. After it returns, read `git rev-parse HEAD` yourself (a reported SHA is only a cross-check) and write `branch_tip_sha` = `HEAD` and `pending_step` = null in one write.
+- **Pending step**: before a step marked ✎ (for `A1-fix`, in the fix-pass write; see Retries), write `pending_step` = `{ step_id, skill, from_tip_sha: branch_tip_sha }`. After it returns, read `git rev-parse HEAD` yourself (a reported SHA is only a cross-check) and write `branch_tip_sha` = `HEAD` and `pending_step` = null in one write.
 - **After every step**: `git branch --show-current` is unchanged, `git status --porcelain` is empty, and after an unmarked step `HEAD` equals `branch_tip_sha`. Otherwise halt with the report.
 - **Result**: read the report's last line, `Result: <token>`. A missing line, crash, timeout, network or rate-limit error is transient: re-run the step once unchanged, not counted; a second transient on the same step sets `BLOCKED`. `STOPPED` sets `BLOCKED` with the report.
 - **Fallback**: if you cannot dispatch a fresh `orchestrate-step` subagent (no subagent support, or no agent by that name), write `pending_step` if the step is ✎, print the prompt in one fenced block, ask the human to run it in a fresh thread and bring back its report, and stop.
 
-Template (fill every `<...>`; omit the branch clause before the branch exists):
+Template (fill every `<...>`; omit the branch clause before the branch exists). `<skill reference>` is the step's skill referenced per Paths; for `A1` it is "the approved plan at <plan.md path>, committing per <`create-commit` reference>", and for `A5` "the `A4` simplify-diff report below, committing per <`create-commit` reference>".
 
 ```
 Work only in <worktree>, on branch <branch>; stop and report if `git branch --show-current` differs.
@@ -88,7 +91,7 @@ Report what you did, the files you changed, the checks you ran and their results
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `story` | `review-story` | | requirement | Number your clarifying questions. | `READY` |
 | `context` | `gather-context` | | `requirements.md` | Target what the requirement names; if ambiguous, choose and list what you skipped. | `READY` |
-| `decompose` | `phase-breakdown` | | `requirements.md`, context report | Split into layers, each one independently reviewable pull request; one layer when the change fits one. Give each a Conventional Commits branch name. Second-to-last line: `Layers: <n>`. | `READY` |
+| `decompose` | `phase-breakdown` | | `requirements.md`, context report if any | Split into layers, each one independently reviewable pull request; one layer when the change fits one. Give each a Conventional Commits branch name on its own line, `Branch: <name>`. Second-to-last line: `Layers: <n>`. | `READY` |
 | `branch` | `create-branch` | | branch name, trunk | Create exactly `<branch>` from the latest `<trunk>`. | `DONE` |
 | `plan` | `plan-implementation` | | `requirements.md`, context report if any; on re-plan the previous `plan.md` and the human's feedback verbatim | Run read-only and write no files; return the complete plan text. | `READY` |
 | `A1` | the plan, committed per `create-commit` | ✎ | `plan.md`; on a fix pass, the failing report verbatim | Execute the plan end to end within its scope, skipping work already committed; on a fix pass, fix only what the report names. Run the plan's verification. Commit per `create-commit`. | `DONE` |
@@ -109,40 +112,42 @@ Run on every invocation, before any write:
 3. **Drift checks**, for an `ACTIVE` layer, in order:
    0. **Clean tree (halt)**: `git status --porcelain` is empty and the git dir holds no `rebase-merge`, `rebase-apply`, `MERGE_HEAD`, or `CHERRY_PICK_HEAD`.
    1. **Branch (halt)**: `git branch --show-current` equals `git_anchor.branch`; report a detached `HEAD` as such.
-   2. **Tip**: if `HEAD` equals `branch_tip_sha` and `pending_step` is set, the step never committed: clear it, run check 4, then re-run the step, not counted.
+   2. **Tip**: if `HEAD` equals `branch_tip_sha` and `pending_step` is set, the step never committed: run drift check 4, then re-run the step, not counted.
    3. **Moved tip**:
-      - (a) **Crash**: `pending_step` is set and `git merge-base --is-ancestor <from_tip_sha> HEAD` succeeds. Write `branch_tip_sha` = `HEAD` and clear `pending_step`, keeping `from_tip_sha` as the step's starting tip. After check 4, if the human brought the step's report, process it as the step's return; otherwise re-run the step as a transient, not counted.
+      - (a) **Crash**: `pending_step` is set and `git merge-base --is-ancestor <from_tip_sha> HEAD` succeeds. Write `branch_tip_sha` = `HEAD` and clear `pending_step`, keeping `from_tip_sha` as the step's starting tip. After drift check 4, if the human brought the step's report, process it as the step's return; otherwise re-run the step as a transient, not counted.
       - (b) **Maintenance**: the phase is `WAITING_PLAN_APPROVAL`, `WAITING_RELEASE_APPROVAL`, or `BLOCKED`; the `base_sha` and `branch_tip_sha` objects exist; with `P` = `git rev-parse <trunk>`, `git merge-base --is-ancestor P HEAD` succeeds; `git rev-list --merges P..HEAD` is empty; and the ordered `git patch-id --stable` list of `base_sha..branch_tip_sha` equals that of `P..HEAD`. Write `base_sha` = `P`, `branch_tip_sha` = `HEAD`, `approved_sha` = null, append to `roadblocks.md`, and from `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING`. Not counted.
       - (c) **Otherwise halt**: report the old and new tips and the first differing patch.
-   4. **Base check**, against the local `<trunk>` with no fetch: `git rev-parse <trunk>` equals `base_sha` is in sync. If `git merge-base --is-ancestor <base_sha> <trunk>` succeeds, run `git rebase <trunk>`; otherwise upstream was rewritten, so run `git rebase --onto <trunk> <base_sha>`. On a conflict, `git rebase --abort` and set `BLOCKED` naming the files. After a rebase, write `base_sha` = `git rev-parse <trunk>` and `branch_tip_sha` = `git rev-parse <branch>`; from `IMPLEMENTING` or `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING` at `A2`, otherwise dispatch `A2` alone and log a failure for the next touchpoint.
-4. **Adopt** (human reply after a halt or in `BLOCKED`): write `base_sha` = `git merge-base <trunk> HEAD`, `branch_tip_sha` = `HEAD`, `approved_sha` and `pending_step` = null, append to `roadblocks.md`; from `WAITING_RELEASE_APPROVAL` or `BLOCKED` enter `IMPLEMENTING` at `A2`.
+   4. **Base check**, against the local `<trunk>` with no fetch: if `git rev-parse <trunk>` equals `base_sha`, the branch is in sync; stop here. Otherwise, if `git merge-base --is-ancestor <base_sha> <trunk>` succeeds, run `git rebase <trunk>`; otherwise upstream was rewritten, so run `git rebase --onto <trunk> <base_sha>`. On a conflict, `git rebase --abort` and set `BLOCKED` naming the files. After a rebase, write `base_sha` = `git rev-parse <trunk>` and `branch_tip_sha` = `git rev-parse <branch>`; from `IMPLEMENTING` or `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING` at the pending step if one is set, else at `A2`; otherwise dispatch `A2` alone and log a failure for the next touchpoint.
+
+**Adopt** (human reply after a halt or in `BLOCKED`): write `base_sha` = `git rev-parse <trunk>`, `branch_tip_sha` = `HEAD`, `approved_sha` and `pending_step` = null, append to `roadblocks.md`; from `WAITING_RELEASE_APPROVAL` or `BLOCKED` enter `IMPLEMENTING` at `A2`.
 
 **Halt** means stop and report, writing nothing. **BLOCKED** means write the phase, append the cause to `roadblocks.md`, and report what the human must decide. Write a phase only after its action succeeds.
 
 ## Phases
 
-- **Start**: dispatch `story`. Present its report and a proposed stack name, a slug of the requirement's title. When the human answers and confirms or replaces the name: if `S/stacks/<name>/` exists, ask whether to resume it or choose another name; otherwise write `requirements.md` and `stack.json` with `trunk` from `git symbolic-ref --short refs/remotes/origin/HEAD` minus `origin/` (ask if that fails).
-- **`ANALYSIS`**: dispatch `context`, then set `STACK_DECOMPOSITION`.
-- **`STACK_DECOMPOSITION`**: dispatch `decompose`. More than one layer halts: "Decomposition proposes <n> layers (<branches>); stacked work is not supported yet. Narrow the requirement to one branch, or abandon." Append a narrowed requirement to `requirements.md` and re-run; `abandon` deletes `S/stacks/<name>/`. With one layer, check the branch name, then write the `PENDING` layer, `active_layer_index` 0, and `LAYERS`.
+- **Start**: dispatch `story`. Present its report and a proposed stack name, a slug of the requirement's title. If the answers raise new questions, re-run `story` once with the requirement and the answers, then present it and ask again. When the human answers and confirms or replaces the name: if `S/stacks/<name>/` exists, ask whether to resume it or choose another name; otherwise write `requirements.md` and `stack.json` with `trunk` from `git symbolic-ref --short refs/remotes/origin/HEAD` minus `origin/` (ask if that fails).
+- **`ANALYSIS`**: `requirements.md` exists, so `story` is not re-run. Dispatch `context`, then set `STACK_DECOMPOSITION`. Its report reaches `decompose` and the first `plan` only in the run that produced it; after a resume they run without it.
+- **`STACK_DECOMPOSITION`**: dispatch `decompose`. More than one layer halts: "Decomposition proposes <n> layers (<branches>); stacked work is not supported yet. Narrow the requirement to one branch, or abandon." Append a narrowed requirement to `requirements.md` and re-run; `abandon` deletes `S/stacks/<name>/`. With one layer, take the name from its `Branch:` line and require that `git check-ref-format --branch <name>` succeeds, the name is not `stacks` or under `stacks/`, and both `git show-ref --verify --quiet refs/heads/<name>` and `git ls-remote --exit-code --heads origin <name>` fail; if the line is missing or a check fails, ask the human for a name and check it. Then write the `PENDING` layer, `active_layer_index` 0, and `LAYERS`.
 - **Branch creation** (layer `PENDING`, no `state.json`): run drift check 0. If the branch does not exist, dispatch `branch`. Then require the current branch to be it and `HEAD` to equal `git rev-parse <trunk>`, else halt. Write `state.json` in `PLANNING` with `base_sha` = `branch_tip_sha` = `HEAD`, then set the layer `ACTIVE`.
 - **`PLANNING`**: dispatch `plan`, write its text verbatim to `plan.md`, set `WAITING_PLAN_APPROVAL`.
 - **`WAITING_PLAN_APPROVAL`** (Gate 1): present `plan.md`. No code is written before approval. `approve` sets `gate_1_plan_approved` and enters `IMPLEMENTING`. Feedback enters `PLANNING`, and the next `plan` prompt carries the previous `plan.md` and the feedback.
-- **`IMPLEMENTING`** (Stage A): start at `A1` when `branch_tip_sha` equals `base_sha` or a fix pass is due, else at `A2`.
+- **`IMPLEMENTING`** (Stage A): start at `A1` when `branch_tip_sha` equals `base_sha`, else at `A2`; a fix pass starts at `A1-fix`.
   1. `A1`.
   2. `A2`: `FAIL-IN-SCOPE` is a counted failure; `FAIL-UNRELATED` is logged and passes.
-  3. `A3`: `GAPS` gets one fix pass (`A1` with the report), then `A2` and `A3` again; `GAPS` again is a counted failure. `CONFLICT` sets `BLOCKED`.
-  4. `A4`: `NONE` skips to 7.
+  3. `A3`: `ALIGNED` sets `gaps_fix_used` false. `GAPS` with it false runs a fix pass that sets it true, not counted; with it true, `GAPS` is a counted failure. `CONFLICT` sets `BLOCKED`.
+  4. `A4`: append `- <UTC time> simplify-diff <tip SHA>: Scope Reductions: <each, separated by "; ", or none>` to `roadblocks.md`. `NONE` skips to 7.
   5. `A5`; its starting tip is the pre-cut tip.
-  6. `A6v`, then `A6a`. If either fails, `git reset --hard <pre-cut tip>`, write `branch_tip_sha`, log it, and continue. Not counted.
-  7. `A7`, passing `A4`'s Scope Reductions. Write `last_verdict` and set `AUDITING`.
-- **`AUDITING`** (Stage B): dispatch `B`. `APPROVE` writes `approved_sha` = `HEAD` and `WAITING_RELEASE_APPROVAL`. `REQUEST CHANGES` is a counted failure with the review as the fix input.
-- **`WAITING_RELEASE_APPROVAL`** (Gate 2): if `HEAD` differs from `approved_sha`, enter `IMPLEMENTING`, not counted. Present `git diff --stat <base_sha>..HEAD`, the review verdict, and `handover.md` with its validation evidence and Scope Reductions. No pull request is created before approval. `approve` sets `gate_2_release_approved`, then Release. Feedback enters `IMPLEMENTING` with it as the fix input, not counted.
-- **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction resets `count` to 0 and enters `IMPLEMENTING` with the direction as the fix input. `re-plan` resets `count` to 0 and enters `PLANNING`. `adopt` per Boot.
+  6. `A6v`, then `A6a`. `FAIL-UNRELATED` is logged and passes. If either returns `FAIL-IN-SCOPE`, `GAPS`, or `CONFLICT`, `git reset --hard <pre-cut tip>`, write `branch_tip_sha`, log it, and continue. Not counted.
+  7. `A7`, passing the Scope Reductions from the last such `roadblocks.md` entry. Write `last_verdict` and set `AUDITING`.
+- **`AUDITING`** (Stage B): dispatch `B`. `APPROVE` writes `approved_sha` = `HEAD` and `WAITING_RELEASE_APPROVAL`. `REQUEST CHANGES` is a counted failure with the review as input.
+- **`WAITING_RELEASE_APPROVAL`** (Gate 2): if `HEAD` differs from `approved_sha`, enter `IMPLEMENTING`, not counted. Present `git diff --stat <base_sha>..HEAD`, the review verdict, `handover.md` with its validation evidence, and the Scope Reductions from the last such `roadblocks.md` entry. No pull request is created before approval. `approve` sets `gate_2_release_approved`, then Release. Feedback runs a fix pass with it as input, not counted.
+- **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction runs a fix pass that resets `count` to 0, with the direction as input. `re-plan` resets `count` to 0 and enters `PLANNING`. `adopt` per Boot.
 - **`RELEASED`**: read-only. `gh pr view <pr> --json state`: `MERGED` or `CLOSED` deletes `S/<branch>/` and `S/stacks/<name>/`; `OPEN` reports the pull request and stops.
 
 ## Retries
 
-- **Counted failure**: if `count` >= `max_allowed`, set `BLOCKED`. Otherwise increment `count`, append to `roadblocks.md`, enter `IMPLEMENTING`, and run a fix pass (`A1` with the failing report), then Stage A from `A2`.
+- **Fix pass**: append `- <UTC time> <skill, or human> <tip SHA>: fix: <its input's root cause>` to `roadblocks.md`, then in one write set phase `IMPLEMENTING`, the pass's `count` or `gaps_fix_used` change, and `pending_step` = `{ "A1-fix", "implement", branch_tip_sha }`. Dispatch `A1` with the input, then Stage A from `A2`. A re-run `A1-fix` takes the last `fix` entry in `roadblocks.md` as its input.
+- **Counted failure**: if `count` >= `max_allowed`, set `BLOCKED`. Otherwise run a fix pass that increments `count`, with the failing report as input.
 - **Not counted**: formatter fixes, unrelated or pre-existing failures (logged), Suggestions and Nitpicks, failures caused only by `A5`, transients, a moved `HEAD` at Gate 2, maintenance, and adoption.
 - Only the human's exit from `BLOCKED` resets `count`.
 
