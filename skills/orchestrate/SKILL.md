@@ -10,7 +10,7 @@ You coordinate; workers do the work. You dispatch every step, own the state file
 ## Inputs
 
 - A requirement (text, file, or link) to start; nothing to resume the run on the current branch; or a stack name to resume a run that has no branch yet.
-- Human replies: answers and a stack name (story review), `approve` or feedback (gates), `fix` with direction or `re-plan` (BLOCKED), `adopt` (BLOCKED, or a tip-moved halt), `narrow` with the narrowed requirement (after a stacked-work halt), `abandon` (any located stack).
+- Human replies: answers and a stack name (story review), `approve` or feedback (gates), `approve` (a multi-layer split), `fix` with direction or `re-plan` (BLOCKED), `adopt` (BLOCKED, or a tip-moved halt), `narrow` with the narrowed requirement (after a multi-layer split or a stacked-work halt), `abandon` (any located stack).
 - Run one orchestrator session per stack at a time.
 
 ## Paths
@@ -69,8 +69,9 @@ Until the layer has `state.json`, `stack.json` drives the next action: `blocked`
 
 ## Dispatch
 
-Send each step as one prompt, built from the template, to the `orchestrate-step` agent as a fresh subagent with no conversation history, never a fork of this context (`review-branch` too).
+Send each step as one prompt, built from the template, to the `orchestrate-step` agent as a fresh subagent with no conversation history, never a fork of this context (`review-branch` too). Dispatch in the foreground, one step at a time, and wait for each to return before the next.
 
+- **Before every step**: `git status --porcelain` is empty, else halt listing the dirty paths; every worker discards uncommitted changes.
 - **Pending step**: before a step marked ✎ (for `A1`, in the Gate 1 `approve` write; for `A1-fix`, in the fix-pass write; see Retries), write `pending_step` = `{ step_id, skill, from_tip_sha: branch_tip_sha }`. After it returns, read `git rev-parse HEAD` yourself (a reported SHA is only a cross-check) and write `branch_tip_sha` = `HEAD` and `pending_step` = null in one write. When the step's result sets `BLOCKED`, this write is folded into the BLOCKED write, not done separately.
 - **After every step** except `branch`: `git branch --show-current` is unchanged, `git status --porcelain` is empty, after an unmarked step `HEAD` equals `branch_tip_sha`, and after a ✎ step `from_tip_sha` is an ancestor of `HEAD`. Otherwise halt with the report.
 - **Result**: read the report's last line, `Result: <token>`; the token must equal one of the step's Tokens or `STOPPED` exactly (case-sensitive, verbatim, no suffix). A missing line, an unrecognized token, a crash, timeout, network or rate-limit error is transient: re-run the step once unchanged, not counted; a second transient on the same step sets `BLOCKED` (except `release`, per Release). `STOPPED` is valid from every step and sets `BLOCKED` with the report (except `release`, per Release); it is never transient.
@@ -101,7 +102,7 @@ Report what you did, the files you changed, the checks you ran and their results
 | `A3`, `A6a` | `check-alignment` | | `plan.md` | Scope: `git diff <base_sha>...HEAD`. `CONFLICT` when any plan-versus-standard conflict exists. | `ALIGNED`, `GAPS`, `CONFLICT` |
 | `A4` | `simplify-diff` | | `plan.md` | Scope: `git diff <base_sha>...HEAD`. `NONE` when there are no Safe Cuts or Simplifications. | `CUTS`, `NONE` |
 | `A5` | `simplify-diff` report | ✎ | `A4` report verbatim, `plan.md` | Apply only its Safe Cuts and Simplifications, only within the plan's scope; apply no Scope Reductions. Commit them separately. | `DONE` |
-| `A7` | `prepare-handover` | | `plan.md`, Scope Reductions verbatim or "none" | Add the Scope Reductions under a `Scope Reductions` heading. | `DONE` |
+| `A7` | `prepare-handover` | | `plan.md`, Scope Reductions verbatim or "none", the last `A2` or `A6v` report verbatim | Add the Scope Reductions under a `Scope Reductions` heading. Take the verification evidence from the validation report. | `DONE` |
 | `B` | `review-branch` | | | Target branch: `<target>`; diff scope: `git diff <base_sha>...HEAD`. Use the Result token `APPROVE` or `REQUEST CHANGES`, not the rubric's `(PASS)` or `(FAIL)` forms. | `APPROVE`, `REQUEST CHANGES` |
 | `release` | `create-pr` | | | Base: `<target>`. Diff scope: `git diff <base_sha>...HEAD`. Keep-checkout: yes. | `DONE` |
 
@@ -131,7 +132,7 @@ Run on every invocation, before any other write:
 
 - **Start**: dispatch `story`. Present its report and a proposed stack name, a slug of the requirement's title. If the answers raise new questions, re-run `story` once with the requirement and the answers, then present it and ask again. When the human answers and confirms or replaces the name: if `S/stacks/<name>/` exists, ask whether to resume it or choose another name; otherwise write `requirements.md` and `stack.json` with `trunk` from `git symbolic-ref --short refs/remotes/origin/HEAD` minus `origin/` (ask if that fails).
 - **`ANALYSIS`**: dispatch `context`, then set `STACK_DECOMPOSITION`. Its report reaches `decompose` and the first `plan` only in the run that produced it; after a resume they run without it.
-- **`STACK_DECOMPOSITION`**: dispatch `decompose`. Take the layers' names from their `Branch:` lines, bottom first, and each layer's scope from the `Scope:` line after its `Branch:` line. For each name, require that `git check-ref-format --branch <name>` succeeds, the name is not `stacks` or under `stacks/` and is unique among the layers, `git show-ref --verify --quiet refs/heads/<name>` fails, and `git ls-remote --exit-code --heads origin <name>` exits 2 (any other non-zero exit cannot verify: ask the human). If a line is missing, the count differs from `Layers:`, or a check fails, ask the human for the missing or failing names or scopes and check them. With more than one layer, check before any stack command:
+- **`STACK_DECOMPOSITION`**: dispatch `decompose`. Take the layers' names from their `Branch:` lines, bottom first, and each layer's scope from the `Scope:` line after its `Branch:` line. For each name, require that `git check-ref-format --branch <name>` succeeds, the name is not `stacks` or under `stacks/` and is unique among the layers, `git show-ref --verify --quiet refs/heads/<name>` fails, and `git ls-remote --exit-code --heads origin <name>` exits 2 (any other non-zero exit cannot verify: ask the human). If a line is missing, the count differs from `Layers:`, or a check fails, ask the human for the missing or failing names or scopes and check them. With more than one layer, present each layer's branch and scope and stop for the human: `approve` continues; `narrow` per below. Then, before any stack command, check:
   - `gh stack --version` reports 0.2.1 or later, else halt: "Stacked work needs gh-stack v0.2.1 or later (found <version, or none>): run `gh extension install github/gh-stack` or `gh extension upgrade gh-stack`."
   - The first line of `gh api --include 'repos/{owner}/{repo}/stacks'` reports status 200, else halt: "Stacked pull requests are unavailable for this repository (status <status>); they need github.com. Check `gh auth status`, `GH_TOKEN`, `GH_REPO`, and the `origin` remote."
 
@@ -147,7 +148,7 @@ Run on every invocation, before any other write:
 - **`IMPLEMENTING`** (Stage A): Gate 1 `approve` starts at `A1`, a fix pass at `A1-fix`, and Boot's Resume at the pending step; every other entry starts at `A2`.
   1. `A1`.
   2. `A2`: `FAIL-IN-SCOPE` is a counted failure; `FAIL-UNRELATED` is logged and passes.
-  3. `A3`: `ALIGNED` sets `gaps_fix_used` false. `GAPS` with it false runs a fix pass that sets it true, not counted; with it true, `GAPS` is a counted failure. `CONFLICT` sets `BLOCKED`.
+  3. `A3`: `ALIGNED` sets `gaps_fix_used` false. `GAPS` with it false runs a fix pass with the `A3` report as input that sets it true, not counted; with it true, `GAPS` is a counted failure. `CONFLICT` sets `BLOCKED`.
   4. `A4`: append `- <UTC time> simplify-diff <tip SHA>: Scope Reductions: <each, separated by "; ", or none>` to `roadblocks.md`. `NONE` skips to 7.
   5. `A5`: set `precut_sha` to `branch_tip_sha` in the pending-step write.
   6. `A6`:
@@ -156,7 +157,7 @@ Run on every invocation, before any other write:
      3. On `GAPS` or `CONFLICT`, go to 4.
      4. `git reset --hard <precut_sha>` (this also discards any commits `A6v` made), write `branch_tip_sha`, and log it; this cut failure is not counted.
      5. Re-run `A6v` only (not `A6a`; this tip already passed `A3`). `FAIL-IN-SCOPE` is a counted failure; otherwise go to `A7`.
-  7. `A7`, passing the Scope Reductions from the last such `roadblocks.md` entry. Write `last_verdict` (after the 6.4 reset, `A3`'s verdict, which is for this tip), `precut_sha` = null, and `AUDITING`.
+  7. `A7`, passing the Scope Reductions from the last such `roadblocks.md` entry and the last `A2` or `A6v` report. Write `last_verdict` (after the 6.4 reset, `A3`'s verdict, which is for this tip), `precut_sha` = null, and `AUDITING`.
 - **`AUDITING`** (Stage B): dispatch `B`. `APPROVE` writes `approved_sha` = `HEAD` and `WAITING_RELEASE_APPROVAL`. `REQUEST CHANGES` is a counted failure with the review as input.
 - **`WAITING_RELEASE_APPROVAL`** (Gate 2): if `gate_2_release_approved` is already true and the human's reply is not feedback, go to Release (a failed release leaves it true; re-invoking does not ask again). Otherwise, if `HEAD` differs from `approved_sha`, enter `IMPLEMENTING`, not counted. Present `git diff --stat <base_sha>...HEAD`, the review verdict, `handover.md` with its validation evidence, and the Scope Reductions from the last such `roadblocks.md` entry. No pull request is created before approval. `approve` sets `gate_2_release_approved`, then Release. Feedback, even with the flag true, runs a fix pass with it as input, not counted, which clears the flag.
 - **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction runs a fix pass that resets `count` to 0 and `gaps_fix_used` to false, with the direction as input. `re-plan` resets `count` to 0 and enters `PLANNING`. `adopt` per Boot. With `gate_1_plan_approved` false, `fix` and `adopt` return to `blocked_from` instead of entering `IMPLEMENTING` (`fix` runs no fix pass), and a `fix` direction or `re-plan` feedback is first appended to `requirements.md`.
