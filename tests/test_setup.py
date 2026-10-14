@@ -417,9 +417,6 @@ class AgentInstallTests(SetupTestCase):
         "codex": (".codex",),
     }
 
-    def make_config(self):
-        return setup.AppConfig(home_dir=self.root / "home")
-
     def make_home(self, hosts=None, home_name="home"):
         config = setup.AppConfig(home_dir=self.root / home_name)
         for host in hosts or self.HOST_PARENTS:
