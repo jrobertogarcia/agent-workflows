@@ -60,7 +60,7 @@ S/stacks/<name>/requirements.md S/<branch>/plan.md
   - `pending_step`: `null` or `{ "step_id", "skill", "from_tip_sha" }`; `step_id` `A1-fix` is `A1` on a fix pass.
   - `active_skill`: the skill last dispatched; `pending_step.skill`: the pending step's. Both are `implement` for `A1` and `simplify-diff` for `A5`. `gaps_fix_used`: `A3`'s uncounted `GAPS` fix pass is spent.
   - `last_verdict`: the last `check-alignment` or `review-branch` verdict. `approved_sha`: `HEAD` at `APPROVE`.
-  - Every entry to `PLANNING` sets `gate_1_plan_approved` false. Every entry to `IMPLEMENTING` sets `approved_sha` null and `gate_2_release_approved` false.
+  - Every entry to `PLANNING` sets `gate_1_plan_approved` and `gaps_fix_used` false. Every entry to `IMPLEMENTING` sets `approved_sha` null and `gate_2_release_approved` false.
 
 Until the layer has `state.json`, `stack.json` `phase` drives the next action; after, `state.json` `lifecycle.phase` does.
 
@@ -119,7 +119,7 @@ Run on every invocation, before any write:
       - (c) **Otherwise halt**: report the old and new tips and the first differing patch.
    4. **Base check**, against the local `<trunk>` with no fetch: if `git rev-parse <trunk>` equals `base_sha`, the branch is in sync; stop here. Otherwise, if `git merge-base --is-ancestor <base_sha> <trunk>` succeeds, run `git rebase <trunk>`; otherwise upstream was rewritten, so run `git rebase --onto <trunk> <base_sha>`. On a conflict, `git rebase --abort` and set `BLOCKED` naming the files. After a rebase, write `base_sha` = `git rev-parse <trunk>` and `branch_tip_sha` = `git rev-parse <branch>`; from `IMPLEMENTING` or `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING` at the pending step if one is set, else at `A2`; otherwise dispatch `A2` alone and log a failure for the next touchpoint.
 
-**Adopt** (human reply after a halt or in `BLOCKED`): write `base_sha` = `git rev-parse <trunk>`, `branch_tip_sha` = `HEAD`, `approved_sha` and `pending_step` = null, append to `roadblocks.md`; from `WAITING_RELEASE_APPROVAL` or `BLOCKED` enter `IMPLEMENTING` at `A2`.
+**Adopt** (human reply after a halt or in `BLOCKED`): write `base_sha` = `git rev-parse <trunk>`, `branch_tip_sha` = `HEAD`, `approved_sha` and `pending_step` = null, append to `roadblocks.md`; from `WAITING_RELEASE_APPROVAL` or `BLOCKED` enter `IMPLEMENTING` at `A2`. Adopting from `BLOCKED` is the human's exit: it also resets `count` to 0 and `gaps_fix_used` to false.
 
 **Halt** means stop and report, writing nothing. **BLOCKED** means write the phase, append the cause to `roadblocks.md`, and report what the human must decide. Write a phase only after its action succeeds.
 
@@ -141,7 +141,7 @@ Run on every invocation, before any write:
   7. `A7`, passing the Scope Reductions from the last such `roadblocks.md` entry. Write `last_verdict` and set `AUDITING`.
 - **`AUDITING`** (Stage B): dispatch `B`. `APPROVE` writes `approved_sha` = `HEAD` and `WAITING_RELEASE_APPROVAL`. `REQUEST CHANGES` is a counted failure with the review as input.
 - **`WAITING_RELEASE_APPROVAL`** (Gate 2): if `HEAD` differs from `approved_sha`, enter `IMPLEMENTING`, not counted. Present `git diff --stat <base_sha>..HEAD`, the review verdict, `handover.md` with its validation evidence, and the Scope Reductions from the last such `roadblocks.md` entry. No pull request is created before approval. `approve` sets `gate_2_release_approved`, then Release. Feedback runs a fix pass with it as input, not counted.
-- **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction runs a fix pass that resets `count` to 0, with the direction as input. `re-plan` resets `count` to 0 and enters `PLANNING`. `adopt` per Boot.
+- **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction runs a fix pass that resets `count` to 0 and `gaps_fix_used` to false, with the direction as input. `re-plan` resets `count` to 0 and enters `PLANNING`. `adopt` per Boot.
 - **`RELEASED`**: read-only. `gh pr view <pr> --json state`: `MERGED` or `CLOSED` deletes `S/<branch>/` and `S/stacks/<name>/`; `OPEN` reports the pull request and stops.
 
 ## Retries
@@ -149,7 +149,7 @@ Run on every invocation, before any write:
 - **Fix pass**: append `- <UTC time> <skill, or human> <tip SHA>: fix: <its input's root cause>` to `roadblocks.md`, then in one write set phase `IMPLEMENTING`, the pass's `count` or `gaps_fix_used` change, and `pending_step` = `{ "A1-fix", "implement", branch_tip_sha }`. Dispatch `A1` with the input, then Stage A from `A2`. A re-run `A1-fix` takes the last `fix` entry in `roadblocks.md` as its input.
 - **Counted failure**: if `count` >= `max_allowed`, set `BLOCKED`. Otherwise run a fix pass that increments `count`, with the failing report as input.
 - **Not counted**: formatter fixes, unrelated or pre-existing failures (logged), Suggestions and Nitpicks, failures caused only by `A5`, transients, a moved `HEAD` at Gate 2, maintenance, and adoption.
-- Only the human's exit from `BLOCKED` resets `count`.
+- Only the human's exit from `BLOCKED` (`fix`, `re-plan`, or `adopt`) resets `count` and `gaps_fix_used`.
 
 ## Release
 
