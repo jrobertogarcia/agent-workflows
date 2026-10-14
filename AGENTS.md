@@ -21,7 +21,7 @@ Plan-mode direction in plan-producing skills is prose, not frontmatter, and is e
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 18 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
+Below is the structured list of the 19 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
@@ -45,3 +45,4 @@ Frontmatter `description` in each SKILL.md is authoritative; keep this table and
 | **`create-pr`** | `**/*` | Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit. | [SKILL.md](skills/create-pr/SKILL.md) |
 | **`distill-lessons`** | `**/*` | Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery. | [SKILL.md](skills/distill-lessons/SKILL.md) |
 | **`validate-commit`** | `**/*` | Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing. | [SKILL.md](skills/validate-commit/SKILL.md) |
+| **`orchestrate`** | `**/*` | Drive one requirement from story review to an open pull request on a single branch, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use to run the whole lifecycle end to end. | [SKILL.md](skills/orchestrate/SKILL.md) |

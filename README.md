@@ -48,6 +48,9 @@ For a structured routing index of all skills and trigger scopes, refer to [AGENT
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
 *   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
 
+### 6. Orchestration
+*   **`orchestrate`**: Drive one requirement from story review to an open pull request on a single branch, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use to run the whole lifecycle end to end.
+
 ---
 
 ## Installation & Mechanics

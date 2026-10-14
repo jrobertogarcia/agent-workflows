@@ -72,6 +72,8 @@ graph TD
     CPR --> DL
 ```
 
+Optionally, **`orchestrate`** drives this lifecycle for one branch. It dispatches each skill as a step to a fresh subagent, keeps its state under `~/.agent-workflows/<repo>/`, and stops for the developer at story review, plan approval, and release approval. The skills remain usable by hand.
+
 ---
 
 ## 2. Deep Dive by Stage
