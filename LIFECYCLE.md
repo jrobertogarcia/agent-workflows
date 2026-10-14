@@ -101,22 +101,22 @@ Once per clone, run `git config rerere.enabled true`. A layer checked out in a l
 
 For a review comment on any released layer:
 
-1.  **Sync**: `gh stack checkout`, then `git fetch origin`. For each unmerged layer `<b>`, this must print nothing; otherwise stop and integrate those remote commits first:
+1.  **Sync**: `gh stack checkout`, then `git fetch origin`. For each unmerged layer `<b>` that exists on origin, this must print nothing:
     ```bash
     git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>
     ```
-    Then, from the bottom layer, run `gh stack rebase --upstack`. Do not use `gh stack sync` or `gh stack push` anywhere in maintenance: both force-push with leases from their own fetch, and `push` is not atomic.
+    A listed commit is safe to ignore only if it is your own pre-rebase version of a commit: it appears in `git reflog <b>` and its author and subject match one of your rewritten commits, or, after a merge, it is one of the merged layer's commits or GitHub's rewrite of one (`gh pr view <pr> --json commits` lists them). Otherwise someone else pushed it: stop and integrate it, for example `git cherry-pick <sha>` onto your local `<b>`, then run the check again. Then, from the bottom layer, run `gh stack rebase --upstack`. Do not use `gh stack sync` or `gh stack push` anywhere in maintenance: both force-push with leases from their own fetch, and `push` is not atomic.
 2.  **Check the parent**: on the layer to edit, `git merge-base --is-ancestor <parent> HEAD` must succeed; otherwise stop.
 3.  **Edit** the layer, then run `validate-commit` and `create-commit`.
 4.  **Restack**: from the edited layer, run `gh stack rebase --upstack`, then `validate-commit` on each branch above it.
-5.  **Push**: `gh stack rebase` fetches unless given `--no-trunk`, so run `git fetch origin` and the step 1 check again. Record `git rev-parse origin/<b>` for every unmerged layer, then, with no fetch in between, push all of them in one atomic push leasing each ref on its recorded SHA:
+5.  **Push**: `gh stack rebase` fetches unless given `--no-trunk`, so run `git fetch origin` and the step 1 check again, handling any listed commit as step 1 says. Record `git rev-parse origin/<b>` for each unmerged layer that exists on origin, then, with no fetch in between, push all of them in one atomic push leasing each ref on its recorded SHA:
     ```bash
     git push --atomic origin \
       --force-with-lease=refs/heads/<b1>:<sha1> --force-with-lease=refs/heads/<b2>:<sha2> \
       refs/heads/<b1>:refs/heads/<b1> refs/heads/<b2>:refs/heads/<b2>
     ```
     Afterwards `git ls-remote origin` must show each layer at its local tip. A rejection pushes nothing; retry from the fetch.
-6.  **Merge** the bottom layer with `gh stack merge <pr> --squash|--rebase|--merge --yes`. A bare number is tried first as a stack number, then as a PR number, and `--yes` skips confirmation, so first confirm `<pr>` is not also a stack number. Plain `gh pr merge` is refused for stacked pull requests.
-7.  **Verify** after a merge: run `git fetch origin`. GitHub retargets the next pull request to trunk and rewrites the branches above, so the next maintenance starts at step 1. On each remaining layer `<b>`, `git log origin/<trunk>..<b>` must list only that layer's own commits. Otherwise run `git rebase --onto origin/<trunk> <headRefOid>` on it, taking the merged PR's `headRefOid` from `gh pr view <pr> --json headRefOid` (after a rebase merge neither the local branch nor trunk holds that layer's commits), then push again as in step 5.
+6.  **Merge** the bottom layer with `gh stack merge <pr> --squash|--rebase|--merge --yes`. A bare number is tried first as a stack number, then as a PR number, and `--yes` skips confirmation, so first confirm `<pr>` is not in the stack numbers that `gh api --paginate repos/<owner>/<repo>/stacks --jq '.[].number'` lists. Plain `gh pr merge` is refused for stacked pull requests.
+7.  **Verify** after a merge: run `git fetch origin`. GitHub retargets the next pull request to trunk and rewrites the branches above, so the next maintenance starts at step 1. Record `git rev-parse <b>` for each remaining layer as its old tip. On the lowest remaining layer `<b>`, `git log origin/<trunk>..<b>` must list only its own commits. Otherwise run `git rebase --onto origin/<trunk> <headRefOid> <b>`, taking the merged PR's `headRefOid` from `gh pr view <pr> --json headRefOid` (after a rebase merge neither the local branch nor trunk holds that layer's commits). Then, from that layer, run `gh stack rebase --upstack`; if gh-stack refuses, rebase each layer above in order with `git rebase --onto <parent> <parent's old tip> <b>`. On each layer above, `git log <parent>..<b>` must list only that layer's own commits. Then push as in step 5.
 
 When a pull request merges, `orchestrate` deletes that layer's state on its next run; maintenance never writes it.
