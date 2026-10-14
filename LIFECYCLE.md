@@ -1,127 +1,122 @@
 # Agentic Engineering Lifecycle Guide
 
-This guide describes the agentic engineering lifecycle used by this repository. Agentic engineering is professional software delivery through human-directed collaboration with coding agents, supported by explicit context gathering, planning, implementation, verification, review, and release gates.
-
-Rather than relying on a single "one-shot" generation pass, this repository implements a structured, multi-stage pipeline where developers guide intent, approve transitions, and use specialized skills to keep coding-agent work auditable.
+The lifecycle splits one requirement into phases with explicit human gates: analyze, branch, plan, implement and verify, hand over, review in a fresh thread, and release. Run each skill by hand, or let `orchestrate` drive the whole run.
 
 ---
 
-## 1. Lifecycle Phases
-
-This lifecycle is structured into clear, independent phases to maintain code quality, ensure alignment, and prevent context fatigue.
+## 1. Overview
 
 ```mermaid
 graph TD
-    %% Analyzing Phase
-    subgraph Analyzing ["1. Analyzing Phase (Utilities)"]
+    OR(["orchestrate (optional driver):<br>runs each step in a fresh subagent,<br>stops at the gates"])
+
+    subgraph Analyzing ["1. Analyze"]
+        RS["review-story"]
         GC["gather-context"]
         RW["research-web"]
-        RS["review-story"]
         RC["root-cause"]
     end
 
-    %% Branch & Plan Phase
-    CB["2. Branch Creation<br>create-branch"]
-    PB["3. Phase Breakdown<br>phase-breakdown"]
-    
-    subgraph Loop ["4. Implementation Loop (Verification Gates)"]
+    CB["2. create-branch"]
+    PB["3. phase-breakdown"]
+
+    subgraph Loop ["4. Implement & verify (per phase)"]
         PI["plan-implementation"]
-        DP["delegate-plan (optional)"]
-        Code["Execute Code Changes"]
-        
-        %% Loop Utilities
-        subgraph Utilities ["Verification Utilities (As needed)"]
-            CA["check-alignment"]
-            AT["audit-tests"]
-            SD["simplify-diff"]
-            RF["refactor-code"]
-            VC["validate-commit"]
-            CM["create-commit"]
-        end
-        
-        PI --> DP
-        DP --> Code
-        Code --> Utilities
-        Utilities --> PI
+        G1{{"Gate: plan approval"}}
+        Code["Implement<br>(or delegate-plan)"]
+        V["check-alignment · simplify-diff · refactor-code<br>audit-tests · validate-commit · create-commit"]
+        PI --> G1 --> Code --> V --> PI
     end
 
-    %% Handover & Review Phase
-    PH["5. Handover Preparation<br>prepare-handover (Same Thread)"]
-    Switch["Switch to New Thread<br>(Prevents Context Decay)"]
-    RB["6. Branch Audit<br>review-branch (New Thread)"]
-    
-    %% Branch Review Outcome
-    Decide{"Audit Verdict"}
-    Fix["Resolve findings<br>(Implementation Loop)"]
-    
-    %% PR Release Phase
-    CPR["7. Pull Request<br>create-pr"]
-    DL["8. Lesson Distillation (As needed)<br>distill-lessons"]
+    PH["5. prepare-handover<br>(same thread)"]
+    RB["6. review-branch<br>(fresh thread)"]
+    Decide{"Verdict"}
+    G2{{"Gate: release approval"}}
+    CPR["7. create-pr"]
+    DL["distill-lessons (as needed)"]
 
-    %% Flow connections
-    Analyzing --> CB
-    CB --> PB
-    PB --> Loop
-    Loop -->|Finish all phases| PH
-    PH --> Switch
-    Switch --> RB
-    RB --> Decide
-    Decide -->|Request Changes| Fix
-    Decide -->|Approve| CPR
-    Fix --> Loop
-    CPR --> DL
+    Analyzing --> CB --> PB --> Loop
+    Loop -->|all phases done| PH --> RB --> Decide
+    Decide -->|REQUEST CHANGES| Loop
+    Decide -->|APPROVE| G2 --> CPR --> DL
+    OR -.-> Analyzing
 ```
 
-Optionally, **`orchestrate`** drives this lifecycle for one branch or a stack of branches. It dispatches each skill as a step to a fresh subagent, keeps its state under `~/.agent-workflows/<repo>/`, and stops for the developer at story review, plan approval, and release approval. The skills remain usable by hand.
+---
+
+## 2. Phases
+
+Each skill's description is in the [Skills Index](README.md#skills-index).
+
+### Analyze
+Before touching a branch, run whichever of `review-story`, `gather-context`, `research-web`, and `root-cause` the task needs.
+
+### Branch and break down
+`create-branch` starts the feature branch from the latest default branch; `phase-breakdown` splits a large change into small, independently verifiable phases.
+
+### Plan, implement, verify
+For each phase, `plan-implementation` writes the plan before any code. Save the approved plan to `~/.agent-workflows/<repo>/<branch>/plan.md`; `delegate-plan` and `check-alignment` read it from there by default. It holds the current phase's plan, replaced each phase. Implement it yourself or hand it to another agent with `delegate-plan`; when a delegated agent reports back, run `check-alignment` before trusting the result.
+
+Then verify as needed: `check-alignment` against the plan, `simplify-diff` for cuts, `refactor-code` for structure, `audit-tests` when the suite itself is in question, `validate-commit` before committing, and `create-commit` to commit.
+
+### Hand over, review, release
+`prepare-handover` closes the implementation thread, `review-branch` reviews it in a fresh one, `create-pr` opens the pull request, and `distill-lessons` records anything durable learned along the way.
+
+**Thread boundary.** Review quality drops as a conversation grows, so the review runs with a clean context:
+
+1.  Run `prepare-handover` in the implementation thread. It writes `~/.agent-workflows/<repo>/<branch>/handover.md`.
+2.  Open a new thread and run `review-branch`, which reads that handover.
+3.  On `REQUEST CHANGES`, resolve the findings in the implementation loop and review again. On `APPROVE`, run `create-pr`.
+
+In these paths `<repo>` is the main repository's directory name (shared by its worktrees) and `<branch>` is the current branch; each `/` in a branch name is a nested directory.
 
 ---
 
-## 2. Deep Dive by Stage
+## 3. Orchestrated Mode
 
-### Stage 1: Analysis (Pre-Coding Utilities)
-Before checking out a branch or modifying files, developers use analysis utilities to define requirements and identify system constraints. This gives coding agents the context needed to act deliberately. Developers can select any combination of these utilities depending on the task:
+`orchestrate` drives one requirement end to end. When the breakdown yields one layer, it works on one branch; when it yields several, it builds a stack of branches with gh-stack, one pull request per layer, bottom first. Each step goes to a fresh `orchestrate-step` subagent with no conversation history, so every step, `review-branch` included, starts with a clean context. The orchestrator only coordinates and keeps its state under `~/.agent-workflows/<repo>/`; it never edits code.
 
-Skill trigger descriptions below match the authoritative frontmatter in each `SKILL.md`; keep them in sync when editing descriptions (see [AGENTS.md](AGENTS.md)).
+What you do at each touchpoint:
 
-*   **`gather-context`**: Gather and organize context for a given file, folder, or component before planning or coding. Use when starting work on unfamiliar code.
-*   **`research-web`**: Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence.
-*   **`review-story`**: Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement.
-*   **`root-cause`**: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
+*   **Story review**: answer the numbered questions from `review-story`, and confirm or replace the proposed stack name.
+*   **Plan approval** (each layer): reply `approve`, or give feedback for a revised plan. No code is written before approval.
+*   **Release approval** (each layer): read the diff summary, review verdict, handover, and scope reductions; reply `approve` to open the pull request, or give feedback for another fix pass.
+*   **BLOCKED or halted**: read the reported cause, then reply `fix` with direction, `re-plan`, or `adopt` (accept the branch as it now stands). Before a branch exists, the only replies are `fix` with direction and `abandon`, which drops the run.
 
-### Stage 2: Branching
-Once requirements are clear, execute **`create-branch`** to set up a clean Git branch following Conventional Commits formatting rules.
+To resume, invoke `orchestrate` again on the layer's branch, or with the stack name before a branch exists. It also stops when three layers are open, the most it allows, until the lowest one merges; invoke it again after the merge. It halts when a pull request was closed with a layer above it; reopen the pull request to continue.
 
-### Stage 3: Phase Breakdown & Planning
-For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
-1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable phases.
-2.  For each phase in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits and test scenarios. Once a plan is approved, the developer, or the agent driving the run, saves it to `~/.agent-workflows/<repo>/<branch>/plan.md`, where `delegate-plan` and `check-alignment` look for it by default. The file holds the current phase's plan; each phase's plan replaces the previous one.
-3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** before trusting the result.
+**Requirements**: the `gh` CLI, authenticated. A stack also needs gh-stack 0.2.1 or later (`gh extension install github/gh-stack`) and a github.com repository; without them, `orchestrate` offers to narrow the requirement to one branch.
 
-### Stage 4: Implementation Loop (Verification Gates)
-With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
-*   **`check-alignment`**: Verify the actual diff against the agreed plan and the project's standards, and report ALIGNED or GAPS without editing. Use after implementing a change and before review.
-*   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
-*   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be.
-*   **`refactor-code`**: Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction.
-*   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
-*   **`create-commit`**: Stage the in-scope changes and commit them with a message matching the repository's convention. Use after a logical piece of work is complete and verified.
+**Without subagents**: if the host cannot dispatch an `orchestrate-step` subagent, `orchestrate` prints each step's prompt instead. Run it in a fresh thread and paste the report back.
 
-### Stage 5: Handover, Audit, and Release
-After implementation completes, run **`prepare-handover`** in the active implementation thread, then switch to a fresh thread for **`review-branch`**, which produces review findings and a verdict (`APPROVE` vs `REQUEST CHANGES`). If changes are requested, findings are resolved back in the implementation loop before release.
-
-Once the audit is clean, release proceeds with:
-*   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
-*   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
+State files, drift checks, retries, and gate rules are defined in [skills/orchestrate/SKILL.md](skills/orchestrate/SKILL.md).
 
 ---
 
-## 3. Thread Switching & Context Decay Mitigation
+## 4. Stack Maintenance After Release
 
-LLMs experience quality degradation as conversation history grows (context window bloat). To counteract this, these workflows actively manage thread boundaries.
+Once layers are open as pull requests, addressing review comments, rebasing, and merging are manual and yours. Do this only while `orchestrate` is not acting on the stack: no layer is active, or the run is waiting at a gate or BLOCKED. On its next run, `orchestrate` accepts a moved layer automatically only when the layer's patches are unchanged, a pure rebase onto its parent. Any edit to the layer it is working on makes its next run halt until you reply `adopt`.
 
-### The Handover Protocol
-1.  **Wrap Up Coding**: Complete the changes and run **`prepare-handover`** within the **active implementation thread** to summarize the work and verification details, which it writes to a conventional path outside the repository.
-2.  **Migrate Threads**: Immediately open a **new conversation thread**.
-3.  **Run the Audit**: In the fresh thread, run **`review-branch`** to audit the diff, reading the handover from that same path. This guarantees that code review is performed by a model with a clean context window, ensuring high review fidelity.
-4.  **Tackle Audit Findings**: Resolve blocking findings back in the implementation loop before release.
+Once per clone, run `git config rerere.enabled true`. A layer checked out in a linked worktree can be edited only in that worktree, and `gh stack rebase --upstack` refuses while the worktree of any affected layer is dirty.
 
+For a review comment on any released layer:
+
+1.  **Sync**: `gh stack checkout`, then `git fetch origin`. For each unmerged layer `<b>` that exists on origin, this must print nothing:
+    ```bash
+    git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>
+    ```
+    A listed commit is safe to ignore only if it is your own pre-rebase version of a commit: it is reachable from an entry of `git rev-list -g <b>` and its author and subject match one of your rewritten commits, or, after a merge, it is one of the merged layer's commits or GitHub's rewrite of one (`gh pr view <pr> --json commits` lists them). Otherwise someone else pushed it: stop and integrate it, for example `git cherry-pick <sha>` onto your local `<b>`, then run the check again. Then, from the bottom layer, run `gh stack rebase --upstack`. Do not use `gh stack sync` or `gh stack push` anywhere in maintenance: both force-push with leases from their own fetch, and `push` is not atomic.
+2.  **Check the parent**: on the layer to edit, `git merge-base --is-ancestor <parent> HEAD` must succeed; otherwise stop.
+3.  **Edit** the layer, then run `validate-commit` and `create-commit`.
+4.  **Restack**: from the edited layer, run `gh stack rebase --upstack`, then `validate-commit` on each branch above it.
+5.  **Push**: `gh stack rebase` fetches unless given `--no-trunk`, so run `git fetch origin` and the step 1 check again. After integrating any listed commit as step 1 says, repeat from step 4 (restack the layers above and re-validate) before recording leases. Record `git rev-parse origin/<b>` for each unmerged layer that exists on origin, then, with no fetch in between, push all of them in one atomic push leasing each ref on its recorded SHA:
+    ```bash
+    git push --atomic origin \
+      --force-with-lease=refs/heads/<b1>:<sha1> --force-with-lease=refs/heads/<b2>:<sha2> \
+      refs/heads/<b1>:refs/heads/<b1> refs/heads/<b2>:refs/heads/<b2>
+    ```
+    Afterwards `git ls-remote origin` must show each layer at its local tip. A rejection pushes nothing; retry from the fetch.
+6.  **Merge** the bottom layer with `gh stack merge <pr> --squash|--rebase|--merge --yes`. A bare number is tried first as a stack number, then as a PR number, and `--yes` skips confirmation, so first confirm `<pr>` is not in the stack numbers that `gh api --paginate repos/<owner>/<repo>/stacks --jq '.[].number'` lists. Plain `gh pr merge` is refused for stacked pull requests.
+7.  **Verify** after a merge: run `git fetch origin`. GitHub retargets the next pull request to trunk and rewrites the branches above, so the next maintenance starts at step 1. Record `git rev-parse <b>` for each remaining layer as its old tip. On the lowest remaining layer `<b>`, `git log origin/<trunk>..<b>` must list only its own commits. Otherwise run `git rebase --onto origin/<trunk> <headRefOid> <b>`, taking the merged PR's `headRefOid` from `gh pr view <pr> --json headRefOid` (it is the exact tip GitHub merged, independent of the state of your local branch). Then, from that layer, run `gh stack rebase --upstack`; if gh-stack refuses, rebase each layer above in order with `git rebase --onto <parent> <parent's old tip> <b>`. On each layer above, `git log <parent>..<b>` must list only that layer's own commits. Then push as in step 5.
+
+When a pull request merges, `orchestrate` deletes that layer's state on its next run; maintenance never writes it.
