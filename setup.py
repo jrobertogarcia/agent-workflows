@@ -11,9 +11,10 @@ INCLUDE_PATTERN = re.compile(r"<!--\s*include:\s*([^\s]+?)\s*-->")
 
 # Configuration registry class for developer tools/agents
 class AgentTarget:
-    def __init__(self, name: str, path: Path):
+    def __init__(self, name: str, path: Path, file_suffix: str = ""):
         self.name: str = name
         self.path: Path = path
+        self.file_suffix: str = file_suffix
 
 
 class WorkflowSetupError(Exception):
@@ -51,8 +52,12 @@ class AppConfig:
             AgentTarget("copilot", self.home / ".copilot" / "skills"),
             AgentTarget("codex", self.home / ".codex" / "skills"),
         ]
-        # Legacy location of flat Copilot agent files written by earlier versions of this installer.
-        self.copilot_agents_path: Path = self.home / ".copilot" / "agents"
+        self.agent_targets: List[AgentTarget] = [
+            AgentTarget("claude", self.home / ".claude" / "agents", ".md"),
+            AgentTarget("gemini", self.home / ".gemini" / "config" / "agents"),
+            AgentTarget("copilot", self.home / ".copilot" / "agents", ".agent.md"),
+            AgentTarget("codex", self.home / ".codex" / "agents", ".toml"),
+        ]
 
 
 class FileSystemManager:
@@ -149,7 +154,12 @@ class FileSystemManager:
             else:
                 try:
                     content = source.read_text(encoding="utf-8")
-                    target.write_text(self.SIGNATURE_COMMENT + content, encoding="utf-8")
+                    if content.startswith("---\n"):
+                        # Keep the frontmatter on line 1 so hosts still parse it.
+                        marked = "---\n# source: agent-workflows\n" + content[len("---\n"):]
+                    else:
+                        marked = self.SIGNATURE_COMMENT + content
+                    target.write_text(marked, encoding="utf-8")
                     Console.success("Copied (Fallback)", target.name, "File")
                     return True
                 except (OSError, UnicodeDecodeError):
@@ -313,12 +323,84 @@ def install_skill(
     return fs_manager.link_or_copy(skill_folder, target, repo_dir, is_directory=True, force=force)
 
 
-def list_skill_names(skills_dir: Path) -> Set[str]:
-    """Returns the names of the skill folders in the repository."""
+def list_folder_names(folder: Path) -> Set[str]:
+    """Returns the names of the subfolders in a repository folder."""
     try:
-        return {folder.name for folder in skills_dir.iterdir() if folder.is_dir()}
+        return {child.name for child in folder.iterdir() if child.is_dir()}
     except OSError as err:
-        raise WorkflowSetupError(f"Failed to read skills folder {skills_dir}: {err}")
+        raise WorkflowSetupError(f"Failed to read folder {folder}: {err}")
+
+
+def toml_string(value: str, multiline: bool = False) -> str:
+    """Returns a TOML basic string; multiline output parses back to exactly the input."""
+    escaped: List[str] = []
+    for char in value:
+        if char == "\\":
+            escaped.append("\\\\")
+        elif char == '"':
+            escaped.append('\\"')
+        elif char == "\t" or (char == "\n" and multiline):
+            escaped.append(char)
+        elif ord(char) < 0x20 or ord(char) == 0x7F:
+            escaped.append("\\n" if char == "\n" else f"\\u{ord(char):04X}")
+        else:
+            escaped.append(char)
+    text = "".join(escaped)
+    return f'"""\n{text}"""' if multiline else f'"{text}"'
+
+
+def build_codex_agent_toml(name: str, metadata: Dict[str, str], body: str) -> str:
+    """Builds a Codex agent TOML file from agent frontmatter and body."""
+    return (
+        "# source: agent-workflows\n"
+        f"name = {toml_string(metadata.get('name', name))}\n"
+        f"description = {toml_string(metadata.get('description', ''))}\n"
+        f"developer_instructions = {toml_string(body.strip(), multiline=True)}\n"
+    )
+
+
+def install_codex_agent(
+    agent_folder: Path,
+    target: Path,
+    repo_dir: Path,
+    fs_manager: FileSystemManager,
+    force: bool = False,
+) -> bool:
+    """Generates a Codex agent TOML file; it is a copy because the source marker must live in the file."""
+    if target.exists() or target.is_symlink():
+        if not force and not fs_manager.is_managed_target(target, repo_dir):
+            Console.warning(f"Skipped unmanaged existing target: {target}. Use --force to replace it.")
+            return False
+        fs_manager.clean_target(target)
+
+    metadata, body = fs_manager.load_frontmatter(agent_folder / "agent.md")
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(build_codex_agent_toml(agent_folder.name, metadata, body), encoding="utf-8")
+    except OSError as err:
+        raise WorkflowSetupError(f"Failed to write Codex agent {target}: {err}")
+    Console.success("Generated", target.name)
+    return True
+
+
+def install_agent(
+    agent_folder: Path,
+    target: AgentTarget,
+    repo_dir: Path,
+    fs_manager: FileSystemManager,
+    force: bool = False,
+) -> bool:
+    """Installs an agent in the form the target host reads."""
+    agent_md = agent_folder / "agent.md"
+    if not agent_md.exists():
+        return False
+
+    name = agent_folder.name
+    if target.file_suffix == ".toml":
+        return install_codex_agent(agent_folder, target.path / f"{name}.toml", repo_dir, fs_manager, force=force)
+    if not target.file_suffix:
+        return fs_manager.link_or_copy(agent_folder, target.path / name, repo_dir, is_directory=True, force=force)
+    return fs_manager.link_or_copy(agent_md, target.path / f"{name}{target.file_suffix}", repo_dir, force=force)
 
 
 def sync_target_directory(
@@ -356,11 +438,12 @@ def sync_target_directory(
 
 
 def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> None:
-    """Installs skills globally for detected agent tool folders."""
+    """Installs skills and agents globally for detected agent tool folders."""
     Console.info("Scanning active agent configurations...")
     linked_any = False
     repo_dir = skills_dir.parent.resolve()
-    skill_names = list_skill_names(skills_dir)
+    skill_names = list_folder_names(skills_dir)
+    agent_names = list_folder_names(repo_dir / "agents")
 
     for target in config.targets:
         # Check if the parent configuration folder exists (indicates tool is active/installed)
@@ -379,8 +462,14 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
                 install_skill(skills_dir / name, target.path / name, repo_dir, fs_manager, force=force)
             linked_any = True
 
-    # Remove flat agent files written by earlier versions; no-op when the directory is absent.
-    sync_target_directory(config.copilot_agents_path, set(), repo_dir, fs_manager, file_suffix=".agent.md")
+    for agent_target in config.agent_targets:
+        if agent_target.path.parent.exists():
+            Console.info(f"\nConfiguring {agent_target.name.upper()} agents at: {agent_target.path}")
+            sync_target_directory(
+                agent_target.path, agent_names, repo_dir, fs_manager, file_suffix=agent_target.file_suffix
+            )
+            for name in sorted(agent_names):
+                install_agent(repo_dir / "agents" / name, agent_target, repo_dir, fs_manager, force=force)
 
     if not linked_any:
         Console.info("\nNo active agent config directories (e.g. ~/.claude/skills or ~/.gemini/config/skills) were detected.")
@@ -388,16 +477,19 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
 
 
 def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager) -> None:
-    """Cleans up all globally linked/copied skills."""
+    """Cleans up all globally linked/copied skills and agents."""
     Console.info("Cleaning global agent configurations...")
     repo_dir = skills_dir.parent.resolve()
     for target in config.targets:
         if target.path.exists():
             Console.info(f"\nCleaning {target.name.upper()} skills at: {target.path}")
             sync_target_directory(target.path, set(), repo_dir, fs_manager, uninstall_all=True)
-    if config.copilot_agents_path.exists():
-        Console.info(f"\nCleaning legacy COPILOT agent files at: {config.copilot_agents_path}")
-        sync_target_directory(config.copilot_agents_path, set(), repo_dir, fs_manager, file_suffix=".agent.md", uninstall_all=True)
+    for agent_target in config.agent_targets:
+        if agent_target.path.exists():
+            Console.info(f"\nCleaning {agent_target.name.upper()} agents at: {agent_target.path}")
+            sync_target_directory(
+                agent_target.path, set(), repo_dir, fs_manager, file_suffix=agent_target.file_suffix, uninstall_all=True
+            )
 
 
 class RuleCompiler:
@@ -518,7 +610,7 @@ def compile_project(
         WindsurfRuleCompiler()
     ]
 
-    active_skills = list_skill_names(skills_dir)
+    active_skills = list_folder_names(skills_dir)
     repo_dir = skills_dir.parent.resolve()
 
     Console.info(f"Configuring project-level rules at: {project_path}")

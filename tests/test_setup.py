@@ -7,6 +7,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+try:
+    import tomllib
+except ModuleNotFoundError:
+    tomllib = None
+
 import setup
 
 
@@ -18,6 +23,8 @@ class SetupTestCase(unittest.TestCase):
         self.repo_dir = self.root / "agent-workflows"
         self.skills_dir = self.repo_dir / "skills"
         self.skills_dir.mkdir(parents=True)
+        self.agents_dir = self.repo_dir / "agents"
+        self.agents_dir.mkdir()
         self.fs = setup.FileSystemManager()
 
     def add_skill(self, name, description="Test skill"):
@@ -29,6 +36,15 @@ class SetupTestCase(unittest.TestCase):
             encoding="utf-8",
         )
         return skill_dir
+
+    def add_agent(self, name="orchestrate-step", description="Test agent", body="# Agent\n\nBody text\n"):
+        agent_dir = self.agents_dir / name
+        agent_dir.mkdir(parents=True)
+        (agent_dir / "agent.md").write_text(
+            f"---\nname: {name}\ndescription: {description}\n---\n\n{body}",
+            encoding="utf-8",
+        )
+        return agent_dir
 
     def add_skills(self, count=17):
         return [self.add_skill(f"skill-{index:02d}") for index in range(count)]
@@ -216,13 +232,21 @@ class LinkOrCopyTests(SetupTestCase):
         source_dir = self.add_skill("file-source")
         source = source_dir / "SKILL.md"
         target = self.root / "file-source.agent.md"
+        plain_source = self.root / "plain.md"
+        plain_source.write_text("# Plain\n", encoding="utf-8")
+        plain_target = self.root / "plain-copy.md"
 
         with mock.patch("setup.os.symlink", side_effect=OSError("no symlink")):
             installed = self.run_quiet(self.fs.link_or_copy, source, target, self.repo_dir)
+            plain_installed = self.run_quiet(self.fs.link_or_copy, plain_source, plain_target, self.repo_dir)
 
         self.assertTrue(installed)
-        self.assertTrue(target.is_file())
-        self.assertTrue(target.read_text(encoding="utf-8").startswith(setup.FileSystemManager.SIGNATURE_COMMENT))
+        lines = target.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(lines[0], "---")
+        self.assertIn("source: agent-workflows", lines[1])
+        self.assertTrue(self.fs.is_managed_target(target, self.repo_dir))
+        self.assertTrue(plain_installed)
+        self.assertTrue(plain_target.read_text(encoding="utf-8").startswith(setup.FileSystemManager.SIGNATURE_COMMENT))
 
 
 class GlobalInstallTests(SetupTestCase):
@@ -313,7 +337,7 @@ class GlobalInstallTests(SetupTestCase):
 
     def add_legacy_copilot_agent_files(self, config):
         """Creates a managed signature file, a managed symlink (when supported) and a user-owned agent file."""
-        agents = config.copilot_agents_path
+        agents = config.home / ".copilot" / "agents"
         agents.mkdir(parents=True)
         managed = [agents / "skill-00.agent.md"]
         managed[0].write_text(setup.FileSystemManager.SIGNATURE_COMMENT + "legacy", encoding="utf-8")
@@ -333,7 +357,7 @@ class GlobalInstallTests(SetupTestCase):
         installed = list((config.home / ".copilot" / "skills").iterdir())
         self.assertEqual(len(installed), 17)
         self.assertTrue(all(self.fs.is_managed_target(item, self.repo_dir) for item in installed))
-        self.assertFalse(config.copilot_agents_path.exists())
+        self.assertFalse((config.home / ".copilot" / "agents").exists())
 
     def test_link_removes_legacy_managed_copilot_agent_files_and_preserves_unmanaged(self):
         self.add_skills()
@@ -383,6 +407,209 @@ class GlobalInstallTests(SetupTestCase):
 
         self.assertTrue((unmanaged / "README.md").exists())
         self.assertEqual(list(codex_skills.iterdir()), [unmanaged])
+
+
+class AgentInstallTests(SetupTestCase):
+    HOST_PARENTS = {
+        "claude": (".claude",),
+        "gemini": (".gemini", "config"),
+        "copilot": (".copilot",),
+        "codex": (".codex",),
+    }
+
+    def make_home(self, hosts=None, home_name="home"):
+        config = setup.AppConfig(home_dir=self.root / home_name)
+        for host in hosts or self.HOST_PARENTS:
+            parent = config.home.joinpath(*self.HOST_PARENTS[host])
+            parent.mkdir(parents=True)
+        return config
+
+    def agent_dir(self, config, host):
+        return next(target.path for target in config.agent_targets if target.name == host)
+
+    def agent_path(self, config, host):
+        agent_target = next(target for target in config.agent_targets if target.name == host)
+        return agent_target.path / f"orchestrate-step{agent_target.file_suffix}"
+
+    def link(self, config, **kwargs):
+        return self.capture_stdout(setup.install_global, self.skills_dir, config, self.fs, **kwargs)[1]
+
+    def unlink(self, config):
+        self.run_quiet(setup.uninstall_global, self.skills_dir, config, self.fs)
+
+    def test_link_installs_agent_only_for_detected_hosts(self):
+        self.requires_symlink_support()
+        self.add_skills()
+        self.add_agent()
+        for host in self.HOST_PARENTS:
+            with self.subTest(host=host):
+                config = self.make_home([host], home_name=f"home-{host}")
+
+                self.link(config)
+
+                installed = self.agent_path(config, host)
+                self.assertTrue(installed.exists())
+                self.assertTrue(self.fs.is_managed_target(installed, self.repo_dir))
+                if host == "gemini":
+                    self.assertTrue((installed / "agent.md").is_file())
+                for other in self.HOST_PARENTS:
+                    if other != host:
+                        self.assertFalse(self.agent_dir(config, other).exists())
+
+    def test_relink_keeps_agent_in_every_dir(self):
+        self.requires_symlink_support()
+        self.add_skills()
+        self.add_agent()
+        config = self.make_home()
+        legacy_dir = self.agent_dir(config, "copilot")
+        legacy_dir.mkdir()
+        legacy = legacy_dir / "skill-00.agent.md"
+        legacy.write_text(setup.FileSystemManager.SIGNATURE_COMMENT + "legacy", encoding="utf-8")
+
+        self.link(config)
+        self.link(config)
+
+        for host in self.HOST_PARENTS:
+            with self.subTest(host=host):
+                installed = self.agent_path(config, host)
+                self.assertTrue(installed.exists())
+                self.assertTrue(self.fs.is_managed_target(installed, self.repo_dir))
+        self.assertTrue((legacy_dir / "orchestrate-step.agent.md").exists())
+        self.assertFalse(legacy.exists())
+
+    def test_unlink_removes_agent_from_every_dir(self):
+        self.requires_symlink_support()
+        self.add_skills()
+        self.add_agent()
+        config = self.make_home()
+
+        self.link(config)
+        self.unlink(config)
+
+        for host in self.HOST_PARENTS:
+            with self.subTest(host=host):
+                remaining = [
+                    item
+                    for item in self.agent_dir(config, host).iterdir()
+                    if self.fs.is_managed_target(item, self.repo_dir)
+                ]
+                self.assertEqual(remaining, [])
+
+    def test_link_and_unlink_preserve_unmanaged_agent_files(self):
+        self.requires_symlink_support()
+        self.add_skills()
+        self.add_agent()
+        config = self.make_home()
+        user_files = [
+            self.agent_dir(config, "claude") / "mine.md",
+            self.agent_dir(config, "copilot") / "mine.agent.md",
+            self.agent_dir(config, "codex") / "mine.toml",
+            self.agent_dir(config, "gemini") / "mine" / "agent.md",
+        ]
+        for user_file in user_files:
+            user_file.parent.mkdir(parents=True)
+            user_file.write_text("user-owned", encoding="utf-8")
+
+        self.link(config)
+        for user_file in user_files:
+            self.assertEqual(user_file.read_text(encoding="utf-8"), "user-owned")
+        self.unlink(config)
+
+        for user_file in user_files:
+            self.assertEqual(user_file.read_text(encoding="utf-8"), "user-owned")
+
+    @unittest.skipIf(tomllib is None, "tomllib requires Python 3.11+")
+    def test_codex_agent_toml_parses_with_three_keys_and_marker(self):
+        self.add_skills()
+        self.add_agent(description="Run one step", body="# Agent\n\nBody text\n")
+        config = self.make_home(["codex"])
+
+        self.link(config)
+
+        installed = self.agent_path(config, "codex")
+        parsed = tomllib.loads(installed.read_text(encoding="utf-8"))
+        self.assertEqual(set(parsed), {"name", "description", "developer_instructions"})
+        self.assertEqual(parsed["name"], "orchestrate-step")
+        self.assertEqual(parsed["description"], "Run one step")
+        self.assertEqual(parsed["developer_instructions"], "# Agent\n\nBody text")
+        self.assertIn("# source: agent-workflows", installed.read_text(encoding="utf-8").splitlines()[:5])
+        self.assertTrue(self.fs.is_managed_target(installed, self.repo_dir))
+
+    @unittest.skipIf(tomllib is None, "tomllib requires Python 3.11+")
+    def test_codex_agent_toml_round_trips_hostile_text(self):
+        description = 'He said "hi" and used \\'
+        bodies = [
+            '"""\n\'\'\'\n\\\nliteral \\n here\nC:\\path\\\ttab\x01\x7f caf\u00e9 \u2603\nends with a quote"',
+            "ends with a backslash \\",
+        ]
+        for body in bodies:
+            with self.subTest(body=body):
+                text = setup.build_codex_agent_toml("agent", {"description": description}, body)
+
+                parsed = tomllib.loads(text)
+
+                self.assertEqual(parsed["name"], "agent")
+                self.assertEqual(parsed["description"], description)
+                self.assertEqual(parsed["developer_instructions"], body.strip())
+
+    def test_unmanaged_agent_collision_skipped_without_force(self):
+        self.add_skills()
+        self.add_agent()
+        config = self.make_home(["claude", "codex"])
+        collisions = [self.agent_path(config, "claude"), self.agent_path(config, "codex")]
+        for collision in collisions:
+            collision.parent.mkdir(parents=True)
+            collision.write_text("user-owned", encoding="utf-8")
+
+        output = self.link(config)
+
+        self.assertIn("Skipped unmanaged existing target", output)
+        for collision in collisions:
+            self.assertEqual(collision.read_text(encoding="utf-8"), "user-owned")
+
+    def test_force_replaces_unmanaged_agent_collision(self):
+        self.requires_symlink_support()
+        self.add_skills()
+        agent_dir = self.add_agent()
+        config = self.make_home(["claude", "codex"])
+        collisions = [self.agent_path(config, "claude"), self.agent_path(config, "codex")]
+        for collision in collisions:
+            collision.parent.mkdir(parents=True)
+            collision.write_text("user-owned", encoding="utf-8")
+
+        self.link(config, force=True)
+
+        claude_agent, codex_agent = collisions
+        self.assertTrue(claude_agent.is_symlink())
+        self.assert_same_path(claude_agent.resolve(), agent_dir / "agent.md")
+        self.assertTrue(self.fs.is_managed_target(codex_agent, self.repo_dir))
+        if tomllib is not None:
+            self.assertEqual(tomllib.loads(codex_agent.read_text(encoding="utf-8"))["name"], "orchestrate-step")
+
+    def test_symlink_failure_copies_agents_with_markers(self):
+        self.add_skills()
+        self.add_agent(description="Run one step")
+        config = self.make_home(["claude", "gemini", "copilot"])
+
+        with mock.patch("setup.os.symlink", side_effect=OSError("no symlink")):
+            self.link(config)
+            self.link(config)
+
+        for host in ("claude", "copilot"):
+            with self.subTest(host=host):
+                installed = self.agent_path(config, host)
+                content = installed.read_text(encoding="utf-8")
+                self.assertTrue(content.startswith("---\n"))
+                self.assertIn("description: Run one step", content)
+                self.assertTrue(self.fs.is_managed_target(installed, self.repo_dir))
+        gemini_agent = self.agent_path(config, "gemini")
+        self.assertTrue(gemini_agent.is_dir())
+        self.assertTrue((gemini_agent / setup.FileSystemManager.MARKER_FILE).exists())
+
+        self.unlink(config)
+
+        for host in ("claude", "gemini", "copilot"):
+            self.assertEqual(list(self.agent_dir(config, host).iterdir()), [])
 
 
 class ProjectCompilationTests(SetupTestCase):
@@ -578,7 +805,7 @@ class IncludeExpansionTests(SetupTestCase):
         self.assertTrue((installed / setup.FileSystemManager.MARKER_FILE).exists())
         self.assertIn("Shared review rubric", content)
         self.assertNotIn("<!-- include:", content)
-        self.assertFalse(config.copilot_agents_path.exists())
+        self.assertFalse((config.home / ".copilot" / "agents").exists())
 
 
 def load_skill_content(skill_folder, repo_dir):
