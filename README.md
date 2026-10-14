@@ -43,7 +43,7 @@ Skills for delivering software with coding agents through explicit, human-gated 
 ## Installation
 
 ```bash
-python setup.py link
+python3 setup.py link
 ```
 
 For each host whose config directory already exists, `link` installs every skill and the `orchestrate-step` agent that `orchestrate` dispatches to:
@@ -58,15 +58,15 @@ For each host whose config directory already exists, `link` installs every skill
 Skills are symlinked, or copied where symlinks fail; a skill that includes a `shared/` fragment is copied with the fragment expanded. Existing entries this repository did not create are skipped unless you pass `--force`:
 
 ```bash
-python setup.py link --force
-python setup.py unlink        # removes only what this repository installed
+python3 setup.py link --force
+python3 setup.py unlink        # removes only what this repository installed
 ```
 
 Cursor and Windsurf read project rules instead. Compile the skills into a project with:
 
 ```bash
-python setup.py project --path /path/to/project   # writes .cursor/rules/<skill>.mdc and .windsurf/rules/<skill>.md
-python setup.py project --path /path/to/project --clean
+python3 setup.py project --path /path/to/project   # writes .cursor/rules/<skill>.mdc and .windsurf/rules/<skill>.md
+python3 setup.py project --path /path/to/project --clean
 ```
 
 `project` refuses to overwrite rule files it did not write unless you pass `--force`.
