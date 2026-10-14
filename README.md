@@ -1,88 +1,78 @@
 # Agentic Engineering Workflows
 
-This repository provides a reusable workflow system: a collection of skills, rules, and lifecycle practices for professional software engineering with coding agents.
+Skills for delivering software with coding agents through explicit, human-gated phases: context gathering, planning, implementation, verification, fresh-thread review, and release. Use the skills one by one, or let `orchestrate` drive a requirement end to end, on one branch or a stack of branches.
 
-Agentic engineering is the practice of delivering software through human-directed collaboration with coding agents, using explicit context gathering, planning, implementation, verification, review, and release gates.
-
-These lifecycle workflows keep coding-agent work structured and auditable. Instead of relying on a single "one-shot" generation pass, the repository breaks engineering work into phased steps where developers guide intent, approve transitions, and use specialized skills for planning, context gathering, verification, and review.
-
----
-
-## The Agentic Engineering Lifecycle
-
-To preserve context window capacity and ensure high-fidelity reviews, this lifecycle is split into discrete steps across thread boundaries.
-
-For a complete walkthrough of context decay strategies, sequential phases, and thread boundaries, see the detailed [LIFECYCLE.md](LIFECYCLE.md) playbook.
+*   [LIFECYCLE.md](LIFECYCLE.md): the phases, thread boundaries, orchestrated mode, and stack maintenance.
+*   [AGENTS.md](AGENTS.md): the routing index for coding agents.
 
 ---
 
-## Skills Index By Phase
+## Skills Index
 
-For a structured routing index of all skills and trigger scopes, refer to [AGENTS.md](AGENTS.md). For detailed prompt instructions, inspect the individual `SKILL.md` rules inside the [skills/](skills/) folder.
-
-### 1. Analyzing (Pre-Coding Utilities)
+### Analyze
 *   **`gather-context`**: Gather and organize context for a given file, folder, or component before planning or coding. Use when starting work on unfamiliar code.
 *   **`research-web`**: Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence.
 *   **`review-story`**: Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement.
 *   **`root-cause`**: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
 
-### 2. Branch & Breakdown
+### Branch and break down
 *   **`create-branch`**: Check out the latest default branch and create a new feature branch using Conventional Commits. Use when starting new work.
 *   **`phase-breakdown`**: Divide a large change into small, independently verifiable phases. Use before planning implementation of a complex task.
 
-### 3. Implementation & Verification Loop
+### Plan, implement, verify
 *   **`plan-implementation`**: Create a detailed implementation plan for a change, including risk-based test scenarios, and surface open questions and assumptions. Use before writing code or tests.
 *   **`delegate-plan`**: Generate a self-contained prompt for another agent to execute an approved implementation plan. Use after a plan is approved and before implementation.
 *   **`check-alignment`**: Verify the actual diff against the agreed plan and the project's standards, and report ALIGNED or GAPS without editing. Use after implementing a change and before review.
-*   **`create-commit`**: Stage the in-scope changes and commit them with a message matching the repository's convention. Use after a logical piece of work is complete and verified.
-*   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction.
+*   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
+*   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
+*   **`create-commit`**: Stage the in-scope changes and commit them with a message matching the repository's convention. Use after a logical piece of work is complete and verified.
 
-### 4. Handover & Release
+### Hand over, review, release
 *   **`prepare-handover`**: Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread.
 *   **`review-branch`**: Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request.
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
-
-### 5. Ad-Hoc Utilities
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
-*   **`validate-commit`**: Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing.
 
-### 6. Orchestration
+### Orchestrate
 *   **`orchestrate`**: Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use to run the whole lifecycle end to end.
 
 ---
 
-## Installation & Mechanics
+## Installation
 
-The repository uses [setup.py](setup.py) to link or compile skills dynamically depending on your agent environment.
-
-### Global Installation (For Claude Code, Antigravity, Copilot, Codex)
-Symlinks target workflow files globally to machine-wide configuration directories (e.g. `~/.gemini/config/skills` or `~/.claude/skills`):
 ```bash
 python setup.py link
 ```
-`link` also installs the `orchestrate-step` agent from `agents/` for hosts with subagents (Claude Code, which Cursor also reads, Antigravity, Copilot and Codex), and `unlink` removes it.
-To remove all globally installed links:
-```bash
-python setup.py unlink
-```
-By default, global installation skips existing files or directories that were not created by this repository. To intentionally replace unmanaged collisions:
+
+For each host whose config directory already exists, `link` installs every skill and the `orchestrate-step` agent that `orchestrate` dispatches to:
+
+| Host | Skills | `orchestrate-step` agent |
+| :--- | :--- | :--- |
+| Claude Code | `~/.claude/skills/` | `~/.claude/agents/orchestrate-step.md` |
+| Gemini | `~/.gemini/config/skills/` | `~/.gemini/config/agents/orchestrate-step/` |
+| Copilot | `~/.copilot/skills/` | `~/.copilot/agents/orchestrate-step.agent.md` |
+| Codex | `~/.codex/skills/` | `~/.codex/agents/orchestrate-step.toml` (generated) |
+
+Skills are symlinked, or copied where symlinks fail; a skill that includes a `shared/` fragment is copied with the fragment expanded. Existing entries this repository did not create are skipped unless you pass `--force`:
+
 ```bash
 python setup.py link --force
+python setup.py unlink        # removes only what this repository installed
 ```
-Unlink removes only workflow-managed installed targets.
 
-### Local Project Installation (For Cursor & Windsurf)
-Compiles source rules directly into the workspace config directory of a target project:
+Cursor and Windsurf read project rules instead. Compile the skills into a project with:
+
 ```bash
-python setup.py project --path /path/to/project-directory
+python setup.py project --path /path/to/project   # writes .cursor/rules/<skill>.mdc and .windsurf/rules/<skill>.md
+python setup.py project --path /path/to/project --clean
 ```
-*   **Cursor**: Compiles skills into Cursor rules (`.cursor/rules/<skill-name>.mdc`).
-*   **Windsurf**: Compiles skills into Windsurf rules (`.windsurf/rules/<skill-name>.md`).
 
-### Development Checks
-Run the installer regression suite with:
+`project` refuses to overwrite rule files it did not write unless you pass `--force`.
+
+## Development
+
 ```bash
 python3 -m unittest discover -s tests
 ```
