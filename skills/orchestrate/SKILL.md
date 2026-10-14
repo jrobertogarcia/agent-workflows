@@ -5,7 +5,7 @@ description: Drive one requirement from story review to an open pull request on 
 
 # Orchestrate
 
-You coordinate; workers do the work. You dispatch every step, own the state files, read every SHA from git yourself, and stop for the human at the touchpoints. You never edit code and never run a step's skill in this thread. This version drives one branch; a requirement that needs more than one halts at decomposition.
+You coordinate; workers do the work. You dispatch every step, own the state files, and stop for the human at the touchpoints. You never edit code and never run a step's skill in this thread.
 
 ## Inputs
 
@@ -58,7 +58,7 @@ S/stacks/<name>/requirements.md S/<branch>/plan.md
   ```
   - `base_sha`: the trunk tip the branch was last based on. `branch_tip_sha`: the last `HEAD` you verified.
   - `pending_step`: `null` or `{ "step_id", "skill", "from_tip_sha" }`; `step_id` `A1-fix` is `A1` on a fix pass.
-  - `active_skill`: the skill last dispatched; `pending_step.skill`: the pending step's. Both are `implement` for `A1` and `simplify-diff` for `A5`. `gaps_fix_used`: `A3`'s uncounted `GAPS` fix pass is spent.
+  - `active_skill`: the skill last dispatched; `pending_step.skill`: the pending step's. Both are `implement` for `A1` and `simplify-diff` for `A5`.
   - `last_verdict`: the last `check-alignment` or `review-branch` verdict. `approved_sha`: `HEAD` at `APPROVE`.
   - Every entry to `PLANNING` sets `gate_1_plan_approved` and `gaps_fix_used` false. Every entry to `IMPLEMENTING` sets `approved_sha` null and `gate_2_release_approved` false.
 
@@ -66,7 +66,7 @@ Until the layer has `state.json`, `stack.json` `phase` drives the next action; a
 
 ## Dispatch
 
-Send each step as one prompt, built from the template, to the `orchestrate-step` agent as a fresh subagent with no conversation history, never a fork or copy of this context. `review-branch` is no exception.
+Send each step as one prompt, built from the template, to the `orchestrate-step` agent as a fresh subagent with no conversation history, never a fork of this context (`review-branch` too).
 
 - **Pending step**: before a step marked ✎ (for `A1-fix`, in the fix-pass write; see Retries), write `pending_step` = `{ step_id, skill, from_tip_sha: branch_tip_sha }`. After it returns, read `git rev-parse HEAD` yourself (a reported SHA is only a cross-check) and write `branch_tip_sha` = `HEAD` and `pending_step` = null in one write.
 - **After every step**: `git branch --show-current` is unchanged, `git status --porcelain` is empty, and after an unmarked step `HEAD` equals `branch_tip_sha`. Otherwise halt with the report.
@@ -77,7 +77,6 @@ Template (fill every `<...>`; omit the branch clause before the branch exists). 
 
 ```
 Work only in <worktree>, on branch <branch>; stop and report if `git branch --show-current` differs.
-Treat this as a fresh session with no prior conversation.
 Step <step_id>: follow <skill reference>. Where it differs from these instructions, follow these. Resolve include directives in that skill relative to the repository root that holds its skills/ directory.
 Inputs:
 <each absolute path to read, and each report passed verbatim, labeled>
@@ -94,11 +93,11 @@ Report what you did, the files you changed, the checks you ran and their results
 | `decompose` | `phase-breakdown` | | `requirements.md`, context report if any | Split into layers, each one independently reviewable pull request; one layer when the change fits one. Give each a Conventional Commits branch name on its own line, `Branch: <name>`. Second-to-last line: `Layers: <n>`. | `READY` |
 | `branch` | `create-branch` | | branch name, trunk | Create exactly `<branch>` from the latest `<trunk>`. | `DONE` |
 | `plan` | `plan-implementation` | | `requirements.md`, context report if any; on re-plan the previous `plan.md` and the human's feedback verbatim | Run read-only and write no files; return the complete plan text. | `READY` |
-| `A1` | the plan, committed per `create-commit` | ✎ | `plan.md`; on a fix pass, the failing report verbatim | Execute the plan end to end within its scope, skipping work already committed; on a fix pass, fix only what the report names. Run the plan's verification. Commit per `create-commit`. | `DONE` |
+| `A1` | the plan, committed per `create-commit` | ✎ | `plan.md`; on a fix pass, the failing report verbatim | Execute the plan end to end within its scope, skipping work already committed; on a fix pass, fix only what the report names. Run the plan's verification. | `DONE` |
 | `A2`, `A6v` | `validate-commit` | ✎ | | Commit any fixes per `create-commit`. `FAIL-UNRELATED` when only unrelated or pre-existing failures remain. | `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED` |
 | `A3`, `A6a` | `check-alignment` | | `plan.md` | Scope: the branch diff against `<trunk>`. `CONFLICT` when any plan-versus-standard conflict exists. | `ALIGNED`, `GAPS`, `CONFLICT` |
 | `A4` | `simplify-diff` | | `plan.md` | Scope: the branch diff against `<trunk>`. `NONE` when there are no Safe Cuts or Simplifications. | `CUTS`, `NONE` |
-| `A5` | `simplify-diff` report | ✎ | `A4` report verbatim, `plan.md` | Apply only its Safe Cuts and Simplifications, only within the plan's scope; apply no Scope Reductions. Commit them separately per `create-commit`. | `DONE` |
+| `A5` | `simplify-diff` report | ✎ | `A4` report verbatim, `plan.md` | Apply only its Safe Cuts and Simplifications, only within the plan's scope; apply no Scope Reductions. Commit them separately. | `DONE` |
 | `A7` | `prepare-handover` | | `plan.md`, Scope Reductions verbatim or "none" | Add the Scope Reductions under a `Scope Reductions` heading. | `DONE` |
 | `B` | `review-branch` | | | Target branch: `<trunk>`. | `APPROVE`, `REQUEST CHANGES` |
 | `release` | `create-pr` | | | Base: `<trunk>`. Keep-checkout: yes. | `DONE` |
@@ -107,7 +106,7 @@ Report what you did, the files you changed, the checks you ran and their results
 
 Run on every invocation, before any write:
 
-1. **Locate**: the `S/stacks/*/stack.json` whose `layers[].branch` is the current branch, else the stack the human names, else start a new run (a requirement is required).
+1. **Locate**: the `S/stacks/*/stack.json` whose `layers[].branch` is the current branch, else the stack the human names, else start a new run.
 2. **Reconcile**: if `state.json` is `RELEASED` and the layer is not, copy `pr` and `RELEASED` into the layer. If the layer is `PENDING` and `state.json` exists, set it `ACTIVE`.
 3. **Drift checks**, for an `ACTIVE` layer, in order:
    0. **Clean tree (halt)**: `git status --porcelain` is empty and the git dir holds no `rebase-merge`, `rebase-apply`, `MERGE_HEAD`, or `CHERRY_PICK_HEAD`.
@@ -126,7 +125,7 @@ Run on every invocation, before any write:
 ## Phases
 
 - **Start**: dispatch `story`. Present its report and a proposed stack name, a slug of the requirement's title. If the answers raise new questions, re-run `story` once with the requirement and the answers, then present it and ask again. When the human answers and confirms or replaces the name: if `S/stacks/<name>/` exists, ask whether to resume it or choose another name; otherwise write `requirements.md` and `stack.json` with `trunk` from `git symbolic-ref --short refs/remotes/origin/HEAD` minus `origin/` (ask if that fails).
-- **`ANALYSIS`**: `requirements.md` exists, so `story` is not re-run. Dispatch `context`, then set `STACK_DECOMPOSITION`. Its report reaches `decompose` and the first `plan` only in the run that produced it; after a resume they run without it.
+- **`ANALYSIS`**: dispatch `context`, then set `STACK_DECOMPOSITION`. Its report reaches `decompose` and the first `plan` only in the run that produced it; after a resume they run without it.
 - **`STACK_DECOMPOSITION`**: dispatch `decompose`. More than one layer halts: "Decomposition proposes <n> layers (<branches>); stacked work is not supported yet. Narrow the requirement to one branch, or abandon." Append a narrowed requirement to `requirements.md` and re-run; `abandon` deletes `S/stacks/<name>/`. With one layer, take the name from its `Branch:` line and require that `git check-ref-format --branch <name>` succeeds, the name is not `stacks` or under `stacks/`, and both `git show-ref --verify --quiet refs/heads/<name>` and `git ls-remote --exit-code --heads origin <name>` fail; if the line is missing or a check fails, ask the human for a name and check it. Then write the `PENDING` layer, `active_layer_index` 0, and `LAYERS`.
 - **Branch creation** (layer `PENDING`, no `state.json`): run drift check 0. If the branch does not exist, dispatch `branch`. Then require the current branch to be it and `HEAD` to equal `git rev-parse <trunk>`, else halt. Write `state.json` in `PLANNING` with `base_sha` = `branch_tip_sha` = `HEAD`, then set the layer `ACTIVE`.
 - **`PLANNING`**: dispatch `plan`, write its text verbatim to `plan.md`, set `WAITING_PLAN_APPROVAL`.
