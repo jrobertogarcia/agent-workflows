@@ -11,6 +11,7 @@ This file contains the structured skills registry and routing index for coding a
 ## 1. Directory Structure
 
 *   `skills/`: Contain individual coding-agent skill prompt manifests. Each subdirectory represents a skill and contains a `SKILL.md` file.
+*   `agents/`: Agent definitions that `setup.py` installs for hosts with subagents. Each subdirectory holds an `agent.md`; `orchestrate-step` is a generic worker that runs one self-contained step prompt.
 *   `shared/`: Shared markdown fragments included by skill manifests (e.g. review rubric used by `review-branch`).
 *   `setup.py`: Platform-agnostic installation utility script (refer to [README.md](README.md) for execution commands).
 
