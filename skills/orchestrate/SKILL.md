@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: Drive one requirement from story review to an open pull request on a single branch, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use to run the whole lifecycle end to end.
+description: Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use to run the whole lifecycle end to end.
 ---
 
 # Orchestrate
@@ -36,7 +36,7 @@ S/stacks/<name>/roadblocks.md   S/<branch>/handover.md
   mv -f "$tmp" "$dir/state.json"
   ```
 - `requirements.md`: the requirement verbatim, then each round of the human's answers verbatim.
-- `stack.json`; `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, or `LAYERS`; `blocked` is `null` or the blocked step's id; `layers` holds at most one entry, `status` `PENDING`, `ACTIVE`, or `RELEASED`:
+- `stack.json`; `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, or `LAYERS`; `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
   ```json
   { "schema_version": 1, "stack_name": "<name>", "trunk": "<trunk>", "phase": "ANALYSIS", "blocked": null,
     "active_layer_index": null, "layers": [], "updated_at": "<time>" }
@@ -46,7 +46,7 @@ S/stacks/<name>/roadblocks.md   S/<branch>/handover.md
   ```json
   {
     "schema_version": 1,
-    "git_anchor": { "repo": "<repo>", "branch": "<branch>", "target_branch": "<trunk>",
+    "git_anchor": { "repo": "<repo>", "branch": "<branch>", "target_branch": "<target>",
                     "base_sha": "<sha>", "branch_tip_sha": "<sha>", "pending_step": null },
     "lifecycle": { "phase": "PLANNING", "active_skill": "plan-implementation", "blocked_from": null },
     "gates": { "gate_1_plan_approved": false, "gate_2_release_approved": false },
@@ -56,7 +56,7 @@ S/stacks/<name>/roadblocks.md   S/<branch>/handover.md
     "updated_at": "<time>"
   }
   ```
-  - `base_sha`: the trunk tip the branch was last based on. `branch_tip_sha`: the last `HEAD` you verified.
+  - `target_branch` (`<target>`): `<trunk>`, or for a layer branched on a parent, the parent's branch. `base_sha`: the `<target>` tip the branch was last based on. `branch_tip_sha`: the last `HEAD` you verified.
   - `pending_step`: `null` or `{ "step_id", "skill", "from_tip_sha" }`; `step_id` `A1-fix` is `A1` on a fix pass.
   - `active_skill`: the skill last dispatched; `pending_step.skill`: the pending step's. Both are `implement` for `A1` and `simplify-diff` for `A5`.
   - `blocked_from`: the phase `BLOCKED` was entered from, kept on a re-entry from `BLOCKED`; null outside `BLOCKED`.
@@ -91,24 +91,24 @@ Report what you did, the files you changed, the checks you ran and their results
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `story` | `review-story` | | requirement | Number your clarifying questions. | `READY` |
 | `context` | `gather-context` | | `requirements.md` | Target what the requirement names; if ambiguous, choose and list what you skipped. | `READY` |
-| `decompose` | `phase-breakdown` | | `requirements.md`, context report if any | Split into layers, each one independently reviewable pull request; one layer when the change fits one. Give each a Conventional Commits branch name on its own line, `Branch: <name>`. Second-to-last line: `Layers: <n>`. | `READY` |
+| `decompose` | `phase-breakdown` | | `requirements.md`, context report if any | Split into layers, bottom first, each one independently reviewable pull request; one layer when the change fits one. Give each a Conventional Commits branch name on its own line, `Branch: <name>`. Second-to-last line: `Layers: <n>`. | `READY` |
 | `branch` | `create-branch` | | branch name, trunk, `F` | Skip the skill's checkout and pull; never check out `<trunk>`. If no worktree in `git worktree list --porcelain` has `<trunk>` checked out, run `git fetch . origin/<trunk>:<trunk>`. Then run `git switch -c <branch> <F>`. | `DONE` |
 | `plan` | `plan-implementation` | | `requirements.md` (with any direction appended), context report if any; on re-plan the previous `plan.md` and the human's feedback verbatim | Run read-only and write no files; return the complete plan text. | `READY` |
 | `A1` | the plan, committed per `create-commit` | ✎ | `plan.md`; on a fix pass, the failing report verbatim | Execute the plan end to end within its scope, skipping work already committed; on a fix pass, fix only what the report names. Run the plan's verification. | `DONE` |
 | `A2`, `A6v` | `validate-commit` | ✎ | | Commit any fixes per `create-commit`. `FAIL-UNRELATED` when only unrelated or pre-existing failures remain. | `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED` |
-| `A3`, `A6a` | `check-alignment` | | `plan.md` | Scope: `git diff <trunk>...HEAD`. `CONFLICT` when any plan-versus-standard conflict exists. | `ALIGNED`, `GAPS`, `CONFLICT` |
-| `A4` | `simplify-diff` | | `plan.md` | Scope: `git diff <trunk>...HEAD`. `NONE` when there are no Safe Cuts or Simplifications. | `CUTS`, `NONE` |
+| `A3`, `A6a` | `check-alignment` | | `plan.md` | Scope: `git diff <target>...HEAD`. `CONFLICT` when any plan-versus-standard conflict exists. | `ALIGNED`, `GAPS`, `CONFLICT` |
+| `A4` | `simplify-diff` | | `plan.md` | Scope: `git diff <target>...HEAD`. `NONE` when there are no Safe Cuts or Simplifications. | `CUTS`, `NONE` |
 | `A5` | `simplify-diff` report | ✎ | `A4` report verbatim, `plan.md` | Apply only its Safe Cuts and Simplifications, only within the plan's scope; apply no Scope Reductions. Commit them separately. | `DONE` |
 | `A7` | `prepare-handover` | | `plan.md`, Scope Reductions verbatim or "none" | Add the Scope Reductions under a `Scope Reductions` heading. | `DONE` |
-| `B` | `review-branch` | | | Target branch: `<trunk>`. | `APPROVE`, `REQUEST CHANGES` |
-| `release` | `create-pr` | | | Base: `<trunk>`. Keep-checkout: yes. | `DONE` |
+| `B` | `review-branch` | | | Target branch: `<target>`. | `APPROVE`, `REQUEST CHANGES` |
+| `release` | `create-pr` | | | Base: `<target>`. Keep-checkout: yes. | `DONE` |
 
 ## Boot
 
 Run on every invocation, before any other write:
 
 1. **Locate**: the `S/stacks/*/stack.json` whose `layers[].branch` is the current branch, else the stack the human names, else start a new run.
-2. **Reconcile**: if `state.json` is `RELEASED` and the layer is not, copy `pr` and `RELEASED` into the layer. If the layer is `PENDING` and `state.json` exists, set it `ACTIVE`.
+2. **Reconcile**, for the active layer (`active_layer_index`): if `state.json` is `RELEASED` and the layer is not, copy `pr` and `RELEASED` into the layer and move `active_layer_index` to the next `PENDING` layer, if any. If the layer is `PENDING` and `state.json` exists, set it `ACTIVE`. Read each `RELEASED` layer's state live with `gh pr view <pr> --json state`. `MERGED` or `CLOSED` deletes its `S/<branch>/`. Once every layer is `RELEASED` and reads `MERGED` or `CLOSED`, delete `S/stacks/<name>/` and report the stack done. A `CLOSED` layer with any layer above it halts: "<PR URL> was closed; reopen it to continue the stack." If the `ACTIVE` layer's `<target>` reads `MERGED`, run Fresh trunk and write `target_branch` = `<trunk>`; drift check 4 then rebases it.
 3. **Pasted report**: if the human's message holds a report whose last line is `Result: <token>` valid for the current step (`pending_step` if set, else the step the phase dispatches next), process it as that step's return now: the After every step checks, the Pending step write, and the token's state change. Continue to the next step only after the drift checks, and only if they enter no other step. With no stack located, it is the `story` return if this thread holds the requirement; otherwise ask for the stack name or the requirement. A pasted report is never a requirement.
 4. **Drift checks**, for an `ACTIVE` layer, in order:
    0. **Clean tree (halt)**: `git status --porcelain` is empty and the git dir holds no `rebase-merge`, `rebase-apply`, `MERGE_HEAD`, or `CHERRY_PICK_HEAD`.
@@ -116,12 +116,12 @@ Run on every invocation, before any other write:
    2. **Tip**: if `HEAD` equals `branch_tip_sha`, go to drift check 4.
    3. **Moved tip**:
       - (a) **Crash**: a ✎ `pending_step` is set and `git merge-base --is-ancestor <from_tip_sha> HEAD` succeeds. Write `branch_tip_sha` = `HEAD`, keeping `pending_step`.
-      - (b) **Maintenance**: the phase is `WAITING_PLAN_APPROVAL`, `WAITING_RELEASE_APPROVAL`, or `BLOCKED`; the `base_sha` and `branch_tip_sha` objects exist; with `P` = `git rev-parse <trunk>`, `git merge-base --is-ancestor P HEAD` succeeds; `git rev-list --merges P..HEAD` is empty; and the ordered `git patch-id --stable` list of `base_sha..branch_tip_sha` equals that of `P..HEAD`. Write `base_sha` = `P`, `branch_tip_sha` = `HEAD`, `approved_sha` = null, append to `roadblocks.md`, and from `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING`. Not counted.
+      - (b) **Maintenance**: the phase is `WAITING_PLAN_APPROVAL`, `WAITING_RELEASE_APPROVAL`, or `BLOCKED`; the `base_sha` and `branch_tip_sha` objects exist; with `P` = `git rev-parse <target>`, `git merge-base --is-ancestor P HEAD` succeeds; `git rev-list --merges P..HEAD` is empty; and the ordered `git patch-id --stable` list of `base_sha..branch_tip_sha` equals that of `P..HEAD`. Write `base_sha` = `P`, `branch_tip_sha` = `HEAD`, `approved_sha` = null, append to `roadblocks.md`, and from `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING`. Not counted.
       - (c) **Otherwise halt**: report the old and new tips and the first differing patch.
-   4. **Base check**, against the local `<trunk>` with no fetch: if `git merge-base --is-ancestor <trunk> <base_sha>` succeeds, the branch is in sync; go to drift check 5. Otherwise, if `pending_step` is `A5`, first run its Resume reset, `git reset --hard <precut_sha>`, and write `branch_tip_sha` = `HEAD`. Then, if `git merge-base --is-ancestor <base_sha> <trunk>` succeeds, run `git rebase <trunk>`; otherwise upstream was rewritten, so run `git rebase --onto <trunk> <base_sha>`. On a conflict, `git rebase --abort` and set `BLOCKED` naming the files. After a rebase, write `base_sha` = `git rev-parse <trunk>`, `branch_tip_sha` = `git rev-parse <branch>`, `precut_sha` = null, and `pending_step` = null unless its step is `A1` or `A1-fix`, which keeps it with `from_tip_sha` = the new `branch_tip_sha`. Then from `IMPLEMENTING`, `AUDITING`, or `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING` at `A2`, unless drift check 5 resumes a step. From another phase with `gate_1_plan_approved` true, dispatch `A2` alone and log a failure for the next touchpoint; with it false, do nothing more.
+   4. **Base check**, against the local `<target>` with no fetch: if `git merge-base --is-ancestor <target> <base_sha>` succeeds, the branch is in sync; go to drift check 5. Otherwise, if `pending_step` is `A5`, first run its Resume reset, `git reset --hard <precut_sha>`, and write `branch_tip_sha` = `HEAD`. Then, if `<target>` is a layer, run the Tracking check and `gh stack rebase --upstack <branch> --no-trunk`. Otherwise, if `git merge-base --is-ancestor <base_sha> <trunk>` succeeds, run `git rebase <trunk>`; otherwise upstream was rewritten, so run `git rebase --onto <trunk> <base_sha>`. On a conflict, abort the rebase (`gh stack rebase --abort` or `git rebase --abort`) and set `BLOCKED` naming the files. After a rebase, write `base_sha` = `git rev-parse <target>`, `branch_tip_sha` = `git rev-parse <branch>`, `precut_sha` = null, and `pending_step` = null unless its step is `A1` or `A1-fix`, which keeps it with `from_tip_sha` = the new `branch_tip_sha`. Then from `IMPLEMENTING`, `AUDITING`, or `WAITING_RELEASE_APPROVAL` enter `IMPLEMENTING` at `A2`, unless drift check 5 resumes a step. From another phase with `gate_1_plan_approved` true, dispatch `A2` alone and log a failure for the next touchpoint; with it false, do nothing more.
    5. **Resume**: in `IMPLEMENTING` with `pending_step` set, re-run that step, not counted, and continue Stage A after it. For `A5`, instead `git reset --hard <precut_sha>`, write `branch_tip_sha` = `HEAD` and `pending_step` = null, and continue Stage A at `A4`.
 
-**Adopt** (human reply after a halt or in `BLOCKED`): write `base_sha` = `git merge-base <trunk> HEAD`, `branch_tip_sha` = `HEAD`, `approved_sha`, `precut_sha`, and `pending_step` = null, append to `roadblocks.md`; from `AUDITING`, `WAITING_RELEASE_APPROVAL`, or `BLOCKED` enter `IMPLEMENTING` at `A2`. Adopting from `BLOCKED` is the human's exit: it also resets `count` to 0 and `gaps_fix_used` to false.
+**Adopt** (human reply after a halt or in `BLOCKED`): write `base_sha` = `git merge-base <target> HEAD`, `branch_tip_sha` = `HEAD`, `approved_sha`, `precut_sha`, and `pending_step` = null, append to `roadblocks.md`; from `AUDITING`, `WAITING_RELEASE_APPROVAL`, or `BLOCKED` enter `IMPLEMENTING` at `A2`. Adopting from `BLOCKED` is the human's exit: it also resets `count` to 0 and `gaps_fix_used` to false.
 
 **Halt** means stop and report, writing nothing. **BLOCKED** means write the phase, `blocked_from`, and `pending_step` = null in one write (after a step, also `branch_tip_sha` = `HEAD`, once the After every step checks pass), append the cause to `roadblocks.md`, and report what the human must decide. Before `state.json` exists, write the step's id to `stack.json` `blocked` instead, leaving its `phase`, and append to the stack's `roadblocks.md`; before `stack.json` exists, halt. Write a phase only after its action succeeds.
 
@@ -129,8 +129,17 @@ Run on every invocation, before any other write:
 
 - **Start**: dispatch `story`. Present its report and a proposed stack name, a slug of the requirement's title. If the answers raise new questions, re-run `story` once with the requirement and the answers, then present it and ask again. When the human answers and confirms or replaces the name: if `S/stacks/<name>/` exists, ask whether to resume it or choose another name; otherwise write `requirements.md` and `stack.json` with `trunk` from `git symbolic-ref --short refs/remotes/origin/HEAD` minus `origin/` (ask if that fails).
 - **`ANALYSIS`**: dispatch `context`, then set `STACK_DECOMPOSITION`. Its report reaches `decompose` and the first `plan` only in the run that produced it; after a resume they run without it.
-- **`STACK_DECOMPOSITION`**: dispatch `decompose`. More than one layer halts: "Decomposition proposes <n> layers (<branches>); stacked work is not supported yet. Narrow the requirement to one branch, or abandon." Append a narrowed requirement to `requirements.md` and re-run; `abandon` deletes `S/stacks/<name>/`. With one layer, take the name from its `Branch:` line and require that `git check-ref-format --branch <name>` succeeds, the name is not `stacks` or under `stacks/`, `git show-ref --verify --quiet refs/heads/<name>` fails, and `git ls-remote --exit-code --heads origin <name>` exits 2 (any other non-zero exit cannot verify: ask the human); if the line is missing or a check fails, ask the human for a name and check it. Then write the `PENDING` layer, `active_layer_index` 0, and `LAYERS`.
-- **Branch creation** (layer `PENDING`, no `state.json`): run drift check 0. If the branch does not exist, run `git fetch origin <trunk>`, record `F` = `git rev-parse origin/<trunk>`, dispatch `branch`, and require the current branch to be it and `HEAD` to equal `F`. If it already existed, or this thread holds no `F`, require instead the current branch to be it and `git rev-list origin/<trunk>..HEAD` to be empty. Otherwise halt. Write `state.json` in `PLANNING` with `base_sha` = `branch_tip_sha` = `HEAD`, then set the layer `ACTIVE`.
+- **`STACK_DECOMPOSITION`**: dispatch `decompose`. Take the layers' names from their `Branch:` lines, bottom first. For each name, require that `git check-ref-format --branch <name>` succeeds, the name is not `stacks` or under `stacks/` and is unique among the layers, `git show-ref --verify --quiet refs/heads/<name>` fails, and `git ls-remote --exit-code --heads origin <name>` exits 2 (any other non-zero exit cannot verify: ask the human). If a line is missing, the count differs from `Layers:`, or a check fails, ask the human for names and check them. With more than one layer, check before any stack command:
+  - `gh stack --version` reports 0.2.1 or later, else halt: "Stacked work needs gh-stack v0.2.1 or later (found <version, or none>): run `gh extension install github/gh-stack` or `gh extension upgrade gh-stack`."
+  - The first line of `gh api --include 'repos/{owner}/{repo}/stacks'` reports status 200, else halt: "Stacked pull requests are unavailable for this repository (status <status>); they need github.com. Check `gh auth status`, `GH_TOKEN`, `GH_REPO`, and the `origin` remote."
+
+  Either halt also offers to narrow the requirement to one branch: append the narrowed requirement to `requirements.md` and re-run. `abandon` deletes `S/stacks/<name>/`. Then write the layers `PENDING`, `active_layer_index` 0, and `LAYERS`.
+- **Branch creation** (layer `PENDING`, no `state.json`): run drift check 0. The parent is the highest `RELEASED` layer that reads `OPEN` in Reconcile. With no parent, the layer starts from the trunk.
+  - **From the trunk**: in a stack, first run Fresh trunk. If the branch does not exist, run `git fetch origin <trunk>`, record `F` = `git rev-parse origin/<trunk>`, dispatch `branch`, and require the current branch to be it and `HEAD` to equal `F`. If it already existed, or this thread holds no `F`, require instead the current branch to be it and `git rev-list origin/<trunk>..HEAD` to be empty. Otherwise halt. In a stack, then run `gh stack init <branch>`. `<target>` is `<trunk>`.
+  - **On a parent**: if three layers read `OPEN`, halt: "Waiting on merge of <the lowest open layer's PR URL>: three layers are open, the most allowed. Re-invoke after it merges." If a lower layer reads `MERGED`, first run `git fetch origin`. For each open layer `<b>`, `git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>` must be empty, else halt listing the commits to integrate into `<b>`. Run the Tracking check and `gh stack rebase --upstack <lowest open layer>`; on a conflict, run `gh stack rebase --abort` and halt naming the files. Then each open layer `<b>` must equal `origin/<b>`, else halt: "<b> differs from origin/<b>; push the open layers, then re-invoke." Next, if the branch does not exist, require the current branch to be the parent, run the Tracking check and `gh stack add <branch>`, and require the current branch to be it and `HEAD` to equal `git rev-parse <parent>`. If it already existed, require instead the current branch to be it and `git rev-list <parent>..HEAD` to be empty. Otherwise halt. `<target>` is the parent.
+  - Write `state.json` in `PLANNING` with `target_branch` = `<target>` and `base_sha` = `branch_tip_sha` = `HEAD`, then set the layer `ACTIVE`.
+  - **Fresh trunk**: run `git fetch origin <trunk>`. If no worktree in `git worktree list --porcelain` has `<trunk>` checked out, run `git fetch . origin/<trunk>:<trunk>`. Then `<trunk>` must equal `origin/<trunk>`, else halt naming the worktree that has it checked out.
+  - **Tracking check**: `gh stack view --json` lists every unmerged layer (`ACTIVE`, or `RELEASED` and reading `OPEN`), bottom first and in order, among its `branches[].name`. Otherwise run `gh stack init <each unmerged layer's branch, bottom first>` and check again; halt if it still fails.
 - **`PLANNING`**: dispatch `plan`, write its plan text verbatim to `plan.md`, without the report wrapper or the `Result:` line, then set `WAITING_PLAN_APPROVAL`.
 - **`WAITING_PLAN_APPROVAL`** (Gate 1): present `plan.md`. No code is written before approval. `approve` sets `gate_1_plan_approved` and enters `IMPLEMENTING`. Feedback enters `PLANNING`, and the next `plan` prompt carries the previous `plan.md` and the feedback.
 - **`IMPLEMENTING`** (Stage A): unless Boot resumes a step, start at `A1` when `branch_tip_sha` equals `base_sha`, else at `A2`; a fix pass starts at `A1-fix`.
@@ -145,7 +154,7 @@ Run on every invocation, before any other write:
 - **`WAITING_RELEASE_APPROVAL`** (Gate 2): if `HEAD` differs from `approved_sha`, enter `IMPLEMENTING`, not counted. Present `git diff --stat <base_sha>...HEAD`, the review verdict, `handover.md` with its validation evidence, and the Scope Reductions from the last such `roadblocks.md` entry. No pull request is created before approval. `approve` sets `gate_2_release_approved`, then Release. Feedback runs a fix pass with it as input, not counted.
 - **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction runs a fix pass that resets `count` to 0 and `gaps_fix_used` to false, with the direction as input. `re-plan` resets `count` to 0 and enters `PLANNING`. `adopt` per Boot. With `gate_1_plan_approved` false, `fix` and `adopt` return to `blocked_from` instead of entering `IMPLEMENTING`, and a `fix` direction or `re-plan` feedback is first appended to `requirements.md`.
 - **Stack `blocked`**: report the last entry in the stack's `roadblocks.md`. `fix` with direction appends it to `requirements.md`, clears `blocked`, and re-runs that step; `abandon` deletes `S/stacks/<name>/`.
-- **`RELEASED`**: read-only. `gh pr view <pr> --json state`: `MERGED` or `CLOSED` deletes `S/<branch>/` and `S/stacks/<name>/`; `OPEN` reports the pull request and stops.
+- **`RELEASED`** (the active layer is `RELEASED`, so none is `PENDING`): read-only. Report each open pull request and stop.
 
 ## Retries
 
@@ -158,8 +167,9 @@ Run on every invocation, before any other write:
 
 With `gate_2_release_approved` true:
 
-1. If `gh pr view <branch> --json number,state,baseRefName` shows no open pull request, dispatch `release`. An open one with a base other than `<trunk>` halts.
-2. **RELEASED check**: the same read shows `OPEN` with `baseRefName` equal to `<trunk>`. Exit codes are not evidence.
-3. Write `state.json` `RELEASED`, then the layer's `pr` and `RELEASED` in `stack.json`.
+1. If `gh pr view <branch> --json number,state,baseRefName` shows no open pull request, dispatch `release`. An open one with a base other than `<target>` halts when `<target>` is `<trunk>`.
+2. **Link**, when `<target>` is a layer: run `gh stack link <the PR number of each open layer, bottom first, then this one>`.
+3. **RELEASED check**: a fresh read as in step 1 shows `OPEN` with `baseRefName` equal to `<target>`. After a link, `gh api 'repos/{owner}/{repo}/stacks?pull_request=<number>'` also lists `<number>` in a stack's `pull_requests[].number`. Exit codes are not evidence.
+4. Write `state.json` `RELEASED`, then in `stack.json` the layer's `pr` and `RELEASED`, moving `active_layer_index` to the next `PENDING` layer if one remains. Continue at its Branch creation.
 
-A failed `create-pr` or check leaves the phase unchanged; report the cause and re-run once it is resolved.
+A failed `create-pr`, link, or check leaves the phase unchanged; report the cause and re-run once it is resolved.
