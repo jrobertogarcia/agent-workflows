@@ -32,8 +32,6 @@ graph TD
         %% Loop Utilities
         subgraph Utilities ["Verification Utilities (As needed)"]
             CA["check-alignment"]
-            CC["check-compliance"]
-            PT["plan-testing"]
             AT["audit-tests"]
             SD["simplify-diff"]
             RF["refactor-code"]
@@ -58,8 +56,7 @@ graph TD
     
     %% PR Release Phase
     CPR["7. Pull Request<br>create-pr"]
-    RPR["8. PR Review (Optional)<br>review-pr"]
-    DL["9. Lesson Distillation (As needed)<br>distill-lessons"]
+    DL["8. Lesson Distillation (As needed)<br>distill-lessons"]
 
     %% Flow connections
     Analyzing --> CB
@@ -72,8 +69,7 @@ graph TD
     Decide -->|Request Changes| Fix
     Decide -->|Approve| CPR
     Fix --> Loop
-    CPR --> RPR
-    RPR --> DL
+    CPR --> DL
 ```
 
 ---
@@ -95,15 +91,13 @@ Once requirements are clear, execute **`create-branch`** to set up a clean Git b
 
 ### Stage 3: Phase Breakdown & Planning
 For complex changes, do not write code immediately. Planning creates an explicit engineering contract between the developer and the coding agent.
-1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable steps.
-2.  For each step in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits.
+1.  Run **`phase-breakdown`** to divide the work into discrete, incrementally verifiable phases.
+2.  For each phase in the breakdown, run **`plan-implementation`** to create a reviewable plan outlining the proposed edits and test scenarios. Once a plan is approved, the developer, or the agent driving the run, saves it to `~/.agent-workflows/<repo>/<branch>/plan.md`, where `delegate-plan` and `check-alignment` look for it by default. The file holds the current phase's plan; each phase's plan replaces the previous one.
 3.  Optionally run **`delegate-plan`** to produce a handoff prompt so a cheaper model can execute the approved plan in a fresh thread. This reduces cost and gives the executing agent a clean context window focused on implementation. When that agent reports back, run **`check-alignment`** before trusting the result.
 
 ### Stage 4: Implementation Loop (Verification Gates)
 With the implementation plan established, coding-agent work proceeds through explicit verification gates. During this loop, the developer selects which verification utilities are needed:
-*   **`check-alignment`**: Verify that implementation changes match the agreed plan or requirements. Use after implementing a planned change.
-*   **`check-compliance`**: Audit changed code against the project's standards and guidelines. Use after changes are written and before review.
-*   **`plan-testing`**: Create a risk-based testing plan for a change. Use before writing tests.
+*   **`check-alignment`**: Verify the actual diff against the agreed plan and the project's standards, and report ALIGNED or GAPS without editing. Use after implementing a change and before review.
 *   **`audit-tests`**: Audit an existing test suite for quality anti-patterns and produce a prioritized improvement plan. Use when test quality itself is the subject, not the tests for a specific change.
 *   **`simplify-diff`**: Audit the work in flight for over-engineering and unnecessary code, and report the cuts that would shrink the diff without applying them. Use when a change is correct but larger than it needs to be.
 *   **`refactor-code`**: Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction.
@@ -115,7 +109,6 @@ After implementation completes, run **`prepare-handover`** in the active impleme
 
 Once the audit is clean, release proceeds with:
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
-*   **`review-pr`**: Review an open pull request and return a structured verdict. Use when auditing submitted changes.
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
 
 ---

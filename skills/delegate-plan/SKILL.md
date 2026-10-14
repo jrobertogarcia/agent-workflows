@@ -5,7 +5,7 @@ description: Generate a self-contained prompt for another agent to execute an ap
 
 # Delegate Plan
 
-1. **Locate the Plan**: Establish the absolute path of the approved plan file and the absolute path of the working root (`git rev-parse --show-toplevel`, which resolves to the active worktree). Ask if either is ambiguous, or if no plan file turns up.
+1. **Locate the Plan**: Use the plan file given, else `~/.agent-workflows/<repo>/<branch>/plan.md`, where `<repo>` is `basename(dirname(git rev-parse --path-format=absolute --git-common-dir))` and `<branch>` is `git branch --show-current`. Stop and say so when `git branch --show-current` is empty. Ask when the plan is absent. Expand the default path to an absolute path before it goes in the prompt. Establish the absolute path of the working root (`git rev-parse --show-toplevel`, which resolves to the active worktree), and ask if it is ambiguous.
 
 2. **Do Not Restate the Plan**: The executing agent reads the plan itself. Do not summarize its goal, steps, or file list in the prompt.
 3. **Compose the Prompt**: The plan defines the executor's authority. Emit one fenced markdown block containing only:
