@@ -59,6 +59,7 @@ Symlinks target workflow files globally to machine-wide configuration directorie
 ```bash
 python setup.py link
 ```
+`link` also installs the `orchestrate-step` agent from `agents/` for hosts with subagents (Claude Code, which Cursor also reads, Antigravity, Copilot and Codex), and `unlink` removes it.
 To remove all globally installed links:
 ```bash
 python setup.py unlink
