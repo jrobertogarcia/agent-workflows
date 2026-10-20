@@ -16,4 +16,4 @@ description: Review the active branch diff against its target branch. Use in a f
 
 ---
 
-<!-- include: shared/review-guidelines.md -->
+Read `review-guidelines.md` from this skill's folder (next to this file) and apply its principles and checklist.

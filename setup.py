@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
-import re
 import sys
 import shutil
+import subprocess
 import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Set
-
-INCLUDE_PATTERN = re.compile(r"<!--\s*include:\s*([^\s]+?)\s*-->")
 
 # Configuration registry class for developer tools/agents
 class AgentTarget:
@@ -46,11 +44,12 @@ class AppConfig:
     """Encapsulates system configuration and active agent targets."""
     def __init__(self, home_dir: Optional[Path] = None):
         self.home: Path = home_dir or Path.home()
+        self.install_dir: Path = self.home / ".local" / "share" / "agent-workflows"
         self.targets: List[AgentTarget] = [
             AgentTarget("claude", self.home / ".claude" / "skills"),
             AgentTarget("gemini", self.home / ".gemini" / "config" / "skills"),
             AgentTarget("copilot", self.home / ".copilot" / "skills"),
-            AgentTarget("codex", self.home / ".codex" / "skills"),
+            AgentTarget("codex", self.home / ".agents" / "skills"),
         ]
         self.agent_targets: List[AgentTarget] = [
             AgentTarget("claude", self.home / ".claude" / "agents", ".md"),
@@ -213,92 +212,9 @@ class FileSystemManager:
         return False
 
 
-def has_includes(body: str) -> bool:
-    """Returns True when the skill body contains include directives."""
-    return INCLUDE_PATTERN.search(body) is not None
-
-
-def resolve_include_path(include_path: str, repo_dir: Path) -> Path:
-    """Resolves an include path to an absolute path within the repository."""
-    candidate = Path(include_path)
-    if candidate.is_absolute():
-        raise WorkflowSetupError(f"Include path must be relative to the repository: {include_path}")
-
-    resolved = (repo_dir / candidate).resolve()
-    repo_resolved = repo_dir.resolve()
-    if resolved != repo_resolved and repo_resolved not in resolved.parents:
-        raise WorkflowSetupError(f"Include path escapes repository: {include_path}")
-
-    return resolved
-
-
-def expand_includes(body: str, repo_dir: Path, _seen: Optional[Set[str]] = None) -> str:
-    """Expands include directives into the skill body."""
-    seen = set(_seen or [])
-
-    def replace_match(match: re.Match[str]) -> str:
-        include_path = match.group(1).strip()
-        resolved = resolve_include_path(include_path, repo_dir)
-        normalized = str(resolved)
-
-        if normalized in seen:
-            raise WorkflowSetupError(f"Circular include detected: {include_path}")
-
-        if not resolved.is_file():
-            raise WorkflowSetupError(f"Missing include file: {include_path}")
-
-        try:
-            included_content = resolved.read_text(encoding="utf-8")
-        except OSError as err:
-            raise WorkflowSetupError(f"Failed to read include file {include_path}: {err}")
-
-        return expand_includes(included_content, repo_dir, seen | {normalized})
-
-    return INCLUDE_PATTERN.sub(replace_match, body)
-
-
-def build_skill_md(metadata: Dict[str, str], body: str) -> str:
-    """Builds a SKILL.md file from metadata and body."""
-    frontmatter_lines = ["---"]
-    for key, value in metadata.items():
-        frontmatter_lines.append(f"{key}: {value}")
-    frontmatter_lines.append("---")
-    return "\n".join(frontmatter_lines) + "\n\n" + body.strip() + "\n"
-
-
-def load_skill_content(skill_folder: Path, repo_dir: Path) -> Tuple[Dict[str, str], str]:
-    """Loads and expands a skill manifest."""
-    skill_md = skill_folder / "SKILL.md"
-    metadata, body = FileSystemManager().load_frontmatter(skill_md)
-    if has_includes(body):
-        body = expand_includes(body, repo_dir)
-    return metadata, body
-
-
-def materialize_skill_directory(
-    skill_folder: Path,
-    target: Path,
-    metadata: Dict[str, str],
-    expanded_body: str,
-    repo_dir: Path,
-    fs_manager: FileSystemManager,
-    force: bool = False,
-) -> bool:
-    """Copies a skill directory with an expanded SKILL.md for include-based skills."""
-    if target.exists() or target.is_symlink():
-        if not force and not fs_manager.is_managed_target(target, repo_dir):
-            Console.warning(f"Skipped unmanaged existing target: {target}. Use --force to replace it.")
-            return False
-        fs_manager.clean_target(target)
-
-    try:
-        shutil.copytree(skill_folder, target)
-        (target / fs_manager.MARKER_FILE).touch()
-        (target / "SKILL.md").write_text(build_skill_md(metadata, expanded_body), encoding="utf-8")
-        Console.success("Materialized", target.name, "Directory with expanded includes")
-        return True
-    except OSError as err:
-        raise WorkflowSetupError(f"Failed to materialize skill directory {skill_folder.name}: {err}")
+def load_skill_content(skill_folder: Path) -> Tuple[Dict[str, str], str]:
+    """Loads a skill manifest."""
+    return FileSystemManager().load_frontmatter(skill_folder / "SKILL.md")
 
 
 def install_skill(
@@ -308,18 +224,9 @@ def install_skill(
     fs_manager: FileSystemManager,
     force: bool = False,
 ) -> bool:
-    """Installs a skill globally, materializing when includes must be expanded."""
-    skill_md = skill_folder / "SKILL.md"
-    if not skill_md.exists():
+    """Installs a skill globally."""
+    if not (skill_folder / "SKILL.md").exists():
         return False
-
-    metadata, body = fs_manager.load_frontmatter(skill_md)
-    if has_includes(body):
-        expanded_body = expand_includes(body, repo_dir)
-        return materialize_skill_directory(
-            skill_folder, target, metadata, expanded_body, repo_dir, fs_manager, force=force
-        )
-
     return fs_manager.link_or_copy(skill_folder, target, repo_dir, is_directory=True, force=force)
 
 
@@ -476,6 +383,28 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
         Console.info("Please run your agent tools at least once to initialize their default paths.")
 
 
+def run_git(*args: str) -> None:
+    """Runs a git command, raising WorkflowSetupError when it fails."""
+    try:
+        subprocess.run(["git", *args], check=True, capture_output=True, text=True)
+    except (OSError, subprocess.CalledProcessError) as err:
+        detail = getattr(err, "stderr", "") or err
+        raise WorkflowSetupError(f"git {' '.join(args)} failed: {str(detail).strip()}")
+
+
+def install_ref(origin: str, ref: str, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> None:
+    """Checks out a release tag detached in the install directory and links its skills."""
+    install_dir = config.install_dir
+    if (install_dir / ".git").exists():
+        run_git("-C", str(install_dir), "fetch", "--force", "--tags", origin)
+    else:
+        install_dir.parent.mkdir(parents=True, exist_ok=True)
+        run_git("clone", origin, str(install_dir))
+    run_git("-C", str(install_dir), "checkout", "--detach", f"refs/tags/{ref}")
+    Console.info(f"Installed {ref} at {install_dir}")
+    install_global(install_dir / "skills", config, fs_manager, force=force)
+
+
 def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager) -> None:
     """Cleans up all globally linked/copied skills and agents."""
     Console.info("Cleaning global agent configurations...")
@@ -490,6 +419,10 @@ def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystem
             sync_target_directory(
                 agent_target.path, set(), repo_dir, fs_manager, file_suffix=agent_target.file_suffix, uninstall_all=True
             )
+
+
+# Not compiled into project rules: it needs subagents, which Cursor and Windsurf rules lack.
+PROJECT_EXCLUDED_SKILLS = {"orchestrate"}
 
 
 class RuleCompiler:
@@ -610,7 +543,7 @@ def compile_project(
         WindsurfRuleCompiler()
     ]
 
-    active_skills = list_folder_names(skills_dir)
+    active_skills = list_folder_names(skills_dir) - PROJECT_EXCLUDED_SKILLS
     repo_dir = skills_dir.parent.resolve()
 
     Console.info(f"Configuring project-level rules at: {project_path}")
@@ -618,11 +551,11 @@ def compile_project(
     skills_to_compile: List[Tuple[str, Dict[str, str], str]] = []
     try:
         for skill_folder in skills_dir.iterdir():
-            if skill_folder.is_dir():
+            if skill_folder.is_dir() and skill_folder.name in active_skills:
                 skill_md = skill_folder / "SKILL.md"
                 if not skill_md.exists():
                     continue
-                metadata, body = load_skill_content(skill_folder, repo_dir)
+                metadata, body = load_skill_content(skill_folder)
                 skills_to_compile.append((skill_folder.name, metadata, body))
     except OSError as err:
         raise WorkflowSetupError(f"Failed to list skills during compilation: {err}")
@@ -653,6 +586,11 @@ def main() -> None:
     link_parser = subparsers.add_parser("link", help="Link skills globally to active agent config directories.")
     link_parser.add_argument("--force", action="store_true", help="Replace existing unmanaged target files or directories.")
 
+    # Install command
+    install_parser = subparsers.add_parser("install", help="Check out a release tag and link its skills globally.")
+    install_parser.add_argument("--ref", required=True, help="Release tag to install.")
+    install_parser.add_argument("--force", action="store_true", help="Replace existing unmanaged target files or directories.")
+
     # Unlink command
     subparsers.add_parser("unlink", help="Unlink global skills from agent config directories.")
 
@@ -677,6 +615,13 @@ def main() -> None:
     try:
         if args.command == "link":
             install_global(skills_dir, config, fs_manager, force=args.force)
+        elif args.command == "install":
+            origin = subprocess.run(
+                ["git", "-C", str(repo_dir), "remote", "get-url", "origin"], capture_output=True, text=True
+            ).stdout.strip()
+            if not origin:
+                raise WorkflowSetupError("No origin remote found in this checkout.")
+            install_ref(origin, args.ref, config, fs_manager, force=args.force)
         elif args.command == "unlink":
             uninstall_global(skills_dir, config, fs_manager)
         elif args.command == "project":
