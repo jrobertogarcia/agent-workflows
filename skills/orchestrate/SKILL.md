@@ -84,7 +84,7 @@ Template (fill every `<...>`; omit the branch clause before the branch exists). 
 
 ```
 Work only in <worktree> (and any temporary worktree these instructions create), on branch <branch>; stop and report if `git branch --show-current` differs.
-Step <step_id>: follow <skill reference>. Where it differs from these instructions, follow these. Resolve include directives in that skill relative to the repository root that holds its skills/ directory.
+Step <step_id>: follow <skill reference>. Where it differs from these instructions, follow these.
 Inputs:
 <each absolute path to read, and each report passed verbatim, labeled>
 Instructions:
