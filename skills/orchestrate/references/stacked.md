@@ -1,6 +1,6 @@
 # Orchestrate: Stacked Work
 
-Read this when `stack.json` holds more than one layer, or the human replies `register`. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; each section names where that file points to it.
+Read this when `stack.json` holds more than one layer, or the human replies `register`. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; most sections name where that file points to them.
 
 ## Boot
 
