@@ -19,7 +19,7 @@ class SkillFrontmatterTest(unittest.TestCase):
         for path in skill_files:
             with self.subTest(skill=path.parent.name):
                 meta, _ = fs.load_frontmatter(path)
-                self.assertFalse(set(meta) - SPEC_KEYS, "non-spec keys")
+                self.assertEqual(set(meta) - SPEC_KEYS, set(), "non-spec keys")
                 self.assertEqual(meta.get("name"), path.parent.name)
                 self.assertLessEqual(len(meta["name"]), 64)
                 description = meta.get("description", "")
