@@ -257,7 +257,7 @@ class GlobalInstallTests(SetupTestCase):
     def test_install_global_only_configures_detected_parent_directories(self):
         self.add_skills()
         config = self.make_config()
-        (config.home / ".agents").mkdir(parents=True)
+        (config.home / ".codex").mkdir(parents=True)
 
         self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
 
@@ -269,7 +269,7 @@ class GlobalInstallTests(SetupTestCase):
         self.requires_symlink_support()
         self.add_skills()
         config = self.make_config()
-        (config.home / ".agents").mkdir(parents=True)
+        (config.home / ".codex").mkdir(parents=True)
 
         self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
         installed = list((config.home / ".agents" / "skills").iterdir())
@@ -285,6 +285,7 @@ class GlobalInstallTests(SetupTestCase):
         self.add_skills()
         config = self.make_config()
         codex_skills = config.home / ".agents" / "skills"
+        (config.home / ".codex").mkdir(parents=True)
         codex_skills.mkdir(parents=True)
         collision = codex_skills / "skill-00"
         collision.mkdir()
@@ -305,6 +306,7 @@ class GlobalInstallTests(SetupTestCase):
         self.add_skills()
         config = self.make_config()
         codex_skills = config.home / ".agents" / "skills"
+        (config.home / ".codex").mkdir(parents=True)
         codex_skills.mkdir(parents=True)
 
         with mock.patch("setup.os.symlink", side_effect=OSError("no symlink")):
@@ -320,6 +322,7 @@ class GlobalInstallTests(SetupTestCase):
         self.add_skills()
         config = self.make_config()
         codex_skills = config.home / ".agents" / "skills"
+        (config.home / ".codex").mkdir(parents=True)
         codex_skills.mkdir(parents=True)
         collision = codex_skills / "skill-00"
         collision.mkdir()
@@ -701,6 +704,17 @@ class ProjectCompilationTests(SetupTestCase):
         self.assertTrue(windsurf_content.startswith("<!-- Source: agent-workflows -->"))
         self.assertNotIn("user-owned", cursor_content)
         self.assertNotIn("user-owned", windsurf_content)
+
+    def test_compile_project_inlines_extra_skill_docs(self):
+        skill = self.add_skill("skill-00")
+        (skill / "rubric.md").write_text("Rubric text\n", encoding="utf-8")
+        project = self.root / "project"
+        project.mkdir()
+
+        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
+
+        for rule in (project / ".cursor" / "rules" / "skill-00.mdc", project / ".windsurf" / "rules" / "skill-00.md"):
+            self.assertIn("Rubric text", rule.read_text(encoding="utf-8"))
 
     def test_compile_project_skips_orchestrate_and_cleans_its_old_rule(self):
         self.add_skill("skill-00")

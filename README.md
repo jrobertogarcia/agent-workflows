@@ -48,7 +48,7 @@ python3 setup.py install --ref <tag>
 
 `install` clones this repository into `~/.local/share/agent-workflows`, checks out the release tag detached, and links from there, so what you run is pinned and does not move with a development checkout. Re-run it with a newer tag to update.
 
-If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install --ref <tag>`. To link a checkout directly instead (for development), use `python3 setup.py link`.
+If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install --ref <tag>`. `unlink` must run from the old checkout before you switch, or stale links in `~/.codex/skills` remain; remove those by hand. To link a checkout directly instead (for development), use `python3 setup.py link`.
 
 For each host whose config directory already exists, `install` and `link` install every skill and the `orchestrate-step` agent that `orchestrate` dispatches to:
 
@@ -73,7 +73,7 @@ python3 setup.py project --path /path/to/project   # writes .cursor/rules/<skill
 python3 setup.py project --path /path/to/project --clean
 ```
 
-`project` skips `orchestrate`, which needs subagents. It refuses to overwrite rule files it did not write unless you pass `--force`.
+`project` inlines each skill's extra `.md` files into its rule and skips `orchestrate`, which needs subagents. It refuses to overwrite rule files it did not write unless you pass `--force`.
 
 `orchestrate` is verified on Claude Code; other hosts are untested.
 

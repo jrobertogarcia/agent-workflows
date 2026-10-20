@@ -9,9 +9,11 @@ from typing import Dict, List, Tuple, Optional, Set
 
 # Configuration registry class for developer tools/agents
 class AgentTarget:
-    def __init__(self, name: str, path: Path, file_suffix: str = ""):
+    def __init__(self, name: str, path: Path, file_suffix: str = "", host_dir: Optional[Path] = None):
         self.name: str = name
         self.path: Path = path
+        # Directory whose existence means the host is installed.
+        self.host_dir: Path = host_dir or path.parent
         self.file_suffix: str = file_suffix
 
 
@@ -49,7 +51,7 @@ class AppConfig:
             AgentTarget("claude", self.home / ".claude" / "skills"),
             AgentTarget("gemini", self.home / ".gemini" / "config" / "skills"),
             AgentTarget("copilot", self.home / ".copilot" / "skills"),
-            AgentTarget("codex", self.home / ".agents" / "skills"),
+            AgentTarget("codex", self.home / ".agents" / "skills", host_dir=self.home / ".codex"),
         ]
         self.agent_targets: List[AgentTarget] = [
             AgentTarget("claude", self.home / ".claude" / "agents", ".md"),
@@ -354,8 +356,7 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
 
     for target in config.targets:
         # Check if the parent configuration folder exists (indicates tool is active/installed)
-        parent_config = target.path.parent
-        if parent_config.exists():
+        if target.host_dir.exists():
             Console.info(f"\nConfiguring {target.name.upper()} skills at: {target.path}")
             try:
                 target.path.mkdir(parents=True, exist_ok=True)
@@ -556,6 +557,10 @@ def compile_project(
                 if not skill_md.exists():
                     continue
                 metadata, body = load_skill_content(skill_folder)
+                # Rules are single files, so inline the skill's reference docs.
+                for extra in sorted(skill_folder.glob("*.md")):
+                    if extra.name != "SKILL.md":
+                        body += "\n\n" + extra.read_text(encoding="utf-8")
                 skills_to_compile.append((skill_folder.name, metadata, body))
     except OSError as err:
         raise WorkflowSetupError(f"Failed to list skills during compilation: {err}")
