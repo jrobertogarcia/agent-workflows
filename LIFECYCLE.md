@@ -84,11 +84,11 @@ What you do at each touchpoint:
 *   **BLOCKED**: read the reported cause, then reply `fix` with direction, `re-plan`, or `adopt` (accept the branch as it now stands; `adopt` also clears a halt on a moved branch tip). Before a branch exists, reply `fix` with direction. Any other halt is cleared by fixing its cause and invoking `orchestrate` again, unless the halt names a reply (such as `narrow`).
 *   **Any time**: `abandon` drops the run's state and keeps the branches and pull requests.
 
-To resume, invoke `orchestrate` again on the layer's branch, or with the stack name before a branch exists. It also stops when three layers are open, the most it allows, until the lowest one merges; invoke it again after the merge. It halts when a pull request was closed with a layer above it; reopen the pull request to continue.
+To resume, invoke `orchestrate` again on the layer's branch, or with the stack name before a branch exists. It halts when a pull request was closed with a layer above it; reopen the pull request to continue.
 
-**Requirements**: the `gh` CLI, authenticated. A stack also needs gh-stack 0.2.1 or later (`gh extension install github/gh-stack`) and a github.com repository; without them, `orchestrate` offers to narrow the requirement to one branch with the `narrow` reply.
+**Requirements**: the `gh` CLI, authenticated. A stack also needs gh-stack 0.2.1 or later (`gh extension install github/gh-stack`), Git 2.36 or later, and a github.com repository; without them, `orchestrate` offers to narrow the requirement to one branch with the `narrow` reply.
 
-**Without subagents**: if the host cannot dispatch an `orchestrate-step` subagent, `orchestrate` prints each step's prompt instead. Run it in a fresh thread and paste the report back.
+Without subagents, `orchestrate` halts; use the skills one by one.
 
 State files, drift checks, retries, and gate rules are defined in [skills/orchestrate/SKILL.md](skills/orchestrate/SKILL.md).
 
