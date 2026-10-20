@@ -254,6 +254,15 @@ class GlobalInstallTests(SetupTestCase):
     def make_config(self):
         return setup.AppConfig(home_dir=self.root / "home")
 
+    def test_agents_dir_without_codex_dir_does_not_install_codex_skills(self):
+        self.add_skills()
+        config = self.make_config()
+        (config.home / ".agents").mkdir(parents=True)
+
+        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+
+        self.assertFalse((config.home / ".agents" / "skills").exists())
+
     def test_install_global_only_configures_detected_parent_directories(self):
         self.add_skills()
         config = self.make_config()
@@ -805,6 +814,30 @@ class InstallRefTests(SetupTestCase):
 
         self.assertTrue((config.install_dir / "skills" / "second").is_dir())
         self.assertTrue((config.home / ".claude" / "skills" / "second").exists())
+
+    def test_install_ref_picks_up_a_moved_annotated_tag(self):
+        origin = self.make_origin()
+        config = self.make_config()
+        self.git(origin, "tag", "-a", "-f", "v1", "-m", "v1")
+        self.run_quiet(setup.install_ref, str(origin), "v1", config, self.fs)
+
+        (origin / "skills" / "second").mkdir()
+        (origin / "skills" / "second" / "SKILL.md").write_text("---\nname: second\n---\n", encoding="utf-8")
+        self.git(origin, "add", ".")
+        self.git(origin, "commit", "-qm", "two")
+        self.git(origin, "tag", "-a", "-f", "v1", "-m", "v1")
+        self.run_quiet(setup.install_ref, str(origin), "v1", config, self.fs)
+
+        self.assertTrue((config.install_dir / "skills" / "second").is_dir())
+
+    def test_install_ref_reports_skipped_unmanaged_entries(self):
+        origin = self.make_origin()
+        config = self.make_config()
+        (config.home / ".claude" / "skills" / "first").mkdir(parents=True)
+
+        output = self.capture_stdout(setup.install_ref, str(origin), "v1", config, self.fs)[1]
+
+        self.assertIn("skipped as unmanaged", output)
 
     def test_install_ref_rejects_unknown_tag(self):
         origin = self.make_origin()

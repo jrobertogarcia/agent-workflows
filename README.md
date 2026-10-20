@@ -48,7 +48,7 @@ python3 setup.py install --ref <tag>
 
 `install` clones this repository into `~/.local/share/agent-workflows`, checks out the release tag detached, and links from there, so what you run is pinned and does not move with a development checkout. Re-run it with a newer tag to update.
 
-If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install --ref <tag>`. `unlink` must run from the old checkout before you switch, or stale links in `~/.codex/skills` remain; remove those by hand. To link a checkout directly instead (for development), use `python3 setup.py link`.
+If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install --ref <tag>`. run `unlink` from the old checkout before pulling this change; if you already pulled, delete the agent-workflows symlinks in `~/.codex/skills` by hand (leave Codex's own `.system` entry). To link a checkout directly instead (for development), use `python3 setup.py link`.
 
 For each host whose config directory already exists, `install` and `link` install every skill and the `orchestrate-step` agent that `orchestrate` dispatches to:
 

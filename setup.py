@@ -346,8 +346,9 @@ def sync_target_directory(
                     Console.error(f"Failed to clean orphaned target {item.name}: {err}")
 
 
-def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> None:
-    """Installs skills and agents globally for detected agent tool folders."""
+def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> int:
+    """Installs skills and agents globally for detected agent tool folders; returns how many were skipped."""
+    skipped = 0
     Console.info("Scanning active agent configurations...")
     linked_any = False
     repo_dir = skills_dir.parent.resolve()
@@ -367,7 +368,8 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
             sync_target_directory(target.path, skill_names, repo_dir, fs_manager)
             
             for name in sorted(skill_names):
-                install_skill(skills_dir / name, target.path / name, repo_dir, fs_manager, force=force)
+                if not install_skill(skills_dir / name, target.path / name, repo_dir, fs_manager, force=force):
+                    skipped += 1
             linked_any = True
 
     for agent_target in config.agent_targets:
@@ -377,11 +379,13 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
                 agent_target.path, agent_names, repo_dir, fs_manager, file_suffix=agent_target.file_suffix
             )
             for name in sorted(agent_names):
-                install_agent(repo_dir / "agents" / name, agent_target, repo_dir, fs_manager, force=force)
+                if not install_agent(repo_dir / "agents" / name, agent_target, repo_dir, fs_manager, force=force):
+                    skipped += 1
 
     if not linked_any:
         Console.info("\nNo active agent config directories (e.g. ~/.claude/skills or ~/.gemini/config/skills) were detected.")
         Console.info("Please run your agent tools at least once to initialize their default paths.")
+    return skipped
 
 
 def run_git(*args: str) -> None:
@@ -403,7 +407,9 @@ def install_ref(origin: str, ref: str, config: AppConfig, fs_manager: FileSystem
         run_git("clone", origin, str(install_dir))
     run_git("-C", str(install_dir), "checkout", "--detach", f"refs/tags/{ref}")
     Console.info(f"Installed {ref} at {install_dir}")
-    install_global(install_dir / "skills", config, fs_manager, force=force)
+    skipped = install_global(install_dir / "skills", config, fs_manager, force=force)
+    if skipped:
+        Console.warning(f"{skipped} entries were skipped as unmanaged. Run `unlink` from your old checkout, or pass --force.")
 
 
 def uninstall_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager) -> None:
