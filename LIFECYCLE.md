@@ -81,7 +81,7 @@ What you do at each touchpoint:
 *   **Story review**: answer the numbered questions from `review-story`, and confirm or replace the proposed stack name.
 *   **Plan approval** (each layer): reply `approve`, or give feedback for a revised plan. No code is written before approval.
 *   **Release approval** (each layer): read the diff summary, review verdict, handover, and scope reductions; reply `approve` to open the pull request, or give feedback for another fix pass. If the worker may not open it, it pushes the branch and hands you the title and body; open the pull request, then invoke `orchestrate` again.
-*   **BLOCKED**: read the reported cause, then reply `fix` with direction, `re-plan` with optional feedback, `retry` (re-run the failed step unchanged, for example after fixing the environment), or `adopt` (accept the branch as it now stands; `adopt` also clears a halt on a moved branch tip). Before a branch exists, reply `fix` with direction. Any other halt is cleared by fixing its cause and invoking `orchestrate` again, unless the halt names a reply (such as `narrow`).
+*   **BLOCKED**: read the reported cause, then reply `fix` with direction, `re-plan` with optional feedback, `retry` (re-run the failed step unchanged, for example after fixing the environment), or `adopt` (accept the branch as it now stands; `adopt` also clears a halt on a moved branch tip). Before a branch exists, reply `fix` with direction or `retry`. Any other halt is cleared by fixing its cause and invoking `orchestrate` again, unless the halt names a reply (such as `narrow`).
 *   **Before the layers are approved**: `register <PR number>` builds the stack on an existing open pull request.
 *   **Any time**: `abandon` drops the run's state and keeps the branches and pull requests.
 
@@ -97,7 +97,7 @@ State files, drift checks, retries, and gate rules are defined in [skills/orches
 
 ## 4. Stack Maintenance After Release
 
-Once layers are open as pull requests, addressing review comments, rebasing, and merging are manual and yours, except that on the highest open layer, with no layer active, `orchestrate` takes `reopen` with the review and runs it back through the lifecycle. Do this only while `orchestrate` is not acting on the stack: no layer is active, or the run is waiting at a gate or BLOCKED. On its next run, `orchestrate` accepts a moved layer automatically only when the layer's patches are unchanged, a pure rebase onto its parent. Any edit to the layer it is working on makes its next run halt until you reply `adopt`.
+Once layers are open as pull requests, addressing review comments, rebasing, and merging are manual and yours. Do this only while `orchestrate` is not acting on the stack: no layer is active, or the run is waiting at a gate or BLOCKED. For a review on the highest open layer, with no layer active, you can instead reply `reopen` with the review, and `orchestrate` runs that layer back through the lifecycle. On its next run, `orchestrate` accepts a moved layer automatically only when the layer's patches are unchanged, a pure rebase onto its parent. Any edit to the layer it is working on makes its next run halt until you reply `adopt`.
 
 Once per clone, run `git config rerere.enabled true`. A layer checked out in a linked worktree can be edited only in that worktree, and `gh stack rebase --upstack` refuses while the worktree of any affected layer is dirty.
 
