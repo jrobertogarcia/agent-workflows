@@ -43,22 +43,26 @@ Skills for delivering software with coding agents through explicit, human-gated 
 ## Installation
 
 ```bash
-python3 setup.py link
+python3 setup.py install --ref <tag>
 ```
 
-For each host whose config directory already exists, `link` installs every skill and the `orchestrate-step` agent that `orchestrate` dispatches to:
+`install` clones this repository into `~/.local/share/agent-workflows`, checks out the release tag detached, and links from there, so what you run is pinned and does not move with a development checkout. Re-run it with a newer tag to update.
+
+If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install --ref <tag>`. run `unlink` from the old checkout before pulling this change; if you already pulled, delete the agent-workflows symlinks in `~/.codex/skills` by hand (leave Codex's own `.system` entry). To link a checkout directly instead (for development), use `python3 setup.py link`.
+
+For each host whose config directory already exists, `install` and `link` install every skill and the `orchestrate-step` agent that `orchestrate` dispatches to:
 
 | Host | Skills | `orchestrate-step` agent |
 | :--- | :--- | :--- |
 | Claude Code | `~/.claude/skills/` | `~/.claude/agents/orchestrate-step.md` |
-| Gemini | `~/.gemini/config/skills/` | `~/.gemini/config/agents/orchestrate-step/` |
+| Antigravity | `~/.gemini/config/skills/` | `~/.gemini/config/agents/orchestrate-step/` |
 | Copilot | `~/.copilot/skills/` | `~/.copilot/agents/orchestrate-step.agent.md` |
-| Codex | `~/.codex/skills/` | `~/.codex/agents/orchestrate-step.toml` (generated) |
+| Codex | `~/.agents/skills/` | `~/.codex/agents/orchestrate-step.toml` (generated) |
 
-Skills are symlinked, or copied where symlinks fail; a skill that includes a `shared/` fragment is copied with the fragment expanded. Existing entries this repository did not create are skipped unless you pass `--force`:
+Skills are symlinked, or copied where symlinks fail. Existing entries this repository did not create are skipped unless you pass `--force`:
 
 ```bash
-python3 setup.py link --force
+python3 setup.py link --force   # `install` takes --force too
 python3 setup.py unlink        # removes only what this repository installed
 ```
 
@@ -69,7 +73,9 @@ python3 setup.py project --path /path/to/project   # writes .cursor/rules/<skill
 python3 setup.py project --path /path/to/project --clean
 ```
 
-`project` refuses to overwrite rule files it did not write unless you pass `--force`.
+`project` inlines each skill's extra `.md` files into its rule and skips `orchestrate`, which needs subagents. It refuses to overwrite rule files it did not write unless you pass `--force`.
+
+`orchestrate` is verified on Claude Code; other hosts are untested.
 
 ## Development
 

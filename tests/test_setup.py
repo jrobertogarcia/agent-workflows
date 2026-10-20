@@ -2,6 +2,7 @@ import contextlib
 import io
 import os
 import re
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -253,6 +254,15 @@ class GlobalInstallTests(SetupTestCase):
     def make_config(self):
         return setup.AppConfig(home_dir=self.root / "home")
 
+    def test_agents_dir_without_codex_dir_does_not_install_codex_skills(self):
+        self.add_skills()
+        config = self.make_config()
+        (config.home / ".agents").mkdir(parents=True)
+
+        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+
+        self.assertFalse((config.home / ".agents" / "skills").exists())
+
     def test_install_global_only_configures_detected_parent_directories(self):
         self.add_skills()
         config = self.make_config()
@@ -260,7 +270,7 @@ class GlobalInstallTests(SetupTestCase):
 
         self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
 
-        self.assertTrue((config.home / ".codex" / "skills").exists())
+        self.assertTrue((config.home / ".agents" / "skills").exists())
         self.assertFalse((config.home / ".claude" / "skills").exists())
         self.assertFalse((config.home / ".copilot" / "skills").exists())
 
@@ -271,10 +281,10 @@ class GlobalInstallTests(SetupTestCase):
         (config.home / ".codex").mkdir(parents=True)
 
         self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
-        installed = list((config.home / ".codex" / "skills").iterdir())
+        installed = list((config.home / ".agents" / "skills").iterdir())
         installed_are_symlinks = [item.is_symlink() for item in installed]
         self.run_quiet(setup.uninstall_global, self.skills_dir, config, self.fs)
-        remaining = list((config.home / ".codex" / "skills").iterdir())
+        remaining = list((config.home / ".agents" / "skills").iterdir())
 
         self.assertEqual(len(installed), 17)
         self.assertTrue(all(installed_are_symlinks))
@@ -283,7 +293,8 @@ class GlobalInstallTests(SetupTestCase):
     def test_global_install_skips_unmanaged_collision_and_installs_others(self):
         self.add_skills()
         config = self.make_config()
-        codex_skills = config.home / ".codex" / "skills"
+        codex_skills = config.home / ".agents" / "skills"
+        (config.home / ".codex").mkdir(parents=True)
         codex_skills.mkdir(parents=True)
         collision = codex_skills / "skill-00"
         collision.mkdir()
@@ -303,7 +314,8 @@ class GlobalInstallTests(SetupTestCase):
     def test_global_install_symlink_failure_falls_back_to_copied_skills(self):
         self.add_skills()
         config = self.make_config()
-        codex_skills = config.home / ".codex" / "skills"
+        codex_skills = config.home / ".agents" / "skills"
+        (config.home / ".codex").mkdir(parents=True)
         codex_skills.mkdir(parents=True)
 
         with mock.patch("setup.os.symlink", side_effect=OSError("no symlink")):
@@ -318,7 +330,8 @@ class GlobalInstallTests(SetupTestCase):
         self.requires_symlink_support()
         self.add_skills()
         config = self.make_config()
-        codex_skills = config.home / ".codex" / "skills"
+        codex_skills = config.home / ".agents" / "skills"
+        (config.home / ".codex").mkdir(parents=True)
         codex_skills.mkdir(parents=True)
         collision = codex_skills / "skill-00"
         collision.mkdir()
@@ -396,7 +409,7 @@ class GlobalInstallTests(SetupTestCase):
     def test_uninstall_global_preserves_unmanaged_files(self):
         self.add_skills()
         config = self.make_config()
-        codex_skills = config.home / ".codex" / "skills"
+        codex_skills = config.home / ".agents" / "skills"
         codex_skills.mkdir(parents=True)
         unmanaged = codex_skills / "user-skill"
         unmanaged.mkdir()
@@ -701,6 +714,32 @@ class ProjectCompilationTests(SetupTestCase):
         self.assertNotIn("user-owned", cursor_content)
         self.assertNotIn("user-owned", windsurf_content)
 
+    def test_compile_project_inlines_extra_skill_docs(self):
+        skill = self.add_skill("skill-00")
+        (skill / "rubric.md").write_text("Rubric text\n", encoding="utf-8")
+        project = self.root / "project"
+        project.mkdir()
+
+        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
+
+        for rule in (project / ".cursor" / "rules" / "skill-00.mdc", project / ".windsurf" / "rules" / "skill-00.md"):
+            self.assertIn("Rubric text", rule.read_text(encoding="utf-8"))
+
+    def test_compile_project_skips_orchestrate_and_cleans_its_old_rule(self):
+        self.add_skill("skill-00")
+        self.add_skill("orchestrate")
+        project = self.root / "project"
+        project.mkdir()
+        old_rule = project / ".cursor" / "rules" / "orchestrate.mdc"
+        old_rule.parent.mkdir(parents=True)
+        old_rule.write_text("---\nsource: agent-workflows\n---\n", encoding="utf-8")
+
+        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
+
+        self.assertTrue((project / ".cursor" / "rules" / "skill-00.mdc").exists())
+        self.assertFalse(old_rule.exists())
+        self.assertFalse((project / ".windsurf" / "rules" / "orchestrate.md").exists())
+
     def test_compile_project_refreshes_managed_rules(self):
         self.add_skill("skill-00", "Original description")
         project = self.root / "project"
@@ -722,94 +761,90 @@ class ProjectCompilationTests(SetupTestCase):
         self.assertIn("Updated body", updated_content)
 
 
-class IncludeExpansionTests(SetupTestCase):
-    def add_shared_fragment(self, relative_path, content):
-        fragment = self.repo_dir / relative_path
-        fragment.parent.mkdir(parents=True, exist_ok=True)
-        fragment.write_text(content, encoding="utf-8")
-        return fragment
-
-    def add_skill_with_include(self, name, include_path, description="Included skill"):
-        skill_dir = self.skills_dir / name
-        skill_dir.mkdir(parents=True)
-        skill_file = skill_dir / "SKILL.md"
-        skill_file.write_text(
-            f"---\nname: {name}\ndescription: {description}\n---\n\n# {name}\n\n"
-            f"<!-- include: {include_path} -->\n",
-            encoding="utf-8",
+class InstallRefTests(SetupTestCase):
+    def git(self, cwd, *args):
+        subprocess.run(
+            ["git", "-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "tag.gpgSign=false", "-c", "commit.gpgSign=false", "-C", str(cwd), *args],
+            check=True, capture_output=True,
         )
-        return skill_dir
 
-    def test_expand_includes_renders_shared_fragment(self):
-        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
-        skill = self.add_skill_with_include("review-branch", "shared/review-guidelines.md")
+    def make_origin(self):
+        origin = self.root / "origin"
+        (origin / "skills" / "first").mkdir(parents=True)
+        (origin / "agents" / "worker").mkdir(parents=True)
+        (origin / "agents" / "worker" / "agent.md").write_text("---\nname: worker\n---\n", encoding="utf-8")
+        (origin / "skills" / "first" / "SKILL.md").write_text("---\nname: first\n---\n", encoding="utf-8")
+        subprocess.run(["git", "init", "-q", str(origin)], check=True)
+        self.git(origin, "add", ".")
+        self.git(origin, "commit", "-qm", "one")
+        self.git(origin, "tag", "v1")
+        return origin
 
-        _, body = load_skill_content(skill, self.repo_dir)
-        self.assertIn("Shared review rubric", body)
-        self.assertNotIn("<!-- include:", body)
+    def make_config(self):
+        config = setup.AppConfig(home_dir=self.root / "home")
+        (config.home / ".claude").mkdir(parents=True)
+        return config
 
-    def test_expand_includes_rejects_missing_file(self):
-        skill = self.add_skill_with_include("review-branch", "shared/missing.md")
+    def test_install_ref_checks_out_tag_detached_and_links_skills(self):
+        self.requires_symlink_support()
+        origin = self.make_origin()
+        config = self.make_config()
+
+        self.run_quiet(setup.install_ref, str(origin), "v1", config, self.fs)
+
+        link = config.home / ".claude" / "skills" / "first"
+        self.assertEqual(link.resolve(), (config.install_dir / "skills" / "first").resolve())
+        head = subprocess.run(
+            ["git", "-C", str(config.install_dir), "symbolic-ref", "-q", "HEAD"], capture_output=True
+        )
+        self.assertNotEqual(head.returncode, 0)
+
+    def test_install_ref_with_new_tag_updates_checkout_and_links(self):
+        self.requires_symlink_support()
+        origin = self.make_origin()
+        config = self.make_config()
+        self.run_quiet(setup.install_ref, str(origin), "v1", config, self.fs)
+
+        (origin / "skills" / "second").mkdir()
+        (origin / "skills" / "second" / "SKILL.md").write_text("---\nname: second\n---\n", encoding="utf-8")
+        self.git(origin, "add", ".")
+        self.git(origin, "commit", "-qm", "two")
+        self.git(origin, "tag", "v2")
+        self.run_quiet(setup.install_ref, str(origin), "v2", config, self.fs)
+
+        self.assertTrue((config.install_dir / "skills" / "second").is_dir())
+        self.assertTrue((config.home / ".claude" / "skills" / "second").exists())
+
+    def test_install_ref_picks_up_a_moved_annotated_tag(self):
+        origin = self.make_origin()
+        config = self.make_config()
+        self.git(origin, "tag", "-a", "-f", "v1", "-m", "v1")
+        self.run_quiet(setup.install_ref, str(origin), "v1", config, self.fs)
+
+        (origin / "skills" / "second").mkdir()
+        (origin / "skills" / "second" / "SKILL.md").write_text("---\nname: second\n---\n", encoding="utf-8")
+        self.git(origin, "add", ".")
+        self.git(origin, "commit", "-qm", "two")
+        self.git(origin, "tag", "-a", "-f", "v1", "-m", "v1")
+        self.run_quiet(setup.install_ref, str(origin), "v1", config, self.fs)
+
+        self.assertTrue((config.install_dir / "skills" / "second").is_dir())
+
+    def test_install_ref_reports_skipped_unmanaged_entries(self):
+        origin = self.make_origin()
+        config = self.make_config()
+        (config.home / ".claude" / "skills" / "first").mkdir(parents=True)
+
+        output = self.capture_stdout(setup.install_ref, str(origin), "v1", config, self.fs)[1]
+
+        self.assertIn("skipped as unmanaged", output)
+
+    def test_install_ref_rejects_unknown_tag(self):
+        origin = self.make_origin()
+        config = self.make_config()
 
         with self.assertRaises(setup.WorkflowSetupError):
-            load_skill_content(skill, self.repo_dir)
-
-    def test_expand_includes_rejects_repo_escape(self):
-        skill = self.add_skill_with_include("review-branch", "../outside.md")
-
-        with self.assertRaises(setup.WorkflowSetupError):
-            load_skill_content(skill, self.repo_dir)
-
-    def test_compile_project_expands_review_skills(self):
-        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
-        self.add_skill_with_include("review-branch", "shared/review-guidelines.md")
-        self.add_skill_with_include("review-pr", "shared/review-guidelines.md")
-        project = self.root / "project"
-        project.mkdir()
-
-        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
-
-        branch_content = (project / ".cursor" / "rules" / "review-branch.mdc").read_text(encoding="utf-8")
-        pr_content = (project / ".cursor" / "rules" / "review-pr.mdc").read_text(encoding="utf-8")
-        self.assertIn("Shared review rubric", branch_content)
-        self.assertIn("Shared review rubric", pr_content)
-        self.assertIn("# review-branch", branch_content)
-        self.assertIn("# review-pr", pr_content)
-        self.assertNotIn("<!-- include:", branch_content)
-        self.assertNotIn("<!-- include:", pr_content)
-
-    def test_install_global_materializes_directory_skill_with_includes(self):
-        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
-        self.add_skill_with_include("review-branch", "shared/review-guidelines.md")
-        config = setup.AppConfig(home_dir=self.root / "home")
-        (config.home / ".codex").mkdir(parents=True)
-
-        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
-
-        installed = config.home / ".codex" / "skills" / "review-branch"
-        content = (installed / "SKILL.md").read_text(encoding="utf-8")
-        self.assertTrue((installed / setup.FileSystemManager.MARKER_FILE).exists())
-        self.assertIn("Shared review rubric", content)
-        self.assertNotIn("<!-- include:", content)
-
-    def test_install_global_materializes_copilot_skill_directory_with_includes(self):
-        self.add_shared_fragment("shared/review-guidelines.md", "Shared review rubric\n")
-        self.add_skill_with_include("review-pr", "shared/review-guidelines.md")
-        config = setup.AppConfig(home_dir=self.root / "home")
-        (config.home / ".copilot").mkdir(parents=True)
-
-        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
-
-        installed = config.home / ".copilot" / "skills" / "review-pr"
-        content = (installed / "SKILL.md").read_text(encoding="utf-8")
-        self.assertTrue((installed / setup.FileSystemManager.MARKER_FILE).exists())
-        self.assertIn("Shared review rubric", content)
-        self.assertNotIn("<!-- include:", content)
-        self.assertFalse((config.home / ".copilot" / "agents").exists())
-
-
-def load_skill_content(skill_folder, repo_dir):
-    return setup.load_skill_content(skill_folder, repo_dir)
+            self.run_quiet(setup.install_ref, str(origin), "v9", config, self.fs)
 
 
 class OrphanCleanupTests(SetupTestCase):
