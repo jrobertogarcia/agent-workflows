@@ -36,7 +36,7 @@ Skills for delivering software with coding agents through explicit, human-gated 
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
 
 ### Orchestrate
-*   **`orchestrate`**: Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use to run the whole lifecycle end to end.
+*   **`orchestrate`**: Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use only when the user explicitly asks to orchestrate or run the whole lifecycle end to end, or to resume an orchestrated run; never for a single step or an ordinary implementation request.
 
 ---
 
