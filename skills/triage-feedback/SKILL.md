@@ -5,8 +5,8 @@ description: Triage a batch of findings on this repo's skills into the GitHub is
 
 # Triage Feedback
 
-1. **Load**: Read the findings pasted in the invocation, the open issues (`gh issue list --state open --json number,title,body,labels`), the pinned index #50, and the private note `~/.agent-workflows/agent-workflows/orchestrate-remediation.md`.
-2. **Triage Each Finding**: Dispatch one fresh mid-tier subagent per finding where the host supports subagents, in parallel, giving each the finding and the full open-issue list; otherwise process findings one at a time in this thread. Triage is read-only either way: no `gh` writes, no repo or note edits, because only Apply writes. Each triage finds evidence in the host's local session transcripts (e.g. `~/.claude/projects` on Claude Code) and the `~/.agent-workflows/` run folders (it returns pointers, not contents) and the root cause in the affected skill's spec, then returns:
+1. **Load**: Read the findings pasted in the invocation, the open issues (`gh issue list --state open --limit 200 --json number,title,body,labels`), the pinned index #50, and the private note `~/.agent-workflows/agent-workflows/orchestrate-remediation.md`.
+2. **Triage Each Finding**: Dispatch one fresh mid-tier subagent per finding where the host supports subagents, in parallel, giving each the finding and the full open-issue list; otherwise process findings one at a time in this thread. Triage is read-only either way: no `gh` writes, no repo or note edits, because only Apply writes. Each triage finds evidence in the host's local session transcripts (e.g. `~/.claude/projects` on Claude Code) and the `~/.agent-workflows/` run folders, and the root cause in the affected skill's spec, then returns, citing evidence as pointers rather than contents:
    - **extend #N** (duplicates land here), **new**, or **no change** (already resolved or not justified, with the reason);
    - `observed` or `speculative`, and an existing `theme:*` label, a proposed new one, or none;
    - the proposed title and body, per the Backlog Rules.

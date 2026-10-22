@@ -297,9 +297,10 @@ class GlobalInstallTests(SetupTestCase):
         (config.home / ".claude").mkdir(parents=True)
         claude_skills = config.home / ".claude" / "skills"
 
-        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs)
+        output = self.capture_stdout(setup.install_global, self.skills_dir, config, self.fs)[1]
         self.assertTrue((claude_skills / "skill-00").exists())
         self.assertFalse((claude_skills / "triage-feedback").exists())
+        self.assertNotIn("maintainer-only", output)
 
         self.run_quiet(setup.install_global, self.skills_dir, config, self.fs, maintainer=True)
         self.assertTrue((claude_skills / "triage-feedback").exists())
@@ -313,7 +314,7 @@ class GlobalInstallTests(SetupTestCase):
         output = self.capture_stdout(setup.install_global, self.skills_dir, config, self.fs)[1]
 
         self.assertFalse((config.home / ".claude" / "skills" / "triage-feedback").exists())
-        self.assertIn("Removed maintainer-only skill triage-feedback; rerun with --maintainer", output)
+        self.assertIn("Removing maintainer-only skill triage-feedback; rerun with --maintainer", output)
 
     def test_global_install_skips_unmanaged_collision_and_installs_others(self):
         self.add_skills()

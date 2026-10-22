@@ -375,7 +375,7 @@ def install_global(
             if not maintainer:
                 for name in sorted(MAINTAINER_SKILLS):
                     if fs_manager.is_managed_target(target.path / name, repo_dir):
-                        Console.warning(f"Removed maintainer-only skill {name}; rerun with --maintainer to keep it.")
+                        Console.warning(f"Removing maintainer-only skill {name}; rerun with --maintainer to keep it.")
 
             # Sync target path to clean up any orphaned rules first!
             sync_target_directory(target.path, skill_names, repo_dir, fs_manager)
