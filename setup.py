@@ -346,13 +346,21 @@ def sync_target_directory(
                     Console.error(f"Failed to clean orphaned target {item.name}: {err}")
 
 
-def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> int:
+# Repo-maintainer tooling, not part of the lifecycle; installed only on request.
+MAINTAINER_SKILLS = {"triage-feedback"}
+
+
+def install_global(
+    skills_dir: Path, config: AppConfig, fs_manager: FileSystemManager, force: bool = False, maintainer: bool = False
+) -> int:
     """Installs skills and agents globally for detected agent tool folders; returns how many were skipped."""
     skipped = 0
     Console.info("Scanning active agent configurations...")
     linked_any = False
     repo_dir = skills_dir.parent.resolve()
     skill_names = list_folder_names(skills_dir)
+    if not maintainer:
+        skill_names -= MAINTAINER_SKILLS
     agent_names = list_folder_names(repo_dir / "agents")
 
     for target in config.targets:
@@ -364,6 +372,11 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
             except OSError as err:
                 raise WorkflowSetupError(f"Failed to create target directory {target.path}: {err}")
             
+            if not maintainer:
+                for name in sorted(MAINTAINER_SKILLS):
+                    if fs_manager.is_managed_target(target.path / name, repo_dir):
+                        Console.warning(f"Removed maintainer-only skill {name}; rerun with --maintainer to keep it.")
+
             # Sync target path to clean up any orphaned rules first!
             sync_target_directory(target.path, skill_names, repo_dir, fs_manager)
             
@@ -397,7 +410,9 @@ def run_git(*args: str) -> None:
         raise WorkflowSetupError(f"git {' '.join(args)} failed: {str(detail).strip()}")
 
 
-def install_ref(origin: str, ref: str, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> None:
+def install_ref(
+    origin: str, ref: str, config: AppConfig, fs_manager: FileSystemManager, force: bool = False, maintainer: bool = False
+) -> None:
     """Checks out a release tag detached in the install directory and links its skills."""
     install_dir = config.install_dir
     if (install_dir / ".git").exists():
@@ -407,7 +422,7 @@ def install_ref(origin: str, ref: str, config: AppConfig, fs_manager: FileSystem
         run_git("clone", origin, str(install_dir))
     run_git("-C", str(install_dir), "checkout", "--detach", f"refs/tags/{ref}")
     Console.info(f"Installed {ref} at {install_dir}")
-    skipped = install_global(install_dir / "skills", config, fs_manager, force=force)
+    skipped = install_global(install_dir / "skills", config, fs_manager, force=force, maintainer=maintainer)
     if skipped:
         Console.warning(f"{skipped} entries were skipped as unmanaged. Run `unlink` from your old checkout, or pass --force.")
 
@@ -550,7 +565,7 @@ def compile_project(
         WindsurfRuleCompiler()
     ]
 
-    active_skills = list_folder_names(skills_dir) - PROJECT_EXCLUDED_SKILLS
+    active_skills = list_folder_names(skills_dir) - PROJECT_EXCLUDED_SKILLS - MAINTAINER_SKILLS
     repo_dir = skills_dir.parent.resolve()
 
     Console.info(f"Configuring project-level rules at: {project_path}")
@@ -596,11 +611,13 @@ def main() -> None:
     # Link command
     link_parser = subparsers.add_parser("link", help="Link skills globally to active agent config directories.")
     link_parser.add_argument("--force", action="store_true", help="Replace existing unmanaged target files or directories.")
+    link_parser.add_argument("--maintainer", action="store_true", help="Also install maintainer-only skills.")
 
     # Install command
     install_parser = subparsers.add_parser("install", help="Check out a release tag and link its skills globally.")
     install_parser.add_argument("--ref", required=True, help="Release tag to install.")
     install_parser.add_argument("--force", action="store_true", help="Replace existing unmanaged target files or directories.")
+    install_parser.add_argument("--maintainer", action="store_true", help="Also install maintainer-only skills.")
 
     # Unlink command
     subparsers.add_parser("unlink", help="Unlink global skills from agent config directories.")
@@ -625,14 +642,14 @@ def main() -> None:
 
     try:
         if args.command == "link":
-            install_global(skills_dir, config, fs_manager, force=args.force)
+            install_global(skills_dir, config, fs_manager, force=args.force, maintainer=args.maintainer)
         elif args.command == "install":
             origin = subprocess.run(
                 ["git", "-C", str(repo_dir), "remote", "get-url", "origin"], capture_output=True, text=True
             ).stdout.strip()
             if not origin:
                 raise WorkflowSetupError("No origin remote found in this checkout.")
-            install_ref(origin, args.ref, config, fs_manager, force=args.force)
+            install_ref(origin, args.ref, config, fs_manager, force=args.force, maintainer=args.maintainer)
         elif args.command == "unlink":
             uninstall_global(skills_dir, config, fs_manager)
         elif args.command == "project":

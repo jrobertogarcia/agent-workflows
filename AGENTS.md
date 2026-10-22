@@ -45,3 +45,11 @@ Frontmatter `description` in each SKILL.md is authoritative; keep this table and
 | **`distill-lessons`** | `**/*` | Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery. | [SKILL.md](skills/distill-lessons/SKILL.md) |
 | **`validate-commit`** | `**/*` | Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing. | [SKILL.md](skills/validate-commit/SKILL.md) |
 | **`orchestrate`** | `**/*` | Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use only when the user explicitly asks to orchestrate or run the whole lifecycle end to end, or to resume an orchestrated run; never for a single step or an ordinary implementation request. | [SKILL.md](skills/orchestrate/SKILL.md) |
+
+---
+
+## 3. Maintainer Tooling
+
+These skills are installed only with `setup.py link --maintainer` or `setup.py install --ref <tag> --maintainer`, and are not counted in the registry above.
+
+- **`triage-feedback`**: Triage a batch of findings on this repo's skills into the GitHub issue backlog, one read-only triage per finding (a fresh subagent where the host supports it), writing only after the maintainer approves a preview. Maintainer-only; use when the maintainer pastes findings to triage. ([SKILL.md](skills/triage-feedback/SKILL.md))

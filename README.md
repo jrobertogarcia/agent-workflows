@@ -66,6 +66,8 @@ python3 setup.py link --force   # `install` takes --force too
 python3 setup.py unlink        # removes only what this repository installed
 ```
 
+Pass `--maintainer` to `link` or `install` to also install maintainer-only skills such as `triage-feedback`.
+
 Cursor and Windsurf read project rules instead. Compile the skills into a project with:
 
 ```bash

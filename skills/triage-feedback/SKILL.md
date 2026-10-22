@@ -1,12 +1,12 @@
 ---
 name: triage-feedback
-description: Triage a batch of findings on this repo's skills into the GitHub issue backlog, one fresh read-only subagent per finding, writing only after the maintainer approves a preview. Maintainer-only; use when the maintainer pastes findings to triage.
+description: Triage a batch of findings on this repo's skills into the GitHub issue backlog, one read-only triage per finding (a fresh subagent where the host supports it), writing only after the maintainer approves a preview. Maintainer-only; use when the maintainer pastes findings to triage.
 ---
 
 # Triage Feedback
 
 1. **Load**: Read the findings pasted in the invocation, the open issues (`gh issue list --state open --json number,title,body,labels`), the pinned index #50, and the private note `~/.agent-workflows/agent-workflows/orchestrate-remediation.md`.
-2. **Triage Each Finding**: Dispatch one fresh mid-tier subagent per finding, in parallel, giving each the finding and the full open-issue list. Subagents are read-only: no `gh` writes, no repo or note edits. Each finds evidence in `~/.claude/projects/*/*.jsonl` and `~/.agent-workflows/` (it returns pointers, not contents) and the root cause in the affected skill's spec, then returns:
+2. **Triage Each Finding**: Dispatch one fresh mid-tier subagent per finding where the host supports subagents, in parallel, giving each the finding and the full open-issue list; otherwise process findings one at a time in this thread. Triage is read-only either way: no `gh` writes, no repo or note edits, because only Apply writes. Each triage finds evidence in the host's local session transcripts (e.g. `~/.claude/projects` on Claude Code) and the `~/.agent-workflows/` run folders (it returns pointers, not contents) and the root cause in the affected skill's spec, then returns:
    - **extend #N** (duplicates land here), **new**, or **no change** (already resolved or not justified, with the reason);
    - `observed` or `speculative`, and an existing `theme:*` label, a proposed new one, or none;
    - the proposed title and body, per the Backlog Rules.
