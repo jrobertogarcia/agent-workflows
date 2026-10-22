@@ -290,32 +290,6 @@ class GlobalInstallTests(SetupTestCase):
         self.assertTrue(all(installed_are_symlinks))
         self.assertEqual(remaining, [])
 
-    def test_install_global_installs_maintainer_skill_only_on_request(self):
-        self.add_skill("skill-00")
-        self.add_skill("triage-feedback")
-        config = self.make_config()
-        (config.home / ".claude").mkdir(parents=True)
-        claude_skills = config.home / ".claude" / "skills"
-
-        output = self.capture_stdout(setup.install_global, self.skills_dir, config, self.fs)[1]
-        self.assertTrue((claude_skills / "skill-00").exists())
-        self.assertFalse((claude_skills / "triage-feedback").exists())
-        self.assertNotIn("maintainer-only", output)
-
-        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs, maintainer=True)
-        self.assertTrue((claude_skills / "triage-feedback").exists())
-
-    def test_install_global_without_maintainer_removes_earlier_maintainer_install_with_note(self):
-        self.add_skill("triage-feedback")
-        config = self.make_config()
-        (config.home / ".claude").mkdir(parents=True)
-
-        self.run_quiet(setup.install_global, self.skills_dir, config, self.fs, maintainer=True)
-        output = self.capture_stdout(setup.install_global, self.skills_dir, config, self.fs)[1]
-
-        self.assertFalse((config.home / ".claude" / "skills" / "triage-feedback").exists())
-        self.assertIn("Removing maintainer-only skill triage-feedback; rerun with --maintainer", output)
-
     def test_global_install_skips_unmanaged_collision_and_installs_others(self):
         self.add_skills()
         config = self.make_config()
@@ -766,18 +740,6 @@ class ProjectCompilationTests(SetupTestCase):
         self.assertFalse(old_rule.exists())
         self.assertFalse((project / ".windsurf" / "rules" / "orchestrate.md").exists())
 
-    def test_compile_project_never_compiles_maintainer_skills(self):
-        self.add_skill("skill-00")
-        self.add_skill("triage-feedback")
-        project = self.root / "project"
-        project.mkdir()
-
-        self.run_quiet(setup.compile_project, self.skills_dir, project, self.fs)
-
-        self.assertTrue((project / ".cursor" / "rules" / "skill-00.mdc").exists())
-        self.assertFalse((project / ".cursor" / "rules" / "triage-feedback.mdc").exists())
-        self.assertFalse((project / ".windsurf" / "rules" / "triage-feedback.md").exists())
-
     def test_compile_project_refreshes_managed_rules(self):
         self.add_skill("skill-00", "Original description")
         project = self.root / "project"
@@ -877,19 +839,6 @@ class InstallRefTests(SetupTestCase):
 
         self.assertIn("skipped as unmanaged", output)
 
-    def test_install_ref_with_maintainer_links_maintainer_skill(self):
-        origin = self.make_origin()
-        (origin / "skills" / "triage-feedback").mkdir()
-        (origin / "skills" / "triage-feedback" / "SKILL.md").write_text("---\nname: triage-feedback\n---\n", encoding="utf-8")
-        self.git(origin, "add", ".")
-        self.git(origin, "commit", "-qm", "two")
-        self.git(origin, "tag", "v2")
-        config = self.make_config()
-
-        self.run_quiet(setup.install_ref, str(origin), "v2", config, self.fs, maintainer=True)
-
-        self.assertTrue((config.home / ".claude" / "skills" / "triage-feedback").exists())
-
     def test_install_ref_rejects_unknown_tag(self):
         origin = self.make_origin()
         config = self.make_config()
@@ -968,7 +917,7 @@ class RegistryDescriptionSyncTests(unittest.TestCase):
         fs = setup.FileSystemManager()
         descriptions = {}
         for skill_dir in sorted((self.repo / "skills").iterdir()):
-            if skill_dir.is_dir() and skill_dir.name not in setup.MAINTAINER_SKILLS:
+            if skill_dir.is_dir():
                 metadata, _ = fs.load_frontmatter(skill_dir / "SKILL.md")
                 descriptions[skill_dir.name] = metadata.get("description")
         return descriptions
