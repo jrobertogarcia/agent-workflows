@@ -17,7 +17,7 @@ Target `jrobertogarcia/agent-workflows` (`<target>`): pass `-R <target>` to ever
 5. **Preview and Stop**: Show every write in one list and wait for the user's approval.
    - Full flow: issue edits, new issues, the new index list, and note lines. A new `theme:*` label needs its own approval, and its index position is proposed here.
    - Contributor mode: new issues only, created without `--label`; the proposed labels and theme are stated in the body instead. For **extend** or **no change**, show the existing issue's link and file nothing.
-6. **Apply**: Only this thread writes. Before each write, re-read the issue it touches and, in the full flow, the index; if either changed since Load, stop.
+6. **Apply**: Only this thread writes, with `gh label create -R <target> <name>`, `gh issue edit -R <target> <N> --body-file <file>` and `gh issue create -R <target> --title <title> --body-file <file>`, adding one `--label` per label in the full flow only. Before each write, re-read the issue it touches and, in the full flow, the index; if either changed since Load, stop.
    - Full flow: create any approved label first; edit issue bodies in place with current truth only, and post no comments; create the new issues; rewrite the index list in place, keeping its preamble, and place each new issue under its theme (or Unthemed) with `observed` before `speculative`; if the note exists, add or rewrite one evidence-map line per touched issue as `- #N <title>: <date span>; <paths>`.
    - Contributor mode: create each new issue with no `--label` flag, since it fails or is ignored without write access.
    - If any write fails, stop, report exactly what was written, and do not retry.
