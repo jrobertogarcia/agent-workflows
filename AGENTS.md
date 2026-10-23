@@ -24,6 +24,11 @@ Below is the structured list of the 20 core skills managed by this repository. C
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
+Commands in skills:
+- Pin the exact command only for irreversible or remote-visible actions (push, force or reset, PR create) and for commands whose output is parsed (`--json` fields).
+- Otherwise state the intent and its success check.
+- Ship a script only for multi-step logic that must behave the same every time or that agents keep rewriting.
+
 | Skill Name (Identifier) | Target Globs | Focus & Prompt Trigger Condition | Prompt Manifest |
 | :--- | :--- | :--- | :--- |
 | **`gather-context`** | `**/*` | Gather and organize context for a given file, folder, or component before planning or coding. Use when starting work on unfamiliar code. | [SKILL.md](skills/gather-context/SKILL.md) |
