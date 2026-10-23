@@ -60,7 +60,7 @@ For each phase, `plan-implementation` writes the plan before any code. Save the 
 Then verify as needed: `check-alignment` against the plan, `simplify-diff` for cuts, `refactor-code` for structure, `audit-tests` when the suite itself is in question, `validate-commit` before committing, and `create-commit` to commit.
 
 ### Hand over, review, release
-`prepare-handover` closes the implementation thread, `review-branch` reviews it in a fresh one, `create-pr` opens the pull request, and `distill-lessons` records anything durable learned along the way.
+`prepare-handover` closes the implementation thread, `review-branch` reviews it in a fresh one, `create-pr` opens the pull request, and `distill-lessons` records anything durable learned along the way. To report feedback on these skills themselves, `triage-feedback` files it into this project's issue backlog.
 
 **Thread boundary.** Review quality drops as a conversation grows, so the review runs with a clean context:
 

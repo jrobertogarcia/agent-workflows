@@ -34,6 +34,7 @@ Skills for delivering software with coding agents through explicit, human-gated 
 *   **`review-branch`**: Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request.
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
+*   **`triage-feedback`**: Triage feedback on this project's skills into its GitHub issue backlog, checking each finding read-only against existing issues and writing only after the user approves a preview. Use when you have findings, bugs, or suggestions about these skills to report.
 
 ### Orchestrate
 *   **`orchestrate`**: Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use only when the user explicitly asks to orchestrate or run the whole lifecycle end to end, or to resume an orchestrated run; never for a single step or an ordinary implementation request.
