@@ -5,7 +5,7 @@ description: Triage feedback on this project's skills into its GitHub issue back
 
 # Triage Feedback
 
-Target `jrobertogarcia/agent-workflows` (`<target>`): pass `-R <target>` to every `gh` call, never the current directory's repository or a fork.
+Target `jrobertogarcia/agent-workflows` (`<target>`): pass `-R <target>` to every `gh issue`, `gh label` and `gh pr` call; `gh repo view` takes `<target>` positionally and `gh auth status` takes neither. Never use the current directory's repository or a fork.
 
 1. **Preflight**: Run `gh auth status --hostname github.com`; if it fails, stop and tell the user to run `gh auth login`. Read `gh repo view <target> --json viewerPermission`: `ADMIN`, `MAINTAIN` or `WRITE` gets the full flow; anyone else gets contributor mode, which only creates new issues.
 2. **Load**: Read the findings pasted in the invocation, every issue (`gh issue list -R <target> --state all --limit 500 --json number,title,body,labels,state,isPinned`), the labels (`gh label list -R <target> --limit 500`), and the index, which is the pinned issue; in the full flow, stop unless exactly one issue is pinned. Read the private note `~/.agent-workflows/agent-workflows/orchestrate-remediation.md` only if it exists.
