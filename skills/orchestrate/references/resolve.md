@@ -14,13 +14,13 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Start
 
-- After `story`, dispatch `resolve` with the story report's numbered questions as kind `question`.
+- After `story`, dispatch `resolve` with the story report's numbered questions as kind `question`; inputs: the requirement verbatim and the `story` report verbatim.
 - Present the story report, the Settled and Needs you lists, and the proposed stack name.
 - Hold the resolve report in this thread. When the name is confirmed, write it verbatim to `S/stacks/<name>/resolve.md` together with `requirements.md`.
 - A Needs you item the human leaves unanswered proceeds on its recommended option.
 - The human's answers in `requirements.md` override `resolve.md`; add that sentence to the instructions of every step that gets both.
 - On Start's single `story` re-run:
-  - delete `resolve.md`;
+  - after it returns, delete `resolve.md`;
   - resolve its questions again, and on `SETTLED` or `NEEDS-DECISION` write its report to `resolve.md`;
   - present the lists again.
 - This adds no stop.
