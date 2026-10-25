@@ -79,8 +79,8 @@ In these paths `<repo>` is the main repository's directory name (shared by its w
 
 What you do at each touchpoint:
 
-*   **Story review**: answer the numbered questions from `review-story`, and confirm or replace the proposed stack name.
-*   **Plan approval** (each layer): reply `approve`, or give feedback for a revised plan. No code is written before approval.
+*   **Story review**: read the Settled list (override any item you disagree with), answer the Needs you questions, and confirm or replace the proposed stack name; an unanswered item proceeds on its recommended option.
+*   **Plan approval** (each layer): the plan comes with Settled and Needs you lists; reply `approve` (which accepts each Needs you item's recommended option), or give feedback for a revised plan. No code is written before approval.
 *   **Release approval** (each layer): read the diff summary, review verdict, handover, scope reductions, and the pull request title and body. Reply `approve` to open the pull request with that text, `redraft` with feedback to change only the text, or give feedback for another fix pass. If the worker may not open it, it pushes the branch and hands you the approved title and body; open the pull request, then invoke `orchestrate` again.
 *   **BLOCKED**: read the reported cause, then reply `fix` with direction, `re-plan` with optional feedback, `retry` (re-run the failed step unchanged, for example after fixing the environment), or `adopt` (accept the branch as it now stands; `adopt` also clears a halt on a moved branch tip). Before a branch exists, reply `fix` with direction or `retry`. Any other halt is cleared by fixing its cause and invoking `orchestrate` again, unless the halt names a reply (such as `narrow`).
 *   **Before the layers are approved**: `register <PR number>` builds the stack on an existing open pull request.
