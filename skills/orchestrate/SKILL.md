@@ -45,7 +45,7 @@ S/stacks/<name>/resolve.md      S/<branch>/fix-input.md
   ```
 - `requirements.md`: the requirement verbatim, then each round of the human's answers verbatim.
 - `plan-feedback.md`: plan feedback since the last Gate 1 `approve`, each appended verbatim under a `## <UTC time>` heading (a `re-plan` after approval replaces it). Only `plan` reads it; its presence makes `PLANNING` a re-plan.
-- `resolve.md`: the last `resolve` report verbatim, per `<resolve>`.
+- `resolve.md`: per `<resolve>`.
 - `stack.json` (layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, or `LAYERS`; `git_common_dir` is `<common>` (absent in older files); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
   ```json
   { "schema_version": 1, "stack_name": "<name>", "trunk": "<trunk>", "git_common_dir": "<common>", "phase": "ANALYSIS", "blocked": null,
