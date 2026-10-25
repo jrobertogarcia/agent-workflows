@@ -21,7 +21,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - The human's answers in `requirements.md` override `resolve.md`; add that sentence to the instructions of every step that gets both.
 - On Start's single `story` re-run:
   - delete `resolve.md`;
-  - resolve its questions again when its count is above 0, and on `SETTLED` or `NEEDS-DECISION` write its report to `resolve.md`;
+  - resolve its questions again, and on `SETTLED` or `NEEDS-DECISION` write its report to `resolve.md`;
   - present the lists again.
 - This adds no stop.
 
