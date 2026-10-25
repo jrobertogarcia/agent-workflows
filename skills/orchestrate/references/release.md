@@ -24,7 +24,3 @@ Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md
 - **Precondition**: `pr-draft.md`'s `Branch tip:` equals `approved_sha`. Otherwise set `gate_2_release_approved` false, run Draft, and present Gate 2. An unapproved draft is never published.
 - **Step 1, an open pull request at `approved_sha`**: read its text with `gh pr view <branch> --json title,body`. Dispatch `release` anyway when its title or body differs from `pr-draft.md`'s, ignoring trailing whitespace. The push is then a no-op, and `gh pr edit` applies the approved text. This covers a text-only fix after `reopen` and a crash between push and edit.
 - **`PUSHED`**: report `pr-draft.md`'s title and body for the human to use.
-
-## Reopen
-
-The `BLOCKED` → fix → Stage A → `B` path continues through Draft and Gate 2. With a pull request open, `draft` starts from its live title and body.
