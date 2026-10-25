@@ -27,7 +27,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## PLANNING
 
-- After writing this entry's first `plan.md`, delete any `S/<branch>/resolve.md`, so it never shows an earlier plan's lists. If the plan's `Open items:` is 0, skip `resolve`; otherwise dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and on `SETTLED` or `NEEDS-DECISION` write its report verbatim to `S/<branch>/resolve.md`.
+- After writing this entry's first `plan.md`, delete any `S/<branch>/resolve.md`, so it never shows an earlier plan's lists. Dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and on `SETTLED` or `NEEDS-DECISION` write its report verbatim to `S/<branch>/resolve.md`.
 - If the report's `Plan changes:` is above 0, dispatch `plan` once more with that report as an input, and write its `plan.md`. This happens at most once per entry to `PLANNING`: the count is held in this thread, and a crash re-runs `PLANNING` from the start.
 - Do not resolve the second plan's open items.
 - Then set `WAITING_PLAN_APPROVAL`.
