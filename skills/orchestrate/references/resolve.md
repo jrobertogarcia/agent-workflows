@@ -20,14 +20,14 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - A Needs you item the human leaves unanswered proceeds on its recommended option.
 - The human's answers in `requirements.md` override `resolve.md`; add that sentence to the instructions of every step that gets both.
 - On Start's single `story` re-run:
-  - resolve its questions again when its count is above 0;
-  - replace `resolve.md` with the new report, or delete it when the count is 0;
+  - delete `resolve.md`;
+  - resolve its questions again when its count is above 0, and on `SETTLED` or `NEEDS-DECISION` write its report to `resolve.md`;
   - present the lists again.
 - This adds no stop.
 
 ## PLANNING
 
-- After writing `plan.md`: if the plan's `Open items:` is 0, skip `resolve` and delete any `S/<branch>/resolve.md`; otherwise dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and write its report verbatim to `S/<branch>/resolve.md`.
+- After writing this entry's first `plan.md`, delete any `S/<branch>/resolve.md`, so it never shows an earlier plan's lists. If the plan's `Open items:` is 0, skip `resolve`; otherwise dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and on `SETTLED` or `NEEDS-DECISION` write its report verbatim to `S/<branch>/resolve.md`.
 - If the report's `Plan changes:` is above 0, dispatch `plan` once more with that report as an input, and write its `plan.md`. This happens at most once per entry to `PLANNING`: the count is held in this thread, and a crash re-runs `PLANNING` from the start.
 - Do not resolve the second plan's open items.
 - Then set `WAITING_PLAN_APPROVAL`.
