@@ -22,7 +22,7 @@ Read-only: never edit code and never post. Any outward-facing text, such as a re
    - Tag each piece of evidence VERIFIED or INFERRED with its location, and state a confidence.
    - For a finding, recommend fix, defer, or discuss.
    - When a plan is among the inputs, mark `(changes plan)` each item whose answer or recommended option differs from what the plan states or assumes.
-6. **Synthesize**: Cross-check the results for contradictions; re-research a contradiction once, or make it NEEDS-DECISION. Rank NEEDS-DECISION items by impact times uncertainty and keep about 5 at most under Needs you. The rest proceed on their recommended option and go under Settled, marked deferred, where the human can override them; none is dropped. Write the full per-item reports to the report path.
+6. **Synthesize**: Cross-check the results for contradictions; re-research a contradiction once, or make it NEEDS-DECISION. Rank NEEDS-DECISION items by impact times uncertainty and keep about 5 at most under Needs you. The rest go under Settled, marked deferred, where the human can override them; none is dropped. Write the full per-item reports to the report path.
 7. **Report**:
    - **Settled**: one line per item: its number, verdict, and answer or option, plus `deferred` where it applies.
    - **Needs you**: each item's exact question, who decides, the options, and the recommended option.
