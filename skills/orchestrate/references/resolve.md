@@ -36,14 +36,11 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 - Present `plan.md`, plus the Settled and Needs you lists from `S/<branch>/resolve.md` when it exists.
 - A bare `approve` while Needs you items are open accepts each item's recommended option, which the presentation shows. The re-dispatched plan already assumes those options; when no re-dispatch ran, they did not differ from the plan.
-- Any other reply is feedback, handled as Gate 1 handles it.
 
 ## A3 CONFLICT
 
-Stage A step 3 only; `A6a` is unchanged.
+Stage A step 3 only.
 
 - Dispatch `resolve` with each conflict in the `A3` report as kind `conflict`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `A3` report verbatim. Add the instruction: "Any resolution that would change `plan.md` is NEEDS-DECISION."
-- `SETTLED` is handled exactly like `GAPS`, using `gaps_fix_used`, with the resolve report as the fix pass's input, so `fix-input.md` holds it verbatim per Fix pass:
-  - with `gaps_fix_used` false, a fix pass, not counted, that sets it true;
-  - with it true, a counted failure.
+- `SETTLED` is handled exactly like `GAPS`, using `gaps_fix_used`, with the resolve report as the fix pass's input.
 - `NEEDS-DECISION` sets `BLOCKED` with the resolve report's Needs you list.
