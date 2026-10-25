@@ -7,8 +7,8 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
 - Dispatch `draft`.
-- The result is transient (re-run once, then BLOCKED, per Result) when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
-- Then write `WAITING_RELEASE_APPROVAL`. A `draft` that returns `STOPPED` sets `BLOCKED`, and `retry` re-runs `draft`.
+- The result is transient per Result when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
+- Then write `WAITING_RELEASE_APPROVAL`; `retry` after a `draft` BLOCKED re-runs `draft`.
 
 ## Gate 2
 
