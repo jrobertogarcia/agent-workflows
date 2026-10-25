@@ -20,8 +20,8 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - A Needs you item the human leaves unanswered proceeds on its recommended option.
 - The human's answers in `requirements.md` override `resolve.md`; add that sentence to the instructions of every step that gets both.
 - On Start's single `story` re-run:
-  - after it returns, delete `resolve.md`;
-  - resolve its questions again, and on `SETTLED` or `NEEDS-DECISION` write its report to `resolve.md`;
+  - resolve its questions again, with the first round's Settled list as an input and the instruction: "Carry each Settled item forward unless `requirements.md` overrides it.";
+  - on `SETTLED` or `NEEDS-DECISION`, append its report to `resolve.md` under the heading `## Story re-run`, keeping the first round's report;
   - present the lists again.
 - This adds no stop.
 
