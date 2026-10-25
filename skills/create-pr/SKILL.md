@@ -7,10 +7,16 @@ description: Push the current branch and open a pull request with a synthesized 
 
 ## Execution
 
-Takes an optional base branch and an optional keep-checkout flag.
+Takes an optional base branch, any related pull request URLs (e.g. a parent pull request), an optional keep-checkout flag, and an optional draft-only flag.
 
-1. **Read the Diff**: Read the branch diff against the given base, else the repository's default branch. Reuse handover or review context already gathered in this thread rather than re-reading it.
-2. **Draft the Title**: Match the title convention of recent merged pull requests in the repository, defaulting to Conventional Commits (e.g. `feat(auth): implement user authentication`) when none is established.
+1. **Read the Diff**: Read the branch diff against the given base, else the repository's default branch. Read the handover at `~/.agent-workflows/<repo>/<branch>/handover.md` when it exists, where `<repo>` is `basename(dirname(git rev-parse --path-format=absolute --git-common-dir))` and `<branch>` is `git branch --show-current`. Treat it as the implementer's self-report.
+   - Its `Branch tip:` SHA must prefix-match `git rev-parse HEAD`. Treat a mismatch or a missing line as stale and discard its verification claims.
+   - Reuse context already gathered in this thread rather than re-reading it.
+2. **Read Conventions & Draft the Title**: Read your recent merged pull requests:
+   ```bash
+   gh pr list --state merged --author @me --limit 5 --json title,body
+   ```
+   If that returns none, run it again without `--author @me`; if still none, no convention is established. Match their title convention, defaulting to Conventional Commits (e.g. `feat(auth): implement user authentication`) when none is established. Use the same pull requests for the body's structure, tone and link conventions in step 3.
 3. **Write the Body**: Write for a busy reviewer: short, plain, specific. Every body carries this content:
    ```markdown
    ## Why
@@ -22,11 +28,22 @@ Takes an optional base branch and an optional keep-checkout flag.
    ## Tested
    <only when verification is non-obvious from the diff>
    ```
-   - **No PR template**: use those headings exactly.
+   - **No PR template**: follow the structure of the recent pull requests from step 2; with none, use those headings exactly.
    - **PR template exists** anywhere in the repository (e.g. `.github/pull_request_template.md` or `docs/pull_request_template.md`): its sections are the skeleton, so drop those headings and write the same content into it. Put Why and What in the free-form narrative section (`## Description`, `## Summary`, or similar), or split them across sections that already map to them (e.g. `## Motivation` and `## Changes`). When the template has no narrative section at all, put Why and What above its first heading. Add no headings beyond the template, fill its metadata fields (e.g. ticket links) from context, and leave checklist items unchecked unless you verified them yourself. Skip Tested when a checklist item already covers verification.
+   - **Links**: Build one link list from the handover's `Links` section and the related pull request URLs you were given, and include every link on it. The step 2 pull requests decide only how links are worded and which kinds (ticket, spec, issue, parent pull request) to expect; name each expected kind that has no link in your report. Never invent a link and never put a placeholder for a missing one in the body.
+   - **Process vocabulary**: Write about the change, not how it was produced. Leave out terms from your own process: approval gates, step names or ids, numbered questions or rulings, state or evidence file names, and references to "the author".
+   - **Deviations and pending verification**: State a deviation from the requirement, or a check not yet run, plainly when the handover records one.
    - Leave out shell commands, merge instructions, and test inventories.
    - Compose the body into a temp file outside the repository.
-4. **Check Before Creating**: Re-read the drafted body. Confirm Why and What are both covered, the headings match the template when one exists and the schema when it does not, and nothing was added beyond them.
+4. **Check Before Creating**: Re-read the drafted title and body and fix them in place:
+   - every step 3 rule holds, and nothing is added beyond the skeleton;
+   - every claim about what changed matches the diff;
+   - every claim about verification is backed by the handover's evidence, and only when the handover is not stale;
+   - the Why matches the requirement or handover.
+
+   Cut or correct each failing sentence, and state a verification claim you cannot confirm as unverified.
+
+   When draft-only is requested, stop here. Push nothing, then report the title, the body, and any missing link kinds.
 5. **Push & Create**: When a base is given, confirm it exists on origin (`git ls-remote --exit-code --heads origin <base>`) and stop if it does not. Push the active branch to origin and open the pull request using the drafted body file, passing `--base <base>` only when a base is given; otherwise omit it.
    ```bash
    git push origin HEAD && gh pr create --title "<TITLE>" --body-file <body-file> [--base <base>]
