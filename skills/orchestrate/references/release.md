@@ -13,7 +13,7 @@ Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md
 ## Gate 2
 
 - **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none".
-- **`redraft <feedback>`**, with `gate_2_release_approved` true or false, handled before Gate 2's "flag true and not feedback" check:
+- **`redraft <feedback>`**:
   - Set `gate_2_release_approved` false.
   - Dispatch `draft` with the feedback verbatim and the current `pr-draft.md`.
   - Present Gate 2 again.
