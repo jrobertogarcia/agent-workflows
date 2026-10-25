@@ -15,6 +15,7 @@ graph TD
         GC["gather-context"]
         RW["research-web"]
         RC["root-cause"]
+        RO["resolve-open-items"]
     end
 
     CB["2. create-branch"]
@@ -49,7 +50,7 @@ graph TD
 Each skill's description is in the [Skills Index](README.md#skills-index).
 
 ### Analyze
-Before touching a branch, run whichever of `review-story`, `gather-context`, `research-web`, and `root-cause` the task needs.
+Before touching a branch, run whichever of `review-story`, `gather-context`, `research-web`, and `root-cause` the task needs. When a review, plan, or check leaves open items, `resolve-open-items` researches each one and returns what it settled and what needs your decision.
 
 ### Branch and break down
 `create-branch` starts the feature branch from the latest default branch; `phase-breakdown` splits a large change into small, independently verifiable phases.

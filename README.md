@@ -14,6 +14,7 @@ Skills for delivering software with coding agents through explicit, human-gated 
 *   **`research-web`**: Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence.
 *   **`review-story`**: Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement.
 *   **`root-cause`**: Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging.
+*   **`resolve-open-items`**: Research each open item (a question, conflict, review finding, or PR comment) from the available sources and return what it settled with evidence and the few decisions that need you. Use when a story review, plan, alignment check, or review leaves open items, before asking the human.
 
 ### Branch and break down
 *   **`create-branch`**: Check out the latest default branch and create a new feature branch using Conventional Commits. Use when starting new work.
