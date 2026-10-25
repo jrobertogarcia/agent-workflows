@@ -4,7 +4,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Resolve Step
 
-- Dispatch `resolve` only when the step before it reports an `Open items:` count above 0; at 0, skip it.
+- After `story` or `plan`, dispatch `resolve` only when that step reports an `Open items:` count above 0; at 0, skip it. At A3 CONFLICT, always dispatch it.
 - A missing or non-numeric `Open items:` line from `story` or `plan`, or `Plan changes:` line from the `PLANNING` `resolve`, is transient.
 - A `resolve` that returns `STOPPED` or hits a second transient does not set `BLOCKED`. Instead:
   - append `- <UTC time> resolve-open-items <tip SHA, or none>: <cause>` to the applicable `roadblocks.md`;
