@@ -13,7 +13,7 @@ Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md
 ## Gate 2
 
 - **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none".
-- **`redraft <feedback>`**:
+- **`redraft <feedback>`**, when `HEAD` equals `approved_sha` (otherwise handle it as Gate 2 handles a moved `HEAD`):
   - Set `gate_2_release_approved` false.
   - Dispatch `draft` with the feedback verbatim and the current `pr-draft.md`.
   - Present Gate 2 again.
@@ -22,4 +22,4 @@ Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md
 ## Release
 
 - **Precondition**: `pr-draft.md`'s `Branch tip:` equals `approved_sha`. Otherwise set `gate_2_release_approved` false, run Draft, and present Gate 2. An unapproved draft is never published.
-- **Step 1, an open pull request at `approved_sha`**: read its text with `gh pr view <branch> --json title,body`. Dispatch `release` anyway when its title or body differs from `pr-draft.md`'s, ignoring trailing whitespace. The push is then a no-op, and `gh pr edit` applies the approved text. This covers a text-only fix after `reopen` and a crash between push and edit.
+- **Step 1, an open pull request at `approved_sha`**: read its text with `gh pr view <branch> --json title,body`. Dispatch `release` anyway when its title or body differs from `pr-draft.md`'s, ignoring line endings (CRLF or LF) and trailing whitespace on each line. The push is then a no-op, and `gh pr edit` applies the approved text. This covers a text-only fix after `reopen` and a crash between push and edit. Skip this comparison when `roadblocks.md` logs a `PUSHED` at `approved_sha`: the human opened that pull request by hand, so its text stands, and Release continues at the RELEASED check.
