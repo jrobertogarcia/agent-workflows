@@ -20,7 +20,6 @@ Locate, on an `address <PR number>` reply.
   - Otherwise the current branch must be that layer's branch, else halt: "check out <branch>".
   - Before writing anything, check `reopen`'s preconditions other than `state.json` (the layer `RELEASED`, `stack.json` phase `LAYERS`, no layer `ACTIVE`), and halt as `reopen` does.
   - If that layer has no `state.json`, write its Layer state.
-  - Then continue with Reconcile, then `reopen` with no text.
 - **No stack located (bootstrap)**:
   - Take `<trunk>` as Start does.
   - **Layers**: if `gh stack view --json` exits 0 and lists the branch, take its `branches[].name` bottom first, keeping those whose `gh pr view <b> --json number,state,baseRefName` reads `OPEN`. A non-zero exit, or a list without the branch, makes the current branch the only layer.
@@ -31,7 +30,8 @@ Locate, on an `address <PR number>` reply.
     - `stack.json`, in the shape per `SKILL.md`: `stack_name` = `<name>`, `trunk` = `<trunk>`, `git_common_dir` = `<common>`, phase `LAYERS`, `blocked` null, `active_layer_index` null, each layer `RELEASED` with its `pr` and `scope` "registered".
     - The reviewed layer's Layer state.
   - Append `- <UTC time> orchestrate <HEAD>: address <PR>: bootstrapped` to the stack's `roadblocks.md`.
-  - Continue with Reconcile, then `reopen` with no text.
+
+In both cases, continue with Reconcile, then `reopen` with no text.
 
 ## Sync
 
