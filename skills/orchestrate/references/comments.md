@@ -25,7 +25,7 @@ Locate, on an `address <PR number>` reply.
   - Take `<trunk>` as Start does.
   - **Layers**: if `gh stack view --json` exits 0 and lists the branch, take its `branches[].name` bottom first, keeping those whose `gh pr view <b> --json number,state,baseRefName` reads `OPEN`. A non-zero exit, or a list without the branch, makes the current branch the only layer.
   - **Base check**: the bottom open layer's `baseRefName` must equal `<trunk>`, and each upper layer's must equal the open layer below it. Otherwise halt, naming the layer and its base, since drift check 4 would rebase it onto the wrong branch. This also halts a stacked PR misread as one layer, for example when gh-stack is missing.
-  - **`<name>`**: a slug of the branch: lower-case it, turn each character outside `[a-z0-9-]` into `-`, trim leading and trailing `-`, and cut it to 40 characters. Halt if `S/stacks/<name>/` or any layer's `S/<b>/` exists, naming the path (resume it, or `abandon`).
+  - **`<name>`**: a slug of the branch: lower-case it, turn each character outside `[a-z0-9-]` into `-`, trim leading and trailing `-`, and cut it to 40 characters. Halt if `S/stacks/<name>/` or any layer's `S/<b>/` exists, naming the path (resume it, or `abandon`; if `S/stacks/<name>/` has no `stack.json`, delete that directory and reply `address <PR>` again).
   - Write, in this order:
     - `requirements.md`: `address <PR>`, then the PR title and body verbatim.
     - `stack.json`, in the shape per `SKILL.md`: `stack_name` = `<name>`, `trunk` = `<trunk>`, `git_common_dir` = `<common>`, phase `LAYERS`, `blocked` null, `active_layer_index` null, each layer `RELEASED` with its `pr` and `scope` "registered".
@@ -91,8 +91,8 @@ Locate, on an `address <PR number>` reply.
 
 Gate 2 Presentation per `<release>`, when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
-- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `fix-input.md` if any, `plan.md`, `handover.md`, and `git log --oneline <base_sha>..HEAD`. Tokens: `DONE`.
-- Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Then one short, natural draft per thread, headed by its number and URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, quoting each point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
+- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `plan.md`, `handover.md`, and `git log --oneline origin/<branch>..HEAD`. Tokens: `DONE`.
+- Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Then one short, natural draft per thread, headed `Comment <n>` and its URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, quoting each point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
 - A wrong line 1 is transient.
 
 ## Restack
