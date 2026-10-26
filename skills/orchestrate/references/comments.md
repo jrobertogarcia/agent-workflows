@@ -9,6 +9,7 @@ Locate, on an `address <PR number>` reply.
 - **Stack located**:
   - If no layer's `pr` is `<PR>`, halt: "#<PR> is not a layer of <name>; check out its branch".
   - Otherwise the current branch must be that layer's branch, else halt: "check out <branch>".
+  - `stack.json` phase must be `LAYERS`, else halt: "finish <name>'s split first, or address #<PR> by hand".
   - If that layer has no `state.json` (a `register`ed layer, or a layer of a bootstrapped stack other than the reviewed one), first run the bootstrap's PR read and Base steps, then write its synthesized `plan.md` and `state.json` exactly as the bootstrap does.
   - Then continue with Reconcile, then `reopen` with no text.
 - **No stack located (bootstrap)**:
@@ -101,6 +102,7 @@ Release, before step 1's dispatch, when this branch's pull request reads `OPEN` 
   - Compare the ordered `git patch-id --stable` lists of the old range `origin/<b> --not $(git merge-base origin/<p> origin/<b>) <merged>` (`origin/<trunk>` for `<p>` in both ranges at the bottom) and the new range `$(git merge-base <p> <b>)..<b>`. The old list must be a prefix of the new one, else halt: "the restack of <b> changed or dropped pushed commits; fix <b> by hand, push it with `git push --force-with-lease=refs/heads/<b>:<origin/<b> SHA> origin <b>:refs/heads/<b>`, then check out <branch> and re-invoke." Append any extra commits, a hand fix asked for below, to this branch's `roadblocks.md`, and list them per layer when reporting the release, since they are pushed unshown.
   - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
   - `FAIL-UNRELATED` is logged and passes. On `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then check out <branch> and re-invoke." It is a failed release per `SKILL.md`.
+  - When `<b>` is below this branch, both halts also say to run `gh stack rebase --upstack <b> --no-trunk` after the fix, since the rebase above starts at this branch and would push the layers between unrebased.
 - Run the cherry-pick check again, excluding `<merged>` as Sync does; halt on a listed commit.
 - Record `L_b` = `git rev-parse origin/<b>` for every open layer.
 
