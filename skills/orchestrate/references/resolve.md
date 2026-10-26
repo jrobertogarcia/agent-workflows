@@ -46,7 +46,6 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - **Otherwise**, dispatch `resolve` with `B`'s numbered findings as kind `finding`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `B` report verbatim. Add the instruction: "Keep `B`'s numbering. For each finding, recommend fix, defer, or discuss. End each per-item report, Needs you items included, with `Tier: small` when fixing it stays inside `plan.md`'s Goal and Changes and the files it lists and changes nothing in its Out of Scope, else `Tier: large`."
 - On `SETTLED` or `NEEDS-DECISION`, replace `S/<branch>/review.md` with `## Review` and the `B` report verbatim, then `## Recommendations` and the resolve report verbatim.
 - On a `resolve` `STOPPED` or second transient, follow Resolve Step, and write `review.md` with `## Review` only, so the findings have no tier.
-- Then go to Draft per `<release>`.
 - **Gate 2 presentation**: every finding in `review.md`, numbered as `B` numbered it, most severe first, Suggestions and Nitpicks included. Each shows its action (resolve's recommendation, else the reviewer's `Recommended action`) and its tier, if any. Resolve's Needs you list follows, if any. Label the column "action", so resolve's `deferred` marker is not read as the `defer` action.
 
 ## A3 CONFLICT
