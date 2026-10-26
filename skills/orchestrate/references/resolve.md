@@ -4,8 +4,8 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Resolve Step
 
-- After `story` or `plan`, dispatch `resolve` only when that step reports an `Open items:` count above 0; at 0, skip it. At A3 CONFLICT, always dispatch it.
-- A missing or non-numeric `Open items:` line from `story` or `plan`, or `Plan changes:` line from the `PLANNING` `resolve`, is transient.
+- After `story` or `plan`, or after `B` `APPROVE` per Findings, dispatch `resolve` only when that step reports an `Open items:` count above 0; at 0, skip it. At A3 CONFLICT, always dispatch it.
+- A missing or non-numeric `Open items:` line from `story`, `plan`, or `B`, or `Plan changes:` line from the `PLANNING` `resolve`, is transient.
 - A `resolve` that returns `STOPPED` or hits a second transient does not set `BLOCKED`. Instead:
   - append `- <UTC time> resolve-open-items <tip SHA, or none>: <cause>` to the applicable `roadblocks.md`;
   - present the items unresearched;
@@ -35,7 +35,19 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 ## Gate 1
 
 - Present `plan.md`, plus the Settled and Needs you lists from `S/<branch>/resolve.md` when it exists.
+- When `plan-feedback.md` holds a `Tier escalated from small:` line (per `<feedback>`), also present "tier escalated from small: <reason>", so that `approve` confirms the large tier.
 - A bare `approve` while Needs you items are open accepts each item's recommended option, which the presentation shows. The re-dispatched plan already assumes those options; when no re-dispatch ran, they did not differ from the plan.
+
+## Findings
+
+`AUDITING`, after `B` `APPROVE`; `<feedback>` reads the `review.md` this writes.
+
+- **At 0 findings**: delete `S/<branch>/review.md` and go to Draft per `<release>`.
+- **Otherwise**, dispatch `resolve` with `B`'s numbered findings as kind `finding`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `B` report verbatim. Add the instruction: "Keep `B`'s numbering. For each finding, recommend fix, defer, or discuss. End each per-item report, Needs you items included, with `Tier: small` when fixing it stays inside `plan.md`'s Goal and Changes and the files it lists and changes nothing in its Out of Scope, else `Tier: large`."
+- On `SETTLED` or `NEEDS-DECISION`, replace `S/<branch>/review.md` with `## Review` and the `B` report verbatim, then `## Recommendations` and the resolve report verbatim.
+- On a `resolve` `STOPPED` or second transient, follow Resolve Step, and write `review.md` with `## Review` only, so the findings have no tier.
+- Then go to Draft per `<release>`.
+- **Gate 2 presentation**: every finding in `review.md`, numbered as `B` numbered it, most severe first, Suggestions and Nitpicks included. Each shows its action (resolve's recommendation, else the reviewer's `Recommended action`) and its tier, if any. Resolve's Needs you list follows, if any. Label the column "action", so resolve's `deferred` marker is not read as the `defer` action.
 
 ## A3 CONFLICT
 
