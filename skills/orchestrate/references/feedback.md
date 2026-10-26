@@ -5,7 +5,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 ## Tiered Replies
 
 - Tiered: Gate 2 feedback; BLOCKED `fix` with `gate_1_plan_approved` true; `reopen` text.
-- Not tiered, and unchanged: Gate 1 feedback, BLOCKED `re-plan`, BLOCKED `fix` with the flag false, `redraft`, and the automatic counted passes (`FAIL-IN-SCOPE`, `GAPS`, a settled A3 conflict, `REQUEST CHANGES`).
+- Not tiered: Gate 1 feedback, BLOCKED `re-plan`, BLOCKED `fix` with the flag false, `redraft`, and the automatic counted passes (`FAIL-IN-SCOPE`, `GAPS`, a settled A3 conflict, `REQUEST CHANGES`).
 
 ## Tier
 
