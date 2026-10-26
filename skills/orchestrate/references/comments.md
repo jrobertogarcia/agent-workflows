@@ -73,7 +73,7 @@ Locate, on an `address <PR number>` reply.
 - Keep a thread whose last reply is the PR author's, and pass that reply as the human's direction.
 - With items, replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text.
 - Delete any `S/<branch>/replies.md`.
-- With no items, delete any `comments.md`, report none, and leave `reopen`'s `BLOCKED` as before, waiting for `fix` or `re-plan`.
+- With no items, delete any `comments.md`, report none, and leave `reopen`'s `BLOCKED` as before.
 
 ## Triage
 
