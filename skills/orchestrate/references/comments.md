@@ -1,6 +1,6 @@
 # Orchestrate: Review Comments
 
-Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; each section names where that file points to it. `S/<branch>/comments.md` is written by you; `S/<branch>/replies.md` is written only by the `replies` step and is never posted.
+Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; each section names where that file points to it.
 
 ## Address
 
