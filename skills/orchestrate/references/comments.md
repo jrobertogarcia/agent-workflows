@@ -60,7 +60,7 @@ In both cases, continue with Reconcile, then `reopen` with no text.
     repository(owner: $owner, name: $repo) { pullRequest(number: $number) {
       reviews(first: 50, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
-        nodes { author { login } state body url isMinimized submittedAt } } } } }
+        nodes { author { login } state body url isMinimized } } } } }
   ```
   ```graphql
   query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) {
@@ -68,7 +68,7 @@ In both cases, continue with Reconcile, then `reopen` with no text.
       author { login }
       comments(first: 50, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
-        nodes { author { login } body url isMinimized createdAt } } } } }
+        nodes { author { login } body url isMinimized } } } } }
   ```
 - Items:
   - each unresolved thread, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
