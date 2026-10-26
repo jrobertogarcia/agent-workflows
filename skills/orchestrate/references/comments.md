@@ -104,7 +104,7 @@ Release, before step 1's dispatch, when an open layer sits above this one.
 
 The `release` dispatch, stacked.
 
-- Pass the lease list. The push becomes `git push --atomic origin --force-with-lease=refs/heads/<b>:<L_b> … refs/heads/<b>:refs/heads/<b> …` for every open layer, with no fetch first. `gh pr edit` runs for this branch only.
+- Pass the lease list. The push becomes `git push --atomic origin --force-with-lease=refs/heads/<b>:<L_b> … refs/heads/<b>:refs/heads/<b> …` for every open layer. `gh pr edit` runs for this branch only.
 - Dispatch even when this layer's PR matches the draft at `approved_sha`, if any open layer's local tip differs from `origin/<b>`.
 - **RELEASED check**: each open layer's `gh pr view <pr> --json headRefOid` also equals `git rev-parse <b>`.
 
