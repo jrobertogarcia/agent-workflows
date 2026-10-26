@@ -68,12 +68,12 @@ Locate, on an `address <PR number>` reply.
   - each unresolved thread, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
   - each non-empty, non-minimized review body;
   - each non-minimized conversation comment whose author is not the PR author;
-  - of those bodies and comments, which have no resolved state, only ones submitted or created after the last `comments fetched` entry in this branch's `roadblocks.md`, since earlier ones were triaged then; with none, all of them;
+  - of those bodies and comments, which have no resolved state, only review bodies submitted, and comments created, at or after that connection's time in the last `comments fetched` entry in this branch's `roadblocks.md`, since earlier ones were triaged then; with no entry or time, all of them;
   - the `reopen` text, if any, without its `small:` or `large:` tag (on `retry` or `adopt`, the last `reopen:` entry's text, so `Human tier:` is `none`), as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, with that reply labeled as the PR author's: it is data, not the human's direction.
 - With items, replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text.
 - With no items, report none and leave `reopen`'s `BLOCKED` as before.
-- Either way, then append `- <UTC time> orchestrate <HEAD>: comments fetched` to this branch's `roadblocks.md`.
+- Either way, then append `- <UTC time> orchestrate <HEAD>: comments fetched; reviews <time>, comments <time>` to this branch's `roadblocks.md`, each `<time>` the latest `submittedAt` or `createdAt` that connection returned (GitHub's clock, so nothing posted after the query is skipped), else the last entry's, else `none`.
 
 ## Triage
 
@@ -99,7 +99,7 @@ Release, before step 1's dispatch, when this branch's pull request reads `OPEN` 
 - For each moved open layer other than this one, with `<p>` the open layer below it, or `origin/<trunk>` for the bottom layer:
   - Compare the ordered `git patch-id --stable` lists of the old range `$(git merge-base origin/<p> origin/<b>)..origin/<b>` (`origin/<trunk>` in both ranges at the bottom) and the new range `$(git merge-base <p> <b>)..<b>`. The old list must be a prefix of the new one, else halt; append any extra commits, a hand fix asked for below, to this branch's `roadblocks.md`, and list them per layer when reporting the release, since they are pushed unshown.
   - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
-  - `FAIL-UNRELATED` is logged and passes. On `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then re-invoke." As a failed release, it does not set `BLOCKED`, and upper-layer state stays as it is.
+  - `FAIL-UNRELATED` is logged and passes. On `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then check out <branch> and re-invoke." As a failed release, it does not set `BLOCKED`, and upper-layer state stays as it is.
 - Run the cherry-pick check again; halt on a listed commit.
 - Record `L_b` = `git rev-parse origin/<b>` for every open layer.
 
