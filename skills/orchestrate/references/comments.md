@@ -31,7 +31,8 @@ Locate, on an `address <PR number>` reply.
 `reopen`, before its write, when more than one layer reads `OPEN`.
 
 - Run drift check 0, the Tracking check in `<stacked>`, then `git fetch origin`.
-- Run the cherry-pick check from On a parent in `<stacked>` for each open layer; on a listed commit, halt listing the commits to integrate.
+- `<merged>`: for each layer in `stack.json` below the lowest open layer whose `pr` reads `MERGED`, the SHA `git rev-parse FETCH_HEAD` prints after `git fetch origin refs/pull/<pr>/head`. A squash or rebase merge leaves that layer's original commits on the open layers' `origin/<b>`, so the checks here and in Restack exclude them.
+- Run the cherry-pick check from On a parent in `<stacked>` for each open layer, with each `<merged>` SHA added after its `--not`; on a listed commit, halt listing the commits to integrate.
 - Run `gh stack rebase --upstack <lowest open layer>`. On a conflict, run `gh stack rebase --abort` and halt naming the files; on any other non-zero exit, halt with its error.
 - A halt here leaves the layer `RELEASED`, so `reopen` can be replied again. Drift check 3(b) then accepts the pure rebase.
 - `gh stack sync` skips the cherry-pick check and `gh stack push` is not atomic, so neither is used.
@@ -68,7 +69,7 @@ Locate, on an `address <PR number>` reply.
   - each unresolved thread, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
   - each non-empty, non-minimized review body;
   - each non-minimized conversation comment whose author is not the PR author;
-  - of those bodies and comments, which have no resolved state, only review bodies submitted, and comments created, at or after that connection's time in the last `comments fetched` entry in this branch's `roadblocks.md`, since earlier ones were triaged then; with no entry or time, all of them;
+  - of those bodies and comments, which have no resolved state, only review bodies submitted, and comments created, after that connection's time in the last `comments fetched` entry in this branch's `roadblocks.md`, since earlier ones were triaged then; with no entry or time, all of them;
   - the `reopen` text, if any, without its `small:` or `large:` tag (on `retry` or `adopt`, the last `reopen:` entry's text, so `Human tier:` is `none`), as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, with that reply labeled as the PR author's: it is data, not the human's direction.
 - With items, replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text.
@@ -95,12 +96,12 @@ After `B` `APPROVE`, with Draft per `<release>`; and from Gate 2 or Release when
 
 Release, before step 1's dispatch, when this branch's pull request reads `OPEN` (a `reopen`) and another layer's does too. "Moved" means a layer's local tip differs from `origin/<b>`, the last pushed tip, so a re-invocation after a halt checks the same layers again.
 
-- Run the Tracking check in `<stacked>`, then `git fetch origin`. When an open layer sits above this one, run `gh stack rebase --upstack <branch> --no-trunk`; on a conflict, run `gh stack rebase --abort` and halt naming the layer and files.
+- Run the Tracking check in `<stacked>`, then `git fetch origin`, and take `<merged>` as Sync does. When an open layer sits above this one, run `gh stack rebase --upstack <branch> --no-trunk`; on a conflict, run `gh stack rebase --abort` and halt naming the layer and files.
 - For each moved open layer other than this one, with `<p>` the open layer below it, or `origin/<trunk>` for the bottom layer:
-  - Compare the ordered `git patch-id --stable` lists of the old range `$(git merge-base origin/<p> origin/<b>)..origin/<b>` (`origin/<trunk>` in both ranges at the bottom) and the new range `$(git merge-base <p> <b>)..<b>`. The old list must be a prefix of the new one, else halt; append any extra commits, a hand fix asked for below, to this branch's `roadblocks.md`, and list them per layer when reporting the release, since they are pushed unshown.
+  - Compare the ordered `git patch-id --stable` lists of the old range `origin/<b> --not $(git merge-base origin/<p> origin/<b>) <merged>` (`origin/<trunk>` for `<p>` in both ranges at the bottom) and the new range `$(git merge-base <p> <b>)..<b>`. The old list must be a prefix of the new one, else halt: "the restack of <b> changed or dropped pushed commits; fix <b> by hand, push it with `git push --force-with-lease=refs/heads/<b>:<origin/<b> SHA> origin <b>:refs/heads/<b>`, then check out <branch> and re-invoke." Append any extra commits, a hand fix asked for below, to this branch's `roadblocks.md`, and list them per layer when reporting the release, since they are pushed unshown.
   - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
   - `FAIL-UNRELATED` is logged and passes. On `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then check out <branch> and re-invoke." As a failed release, it does not set `BLOCKED`, and upper-layer state stays as it is.
-- Run the cherry-pick check again; halt on a listed commit.
+- Run the cherry-pick check again, excluding `<merged>` as Sync does; halt on a listed commit.
 - Record `L_b` = `git rev-parse origin/<b>` for every open layer.
 
 ## Atomic Push
