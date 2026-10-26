@@ -70,6 +70,7 @@ For each issue found, provide:
 - **Issue**: Clear description of the problem
 - **Suggestion**: Specific recommendation for improvement
 - **Example**: Code snippet showing the fix (when helpful)
+- **Recommended action**: `fix`, `defer`, or `discuss`: your proposal for this finding
 
 ### 🚦 Unified Verdict Rules
 Evaluate all documented findings to cast a single final verdict:

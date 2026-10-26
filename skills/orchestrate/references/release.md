@@ -8,6 +8,10 @@ Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md
 
 - Dispatch `draft`.
 - The result is transient per Result when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
+- It is also transient when the body fails the What bound. The body must have a `## What` heading; without one it fails, unless `git ls-files` lists a path whose name contains `pull_request_template` (any case), where create-pr's step 4 and Gate 2 cover the shape. From that heading up to the next heading, leaving out a trailing link block (create-pr's link block: the body's last blank-line-separated block when none of its lines starts with `- ` or `* ` and each names a `#<number>` or a URL):
+  - every non-blank line starts with `- ` or `* `, so wrapped paragraphs, numbered lists, and nested bullets fail;
+  - there are at most 6 such lines;
+  - no line is over 160 characters, counted after stripping a trailing CR.
 - Then write `WAITING_RELEASE_APPROVAL`; `retry` after a `draft` BLOCKED re-runs `draft`.
 
 ## Gate 2
