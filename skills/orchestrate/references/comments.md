@@ -38,15 +38,15 @@ Locate, on an `address <PR number>` reply.
 `reopen`, first. It writes nothing; with one layer only the cherry-pick check on this branch applies.
 
 - Run `git fetch origin`.
-- Each open layer `<b>` below this branch must equal `origin/<b>`. If `git rev-parse <b>` fails or differs, halt: "<b> differs from origin/<b>; sync and push the stack per LIFECYCLE section 4 (step 7 after a merge), then reply `reopen` again with the review."
-- **Cherry-pick check**, on this branch and each open layer `<b>` above it: `git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>` must be empty. On a listed commit, halt listing the commits to integrate, ending "then reply `reopen` again with the review".
+- Each open layer `<b>` below this branch must equal `origin/<b>`. If `git rev-parse <b>` fails or differs, halt: "<b> differs from origin/<b>; sync and push the stack per LIFECYCLE section 4 (step 7 after a merge)."
+- **Cherry-pick check**, on this branch and each open layer `<b>` above it: `git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>` must be empty. On a listed commit, halt listing the commits to integrate.
 - `gh stack sync` skips the cherry-pick check and `gh stack push` is not atomic, so neither is used.
 
 ## Fetch
 
 `reopen`, after Sync.
 
-- Run each query with `gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<PR> -f query=<query>`. A non-zero exit from any query halts with its error, writing nothing, and ends "then reply `reopen` again with the review". gh pages on the first `pageInfo` it streams, and a nested `endCursor` silently drops items, so each top-level `pageInfo` precedes `nodes` and the nested thread `comments` has no `endCursor`:
+- Run each query with `gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<PR> -f query=<query>`. A non-zero exit from any query halts with its error, writing nothing. gh pages on the first `pageInfo` it streams, and a nested `endCursor` silently drops items, so each top-level `pageInfo` precedes `nodes` and the nested thread `comments` has no `endCursor`:
   ```graphql
   query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) {
     repository(owner: $owner, name: $repo) { pullRequest(number: $number) {
