@@ -4,12 +4,12 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Tiered Replies
 
-- Tiered: Gate 2 feedback; BLOCKED `fix` with `gate_1_plan_approved` true, including `fix <n>, <m>` after `reopen`; `reopen` text.
+- Tiered: Gate 2 feedback; BLOCKED `fix` with `gate_1_plan_approved` true, including `fix <n>, <m>` after `reopen`.
 - Not tiered: Gate 1 feedback, BLOCKED `re-plan`, BLOCKED `fix` with the flag false, `redraft`, and the automatic counted passes (`FAIL-IN-SCOPE`, `GAPS`, a settled A3 conflict, `REQUEST CHANGES`).
 
 ## Tier
 
-- **Tagged**: `fix small: <text>` or `fix large: <text>`, or `reopen small: <text>` or `reopen large: <text>`, names the tier; the feedback is the text, and a `reopen` logs it without the tag and records the tag as `Human tier:` in `comments.md`, per `<comments>`.
+- **Tagged**: `fix small: <text>` or `fix large: <text>` names the tier; the feedback is the text. `reopen` text, tagged or not, is not feedback: it is a comment per `<comments>`, and a `small:` or `large:` tag only sets its `Human tier:`.
 - **`fix <n>, <m>`** (Gate 2, or `BLOCKED` from `RELEASED` with `S/<branch>/comments.md`):
   - If the file it reads (`review.md` at Gate 2, else `comments.md`) is missing, or any number matches no item in it, stop naming the numbers that matched nothing. Propose no tier and change no state.
   - At Gate 2, the feedback is, for each selected number, `B`'s finding n from `## Review`, then resolve's per-item report n from `## Recommendations`, all verbatim. Each entry's tier is the `Tier:` line in its per-item report.
@@ -19,7 +19,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - **Untagged**:
   - Propose a tier by comparing the feedback with `plan.md`'s Goal, Changes, listed files, and Out of Scope.
   - Present the proposal and stop, leaving the phase unchanged.
-  - A bare `small` or `large` (or `fix small` / `fix large` without text) applies the tier to the feedback held in this thread. In `BLOCKED` from `reopen` with nothing held, it applies to the last `reopen:` entry in `roadblocks.md`, unless `comments.md` exists. Otherwise, ask for the feedback again.
+  - A bare `small` or `large` (or `fix small` / `fix large` without text) applies the tier to the feedback held in this thread. Otherwise, ask for the feedback again.
 
 ## Small
 

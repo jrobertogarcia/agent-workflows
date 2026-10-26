@@ -12,8 +12,9 @@ Locate, on an `address <PR number>` reply.
   - If that layer has no `state.json` (a `register`ed layer, or a layer of a bootstrapped stack other than the reviewed one), first read its PR as the bootstrap does, then write its synthesized `plan.md` and `state.json` exactly as the bootstrap does.
   - Then handle the reply as `reopen` with no text.
 - **No stack located (bootstrap)**:
-  - Read `gh pr view <PR> --json number,state,title,body,url,headRefName,baseRefName,headRefOid`. It must read `OPEN`, and `headRefName` must equal the current branch. Run drift check 0, then `git fetch origin <branch>`; `HEAD` must equal `headRefOid`. Any failure halts with the cause.
+  - Read `gh pr view <PR> --json number,state,title,body,url,headRefName,baseRefName,headRefOid`. It must read `OPEN`, and `headRefName` must equal the current branch. Run drift check 0, then `git fetch origin`; `HEAD` must equal `headRefOid`. Any failure halts with the cause.
   - Take `<trunk>` as Start does.
+  - **Base**: when `baseRefName` is `<trunk>`, run Fresh trunk in `<stacked>`; otherwise local `<baseRefName>` must equal `origin/<baseRefName>`, else halt naming it. Then `<base_sha>` = `git merge-base <baseRefName> HEAD`, so a stale local base cannot pull its commits into the PR's diff.
   - **Layers**: if `gh stack view --json` exits 0 and lists the branch, take its `branches[].name` bottom first, keeping those whose `gh pr view <b> --json number,state,baseRefName` reads `OPEN`. A non-zero exit, or a list without the branch, makes the current branch the only layer.
   - **Base check**: the bottom open layer's `baseRefName` must equal `<trunk>`, and each upper layer's must equal the open layer below it. Otherwise halt, naming the layer and its base, since drift check 4 would rebase it onto the wrong branch. This also halts a stacked PR misread as one layer, for example when gh-stack is missing.
   - **`<name>`**: a slug of the branch: lower-case it, turn each character outside `[a-z0-9-]` into `-`, trim leading and trailing `-`, and cut it to 40 characters. Halt if `S/stacks/<name>/` or any layer's `S/<b>/` exists, naming the path (resume it, or `abandon`).
@@ -21,7 +22,7 @@ Locate, on an `address <PR number>` reply.
     - `requirements.md`: `address <PR>`, then the PR title and body verbatim.
     - `stack.json`: phase `LAYERS`, `active_layer_index` null, each layer `RELEASED` with its `pr` and `scope` "registered".
     - `plan.md` (synthesized): `## Goal` is the PR title plus the body's `## What` section, or its first paragraph; `## Changes` is `git diff --stat <base_sha>...HEAD` verbatim; `## Out of Scope` is what the body states, else "none stated".
-    - The reviewed layer's `state.json`, in the fixed shape: phase `RELEASED`, `target_branch` = `baseRefName`, `base_sha` = `git merge-base <target> HEAD`, `branch_tip_sha` = `approved_sha` = `HEAD`, `gate_1_plan_approved` true, `gate_2_release_approved` false.
+    - The reviewed layer's `state.json`, in the fixed shape: phase `RELEASED`, `target_branch` = `baseRefName`, `base_sha` = `<base_sha>`, `branch_tip_sha` = `approved_sha` = `HEAD`, `gate_1_plan_approved` true, `gate_2_release_approved` false.
   - Append `- <UTC time> orchestrate <HEAD>: address <PR>: bootstrapped` to the stack's `roadblocks.md`.
   - Continue with Reconcile, then `reopen` with no text.
 
@@ -67,11 +68,11 @@ Locate, on an `address <PR number>` reply.
   - each unresolved thread, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
   - each non-empty, non-minimized review body;
   - each non-minimized conversation comment whose author is not the PR author;
-  - the `reopen` text, if any, as one more item marked "from the human".
+  - the `reopen` text, if any, without its `small:` or `large:` tag, as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, and pass that reply as the human's direction.
-- Replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text.
+- With items, replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text.
 - Delete any `S/<branch>/replies.md`.
-- With no items, report none and leave `reopen`'s `BLOCKED` as before, waiting for `fix` or `re-plan`.
+- With no items, delete any `comments.md`, report none, and leave `reopen`'s `BLOCKED` as before, waiting for `fix` or `re-plan`.
 
 ## Triage
 
@@ -85,24 +86,25 @@ Locate, on an `address <PR number>` reply.
 
 After `B` `APPROVE`, with Draft per `<release>`; and from Gate 2 or Release when stale. Runs when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
-- Dispatch step `replies`. Skill reference: "the PR-comment triage below". Inputs: `comments.md`, `fix-input.md` if any, `plan.md`, `handover.md`, and `git log --oneline <base_sha>..HEAD`. Tokens: `DONE`.
+- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `fix-input.md` if any, `plan.md`, `handover.md`, and `git log --oneline <base_sha>..HEAD`. Tokens: `DONE`.
 - Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Then one short, natural draft per thread, headed by its number and URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, quoting each point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, or for the item from the human. Commit nothing; never post."
 - A wrong line 1 is transient.
 
 ## Restack
 
-Release, before step 1's dispatch, when an open layer sits above this one.
+Release, before step 1's dispatch, when more than one layer reads `OPEN`. "Moved" means a layer's local tip differs from `origin/<b>`, the last pushed tip, so a re-invocation after a halt checks the same layers again.
 
-- Record each open layer's tip.
-- Run the Tracking check in `<stacked>`, then `gh stack rebase --upstack <branch> --no-trunk`. On a conflict, run `gh stack rebase --abort` and halt naming the layer and files.
-- For each upper layer that moved, compare the ordered `git patch-id --stable` lists of its old and new ranges; a mismatch halts. Then dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `<b>`'s recorded old tip." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
-- On `FAIL-IN-SCOPE`, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then re-invoke." As a failed release, it does not set `BLOCKED`, and upper-layer state stays as it is.
-- Then `git fetch origin` and run the cherry-pick check again; halt on a listed commit.
-- Record `L_b` = `git rev-parse origin/<b>` for every open layer, with no fetch afterwards.
+- Run the Tracking check in `<stacked>`, then `git fetch origin`. When an open layer sits above this one, run `gh stack rebase --upstack <branch> --no-trunk`; on a conflict, run `gh stack rebase --abort` and halt naming the layer and files.
+- For each moved open layer other than this one, with `<p>` the open layer below it, or `origin/<trunk>` for the bottom layer:
+  - Compare the ordered `git patch-id --stable` lists of the old range `$(git merge-base origin/<p> origin/<b>)..origin/<b>` (`origin/<trunk>` in both ranges at the bottom) and the new range `$(git merge-base <p> <b>)..<b>`. The old list must be a prefix of the new one, else halt; append any extra commits, a hand fix asked for below, to `roadblocks.md`.
+  - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
+  - On `FAIL-IN-SCOPE`, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then re-invoke." As a failed release, it does not set `BLOCKED`, and upper-layer state stays as it is.
+- Run the cherry-pick check again; halt on a listed commit.
+- Record `L_b` = `git rev-parse origin/<b>` for every open layer.
 
 ## Atomic Push
 
-The `release` dispatch, stacked.
+The `release` dispatch, after Restack ran.
 
 - Pass the lease list. The push becomes `git push --atomic origin --force-with-lease=refs/heads/<b>:<L_b> … refs/heads/<b>:refs/heads/<b> …` for every open layer. `gh pr edit` runs for this branch only.
 - Dispatch even when this layer's PR matches the draft at `approved_sha`, if any open layer's local tip differs from `origin/<b>`.
