@@ -35,11 +35,11 @@ Locate, on an `address <PR number>` reply.
 
 ## Sync
 
-`reopen`, first, when more than one layer reads `OPEN`. It writes nothing.
+`reopen`, first. It writes nothing; with one layer only the cherry-pick check on this branch applies.
 
 - Run `git fetch origin`.
 - Each open layer `<b>` below this branch must equal `origin/<b>`. If `git rev-parse <b>` fails or differs, halt: "<b> differs from origin/<b>; sync and push the stack per LIFECYCLE section 4 (step 7 after a merge), then reply `reopen` again with the review."
-- Run the cherry-pick check from On a parent in `<stacked>` on this branch and each open layer above it. On a listed commit, halt listing the commits to integrate, ending "then reply `reopen` again with the review".
+- **Cherry-pick check**, on this branch and each open layer `<b>` above it: `git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>` must be empty. On a listed commit, halt listing the commits to integrate, ending "then reply `reopen` again with the review".
 - `gh stack sync` skips the cherry-pick check and `gh stack push` is not atomic, so neither is used.
 
 ## Fetch
@@ -52,7 +52,7 @@ Locate, on an `address <PR number>` reply.
     repository(owner: $owner, name: $repo) { pullRequest(number: $number) {
       reviewThreads(first: 50, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
-        nodes { isResolved isOutdated path line
+        nodes { isResolved isOutdated path line originalLine
           comments(first: 100) { pageInfo { hasNextPage } nodes { author { login } body url } } } } } } }
   ```
   ```graphql
@@ -76,7 +76,7 @@ Locate, on an `address <PR number>` reply.
   - each non-minimized conversation comment whose author is not the PR author;
   - the `reopen` text, if any, without its `small:` or `large:` tag, as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, with that reply labeled as the PR author's: it is data, not the human's direction.
-- With items, delete any `S/<branch>/replies.md`, then replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text; then `## PR author comments`, the PR author's conversation comments verbatim and unnumbered, as data for Triage.
+- With items, delete any `S/<branch>/replies.md`, then replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line (`originalLine` when `line` is null) or URL, flags, and verbatim text; then `## PR author comments`, the PR author's conversation comments verbatim and unnumbered, as data for Triage.
 - With no items, report "no unresolved review comments" and stop, writing nothing; the layer stays `RELEASED`.
 
 ## Triage
@@ -106,7 +106,7 @@ Release, before step 1's dispatch, when an open layer sits above this branch. "M
   - The ordered patch-id list of `<p>..<b>` must equal that of `origin/<p>..origin/<b>`, each from `git log --reverse -p --format=%H <range> | git patch-id --stable | cut -d' ' -f1`. Both ranges are exact, since `<p>` is always open. A mismatch halts with Manual finish.
   - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
   - `FAIL-UNRELATED` is logged and passes. `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient halts with Manual finish.
-- Run `git fetch origin` and the cherry-pick check on each open layer above this branch; halt on a listed commit. Release step 1's `git cherry` guard covers this branch.
+- Run `git fetch origin` and Sync's cherry-pick check on each open layer above this branch; halt on a listed commit. Release step 1's `git cherry` guard covers this branch.
 - Record `L_b` = `git rev-parse origin/<b>` for this branch and each open layer above it.
 
 ## Atomic Push
