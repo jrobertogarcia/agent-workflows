@@ -20,7 +20,7 @@ Plan-mode direction in plan-producing skills is prose, not frontmatter, and is e
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 20 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
+Below is the structured list of the 21 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
@@ -35,6 +35,7 @@ Commands in skills:
 | **`research-web`** | `**/*` | Research current best practices and trade-offs from authoritative sources. Use when a decision needs external evidence. | [SKILL.md](skills/research-web/SKILL.md) |
 | **`review-story`** | `**/*` | Audit a user story for gaps, conflicts, and missing detail. Use before planning or implementing a requirement. | [SKILL.md](skills/review-story/SKILL.md) |
 | **`root-cause`** | `**/*` | Investigate an issue to identify its root cause with evidence before proposing fixes. Use when debugging. | [SKILL.md](skills/root-cause/SKILL.md) |
+| **`resolve-open-items`** | `**/*` | Research each open item (a question, conflict, review finding, or PR comment) from the available sources and return what it settled with evidence and the few decisions that need you. Use when a story review, plan, alignment check, or review leaves open items, before asking the human. | [SKILL.md](skills/resolve-open-items/SKILL.md) |
 | **`create-branch`** | `**/*` | Check out the latest default branch and create a new feature branch using Conventional Commits. Use when starting new work. | [SKILL.md](skills/create-branch/SKILL.md) |
 | **`phase-breakdown`** | `**/*` | Divide a large change into small, independently verifiable phases. Use before planning implementation of a complex task. | [SKILL.md](skills/phase-breakdown/SKILL.md) |
 | **`plan-implementation`** | `**/*` | Create a detailed implementation plan for a change, including risk-based test scenarios, and surface open questions and assumptions. Use before writing code or tests. | [SKILL.md](skills/plan-implementation/SKILL.md) |
