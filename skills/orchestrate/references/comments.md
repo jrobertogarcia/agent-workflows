@@ -9,8 +9,8 @@ Locate, on an `address <PR number>` reply.
 - **Stack located**:
   - If no layer's `pr` is `<PR>`, halt: "#<PR> is not a layer of <name>; check out its branch".
   - Otherwise the current branch must be that layer's branch, else halt: "check out <branch>".
-  - If that layer has no `state.json` (a `register`ed layer, or a layer of a bootstrapped stack other than the reviewed one), first read its PR as the bootstrap does, then write its synthesized `plan.md` and `state.json` exactly as the bootstrap does.
-  - Then handle the reply as `reopen` with no text.
+  - If that layer has no `state.json` (a `register`ed layer, or a layer of a bootstrapped stack other than the reviewed one), first run the bootstrap's PR read and Base steps, then write its synthesized `plan.md` and `state.json` exactly as the bootstrap does.
+  - Then continue with Reconcile, then `reopen` with no text.
 - **No stack located (bootstrap)**:
   - Read `gh pr view <PR> --json number,state,title,body,url,headRefName,baseRefName,headRefOid`. It must read `OPEN`, and `headRefName` must equal the current branch. Run drift check 0, then `git fetch origin`; `HEAD` must equal `headRefOid`. Any failure halts with the cause.
   - Take `<trunk>` as Start does.
@@ -20,7 +20,7 @@ Locate, on an `address <PR number>` reply.
   - **`<name>`**: a slug of the branch: lower-case it, turn each character outside `[a-z0-9-]` into `-`, trim leading and trailing `-`, and cut it to 40 characters. Halt if `S/stacks/<name>/` or any layer's `S/<b>/` exists, naming the path (resume it, or `abandon`).
   - Write, in this order:
     - `requirements.md`: `address <PR>`, then the PR title and body verbatim.
-    - `stack.json`: phase `LAYERS`, `active_layer_index` null, each layer `RELEASED` with its `pr` and `scope` "registered".
+    - `stack.json`, in the shape per `SKILL.md`: `stack_name` = `<name>`, `trunk` = `<trunk>`, `git_common_dir` = `<common>`, phase `LAYERS`, `blocked` null, `active_layer_index` null, each layer `RELEASED` with its `pr` and `scope` "registered".
     - `plan.md` (synthesized): `## Goal` is the PR title plus the body's `## What` section, or its first paragraph; `## Changes` is `git diff --stat <base_sha>...HEAD` verbatim; `## Out of Scope` is what the body states, else "none stated".
     - The reviewed layer's `state.json`, in the fixed shape: phase `RELEASED`, `target_branch` = `baseRefName`, `base_sha` = `<base_sha>`, `branch_tip_sha` = `approved_sha` = `HEAD`, `gate_1_plan_approved` true, `gate_2_release_approved` false.
   - Append `- <UTC time> orchestrate <HEAD>: address <PR>: bootstrapped` to the stack's `roadblocks.md`.
@@ -40,7 +40,7 @@ Locate, on an `address <PR number>` reply.
 
 `reopen`, after Boot step 3.
 
-- Run each query with `gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<PR> -f query=<query>`. gh pages on the first `pageInfo` it streams, and a nested `endCursor` silently drops items, so each top-level `pageInfo` precedes `nodes` and the nested thread `comments` has no `endCursor`:
+- Run each query with `gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<PR> -f query=<query>`. A non-zero exit from any query halts with its error, writing nothing. gh pages on the first `pageInfo` it streams, and a nested `endCursor` silently drops items, so each top-level `pageInfo` precedes `nodes` and the nested thread `comments` has no `endCursor`:
   ```graphql
   query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) {
     repository(owner: $owner, name: $repo) { pullRequest(number: $number) {
@@ -54,7 +54,7 @@ Locate, on an `address <PR number>` reply.
     repository(owner: $owner, name: $repo) { pullRequest(number: $number) {
       reviews(first: 50, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
-        nodes { author { login } state body url isMinimized commit { oid } } } } } }
+        nodes { author { login } state body url isMinimized submittedAt } } } } }
   ```
   ```graphql
   query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) {
@@ -62,12 +62,13 @@ Locate, on an `address <PR number>` reply.
       author { login }
       comments(first: 50, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
-        nodes { author { login } body url isMinimized } } } } }
+        nodes { author { login } body url isMinimized createdAt } } } } }
   ```
 - Items:
   - each unresolved thread, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
   - each non-empty, non-minimized review body;
   - each non-minimized conversation comment whose author is not the PR author;
+  - of those bodies and comments, which have no resolved state, only ones submitted or created after the `reopen:` entry before the one this `reopen` logged in this branch's `roadblocks.md`, since earlier ones were triaged then; with no earlier entry, all of them;
   - the `reopen` text, if any, without its `small:` or `large:` tag, as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, and pass that reply as the human's direction.
 - With items, replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text.
@@ -92,13 +93,13 @@ After `B` `APPROVE`, with Draft per `<release>`; and from Gate 2 or Release when
 
 ## Restack
 
-Release, before step 1's dispatch, when more than one layer reads `OPEN`. "Moved" means a layer's local tip differs from `origin/<b>`, the last pushed tip, so a re-invocation after a halt checks the same layers again.
+Release, before step 1's dispatch, when this branch's pull request reads `OPEN` (a `reopen`) and another layer's does too. "Moved" means a layer's local tip differs from `origin/<b>`, the last pushed tip, so a re-invocation after a halt checks the same layers again.
 
 - Run the Tracking check in `<stacked>`, then `git fetch origin`. When an open layer sits above this one, run `gh stack rebase --upstack <branch> --no-trunk`; on a conflict, run `gh stack rebase --abort` and halt naming the layer and files.
 - For each moved open layer other than this one, with `<p>` the open layer below it, or `origin/<trunk>` for the bottom layer:
-  - Compare the ordered `git patch-id --stable` lists of the old range `$(git merge-base origin/<p> origin/<b>)..origin/<b>` (`origin/<trunk>` in both ranges at the bottom) and the new range `$(git merge-base <p> <b>)..<b>`. The old list must be a prefix of the new one, else halt; append any extra commits, a hand fix asked for below, to `roadblocks.md`.
+  - Compare the ordered `git patch-id --stable` lists of the old range `$(git merge-base origin/<p> origin/<b>)..origin/<b>` (`origin/<trunk>` in both ranges at the bottom) and the new range `$(git merge-base <p> <b>)..<b>`. The old list must be a prefix of the new one, else halt; append any extra commits, a hand fix asked for below, to this branch's `roadblocks.md`, and list them per layer when reporting the release, since they are pushed unshown.
   - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
-  - On `FAIL-IN-SCOPE`, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then re-invoke." As a failed release, it does not set `BLOCKED`, and upper-layer state stays as it is.
+  - `FAIL-UNRELATED` is logged and passes. On `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient, halt: "<b> fails on its restacked tip; fix it by hand on <b> without pushing, then re-invoke." As a failed release, it does not set `BLOCKED`, and upper-layer state stays as it is.
 - Run the cherry-pick check again; halt on a listed commit.
 - Record `L_b` = `git rev-parse origin/<b>` for every open layer.
 
