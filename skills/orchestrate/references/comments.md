@@ -44,7 +44,7 @@ Locate, on an `address <PR number>` reply.
 
 ## Fetch
 
-`reopen`, after Sync. The only file it writes is `comments.md`.
+`reopen`, after Sync.
 
 - Run each query with `gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<PR> -f query=<query>`. A non-zero exit from any query halts with its error, writing nothing, and ends "then reply `reopen` again with the review". gh pages on the first `pageInfo` it streams, and a nested `endCursor` silently drops items, so each top-level `pageInfo` precedes `nodes` and the nested thread `comments` has no `endCursor`:
   ```graphql
