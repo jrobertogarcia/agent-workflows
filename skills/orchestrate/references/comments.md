@@ -89,7 +89,7 @@ Locate, on an `address <PR number>` reply.
 
 ## Replies
 
-After `B` `APPROVE`, with Draft per `<release>`; and from Gate 2 or Release when stale. Runs when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
+Gate 2 Presentation per `<release>`, when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
 - Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `fix-input.md` if any, `plan.md`, `handover.md`, and `git log --oneline <base_sha>..HEAD`. Tokens: `DONE`.
 - Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Then one short, natural draft per thread, headed by its number and URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, quoting each point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
