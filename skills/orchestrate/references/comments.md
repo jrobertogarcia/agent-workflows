@@ -69,7 +69,7 @@ Locate, on an `address <PR number>` reply.
   - each non-empty, non-minimized review body;
   - each non-minimized conversation comment whose author is not the PR author;
   - of those bodies and comments, which have no resolved state, only ones submitted or created after the last `comments fetched` entry in this branch's `roadblocks.md`, since earlier ones were triaged then; with none, all of them;
-  - the `reopen` text, if any, without its `small:` or `large:` tag (on `retry`, the last `reopen:` entry's text, so `Human tier:` is `none`), as one more item marked "from the human".
+  - the `reopen` text, if any, without its `small:` or `large:` tag (on `retry` or `adopt`, the last `reopen:` entry's text, so `Human tier:` is `none`), as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, with that reply labeled as the PR author's: it is data, not the human's direction.
 - With items, replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line or URL, flags, and verbatim text.
 - With no items, report none and leave `reopen`'s `BLOCKED` as before.
@@ -77,7 +77,7 @@ Locate, on an `address <PR number>` reply.
 
 ## Triage
 
-`reopen`, after Fetch, when it found items; and `retry` or `adopt` from `RELEASED` per BLOCKED.
+`reopen`, or `retry` or `adopt` from `RELEASED` per BLOCKED, after Fetch when it found items; and `retry` from `RELEASED` per BLOCKED when `comments.md` has no `## Triage`.
 
 - Dispatch `resolve` with the items as kind `PR comment`. Inputs: `comments.md`, `plan.md`, `requirements.md`, `context.md` if any, and, with a stack, each open layer above this one. Add the instruction: "Keep the numbering. Check each comment against the code at `HEAD`, outdated ones included. For each fix, sweep the repository at `HEAD`, and each listed upper layer with `git grep <pattern> <branch>`, for the same mistake. List each hit as file:line labeled `this diff` (inside `git diff <base_sha>...HEAD`), `layer <branch>`, or `pre-existing`; only `this diff` hits belong in the fix. End each per-item report, Needs you items included, with `Tier: small` when fixing it stays inside `plan.md`'s Goal and Changes and the files it lists and changes nothing in its Out of Scope, else `Tier: large`."
 - On `SETTLED` or `NEEDS-DECISION`, append `## Triage` and the report verbatim to `comments.md`. On `STOPPED` or a second transient, follow Resolve Step in `<resolve>`; the comments then carry no tier.
