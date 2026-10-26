@@ -18,7 +18,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - Present the story report, the Settled and Needs you lists, and the proposed stack name.
 - Hold the resolve report in this thread. When the name is confirmed, write it verbatim to `S/stacks/<name>/resolve.md` together with `requirements.md`.
 - A Needs you item the human leaves unanswered proceeds on its recommended option.
-- The human's answers in `requirements.md` override `resolve.md`; add that sentence to the instructions of every step that gets both.
+- Add this sentence to the instructions of every step that gets both `requirements.md` and `resolve.md`: "The human's answers in `requirements.md` override `resolve.md`; an unanswered Needs you item takes its recommended option."
 - On Start's single `story` re-run:
   - resolve its questions again, with the first round's Settled list as an input and the instruction: "Carry each Settled item forward unless `requirements.md` overrides it.";
   - on `SETTLED` or `NEEDS-DECISION`, append its report to `resolve.md` under the heading `## Story re-run`, keeping the first round's report;
