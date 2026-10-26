@@ -24,7 +24,7 @@ Read-only: never edit code and never post. Any outward-facing text, such as a re
    - When a plan is among the inputs, mark `(changes plan)` each item whose answer or recommended option differs from what the plan states or assumes.
 6. **Synthesize**: Cross-check the results for contradictions; re-research a contradiction once, or make it NEEDS-DECISION. Rank NEEDS-DECISION items by impact times uncertainty and keep about 5 at most under Needs you. The rest go under Settled, marked deferred, where the human can override them; none is dropped. Write the full per-item reports to the report path.
 7. **Report**:
-   - **Settled**: one line per item: its number, verdict, and answer or option, plus `deferred` where it applies.
+   - **Settled**: one line per item: its number and a short label, verdict, and answer or option, plus `deferred` where it applies.
    - **Needs you**: each item's exact question, who decides, the options, and the recommended option.
    - Then the report path.
    - The caller proceeds on RECOMMEND and deferred items and lists them under Settled at its next gate; only Needs you stops a run.
