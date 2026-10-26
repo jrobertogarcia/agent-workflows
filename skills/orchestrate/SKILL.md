@@ -35,7 +35,7 @@ S/stacks/<name>/resolve.md      S/<branch>/fix-input.md
 ```
 
 - `<name>` matches `^[a-z0-9][a-z0-9-]{0,39}$`. Each `/` in `<branch>` is a nested directory; a branch named `stacks` or starting `stacks/` halts.
-- You alone write `stack.json`, `requirements.md`, `context.md`, `plan.md`, `state.json`, `fix-input.md`, `plan-feedback.md`, and `resolve.md`. Workers write only `handover.md` and `pr-draft.md`. Each `roadblocks.md` is append-only, strictly one line per entry: `- <UTC time> <skill> <tip SHA>: <root cause>`. `fix-input.md` holds the last fix pass's input verbatim, replaced on each fix pass. Before `state.json` exists, entries go to the stack's `roadblocks.md`.
+- You alone write `stack.json`, `requirements.md`, `context.md`, `plan.md`, `state.json`, `fix-input.md`, `plan-feedback.md`, and `resolve.md`. Workers write only `handover.md` and `pr-draft.md`. Each `roadblocks.md` is append-only, strictly one line per entry: `- <UTC time> <skill> <tip SHA>: <root cause>`. `fix-input.md` holds the last fix pass's input verbatim, replaced on each fix pass and deleted in `PLANNING` per `<resolve>`. Before `state.json` exists, entries go to the stack's `roadblocks.md`.
 - SHAs are full 40-character values. Set `updated_at` (UTC, ISO 8601) on every write. Replace a file atomically:
   ```bash
   tmp="$(mktemp "$dir/state.json.XXXXXX")" && cat > "$tmp" <<'EOF'
