@@ -35,7 +35,7 @@ Locate, on an `address <PR number>` reply.
 
 ## Sync
 
-`reopen`, first. It writes nothing; with one layer only the cherry-pick check on this branch applies.
+`reopen`, first. It writes nothing.
 
 - Run `git fetch origin`.
 - Each open layer `<b>` below this branch must equal `origin/<b>`. If `git rev-parse <b>` fails or differs, halt: "<b> differs from origin/<b>; sync and push the stack per LIFECYCLE section 4 (step 7 after a merge)."
