@@ -38,8 +38,7 @@ Takes an optional base branch, any related pull request URLs (e.g. a parent pull
    - Compose the body into a temp file outside the repository.
 4. **Check Before Creating**: Re-read the drafted title and body and fix them in place:
    - every step 3 rule holds, and nothing is added beyond the skeleton;
-   - What passes the bound: at most 6 top-level bullets, none nested, each one sentence on one line of at most 160 characters; fix a failure by merging or cutting bullets, never by wrapping lines;
-   - without a PR template, the trailing link block is plain lines with one link each, none starting with `- ` or `* `, and none label-only;
+   - What passes the What bound and the trailing link block follows the Links rule; fix a What failure by merging or cutting bullets, never by wrapping lines;
    - every claim about what changed matches the diff;
    - every claim about verification is backed by the handover's evidence, and only when the handover is not stale;
    - the Why matches the requirement or handover.
