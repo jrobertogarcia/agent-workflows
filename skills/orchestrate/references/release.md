@@ -16,7 +16,7 @@ Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md
 
 ## Gate 2
 
-- **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none". When `comments.md` exists, first run Replies per `<comments>`, then present `replies.md` verbatim too. There, `fix <n>` selects review findings, not comments; change a comment's reply with `fix small:` or `fix large:` and direction.
+- **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none". When `comments.md` exists, also present `git log --oneline origin/<branch>..HEAD`, this round's commits, then run Replies per `<comments>` and present `replies.md` verbatim too. There, `fix <n>` selects review findings, not comments; change a comment's reply with `fix small:` or `fix large:` and direction.
 - **`redraft <feedback>`**, when `HEAD` equals `approved_sha` (otherwise handle it as Gate 2 handles a moved `HEAD`):
   - Set `gate_2_release_approved` false.
   - Dispatch `draft` with the feedback verbatim and the current `pr-draft.md`.
