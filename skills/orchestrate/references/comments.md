@@ -39,7 +39,7 @@ In both cases, continue with Reconcile, then `reopen` with no text.
 
 - Run `git fetch origin`.
 - Each open layer `<b>` below this branch must equal `origin/<b>`. If `git rev-parse <b>` fails or differs, halt: "<b> differs from origin/<b>; sync and push the stack per LIFECYCLE section 4 (step 7 after a merge)."
-- **Cherry-pick check**, on this branch and each open layer `<b>` above it: `git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>` must be empty. On a listed commit, halt listing the commits to integrate.
+- **Cherry-pick check**, on this branch and each open layer `<b>` above it: `git log --oneline --cherry-pick --right-only <b>...origin/<b> --not origin/<trunk>` must be empty. A non-zero exit halts with its error; on a listed commit, halt listing the commits to integrate.
 - `gh stack sync` skips the cherry-pick check and `gh stack push` is not atomic, so neither is used.
 
 ## Fetch
@@ -91,7 +91,7 @@ In both cases, continue with Reconcile, then `reopen` with no text.
 
 Gate 2 Presentation per `<release>`, when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
-- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `plan.md`, `handover.md`, and `git log --oneline origin/<branch>..HEAD`. Tokens: `DONE`.
+- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `plan.md`, `handover.md`, and `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`. Tokens: `DONE`.
 - Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Then one short, natural draft per thread, headed `Comment <n>` and its URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, quoting each point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
 - A wrong line 1 is transient.
 
