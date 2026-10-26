@@ -9,7 +9,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Tier
 
-- **Tagged**: `fix small: <text>` or `fix large: <text>` names the tier; the feedback is the text. `reopen` text, tagged or not, is not feedback: it is a comment per `<comments>`, and a `small:` or `large:` tag only sets its `Human tier:`.
+- **Tagged**: `fix small: <text>` or `fix large: <text>` names the tier; the feedback is the text.
 - **`fix <n>, <m>`** (Gate 2, or `BLOCKED` from `RELEASED` with `S/<branch>/comments.md`):
   - If the file it reads (`review.md` at Gate 2, else `comments.md`) is missing, or any number matches no item in it, stop naming the numbers that matched nothing. Propose no tier and change no state.
   - At Gate 2, the feedback is, for each selected number, `B`'s finding n from `## Review`, then resolve's per-item report n from `## Recommendations`, all verbatim. Each entry's tier is the `Tier:` line in its per-item report.
