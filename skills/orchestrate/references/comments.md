@@ -6,7 +6,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 Address, in both cases, for the reviewed layer.
 
-- Read `gh pr view <PR> --json number,state,title,body,url,headRefName,baseRefName,headRefOid`. It must read `OPEN`, and `headRefName` must equal the current branch. Run drift check 0, then `git fetch origin`; `HEAD` must equal `headRefOid`. Any failure halts with the cause, writing nothing.
+- Read `gh pr view <PR> --json state,title,body,headRefName,baseRefName,headRefOid`. It must read `OPEN`, and `headRefName` must equal the current branch. Run drift check 0, then `git fetch origin`; `HEAD` must equal `headRefOid`. Any failure halts with the cause, writing nothing.
 - `<base_sha>` = `git merge-base origin/<baseRefName> HEAD`; the remote ref keeps a stale local base from pulling its commits into the diff.
 - Write `plan.md` (synthesized): `## Goal` is the PR title plus the body's `## What` section, or its first paragraph; `## Changes` is `git diff --stat <base_sha>...HEAD` verbatim; `## Out of Scope` is what the body states, else "none stated".
 - Write `state.json`, in the fixed shape: phase `RELEASED`, `target_branch` = `baseRefName`, `base_sha` = `<base_sha>`, `branch_tip_sha` = `approved_sha` = `HEAD`, `gate_1_plan_approved` true, `gate_2_release_approved` false.
