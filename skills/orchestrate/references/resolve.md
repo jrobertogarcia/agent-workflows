@@ -42,5 +42,5 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 Stage A step 3 only.
 
 - Dispatch `resolve` with each conflict in the `A3` report as kind `conflict`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `A3` report verbatim. Add the instruction: "Any resolution that would change `plan.md` is NEEDS-DECISION."
-- `SETTLED` is handled exactly like `GAPS`, using `gaps_fix_used`, with the resolve report as the fix pass's input.
+- `SETTLED` is handled exactly like `GAPS`, using `gaps_fix_used`, with the resolve report as the fix pass's input. First append the report to `S/<branch>/resolve.md` under a `## A3 conflict <UTC time>` heading, so later fix passes keep it settled.
 - `NEEDS-DECISION` sets `BLOCKED` with the resolve report's Needs you list.
