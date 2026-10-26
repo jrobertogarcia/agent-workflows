@@ -12,7 +12,7 @@ Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md
   - every non-blank line starts with `- ` or `* `, so wrapped paragraphs, numbered lists, and nested bullets fail;
   - there are at most 6 such lines;
   - no line is over 160 characters, counted after stripping a trailing CR.
-- Then write `WAITING_RELEASE_APPROVAL`; `retry` after a `draft` BLOCKED re-runs `draft`, then writes `WAITING_RELEASE_APPROVAL`.
+- Then write `WAITING_RELEASE_APPROVAL`; `retry` after a `draft` BLOCKED re-runs `draft`.
 
 ## Gate 2
 
