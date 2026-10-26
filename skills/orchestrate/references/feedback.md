@@ -9,7 +9,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Tier
 
-- **Tagged**: `fix small: <text>` or `fix large: <text>` names the tier; the feedback is the text.
+- **Tagged**: `fix small: <text>` or `fix large: <text>`, or `reopen small: <text>` or `reopen large: <text>`, names the tier; the feedback is the text, and a `reopen` logs it without the tag.
 - **`fix <n>, <m>`** (Gate 2 only):
   - If `review.md` is missing, or any number matches no finding in it, stop naming the numbers that matched nothing. Propose no tier and change no state.
   - Otherwise the feedback is, for each selected number, `B`'s finding n from `## Review`, then resolve's per-item report n from `## Recommendations`, all verbatim.
