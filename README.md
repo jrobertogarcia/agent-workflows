@@ -61,7 +61,7 @@ For each host whose config directory already exists, `install` and `link` instal
 | Copilot | `~/.copilot/skills/` | `~/.copilot/agents/<name>.agent.md` |
 | Codex | `~/.agents/skills/` | `~/.codex/agents/<name>.toml` (generated) |
 
-`orchestrate-step-light` sets `model: sonnet`, a Claude Code alias. Codex's generated file drops it. On Copilot and Antigravity, which model it runs on depends on the host.
+`orchestrate-step-light` sets `model: sonnet`, a Claude Code alias. Codex's generated file drops it. On Copilot and Antigravity, which model it runs on depends on the host. A host that rejects an unrecognised `model` may not load `orchestrate-step-light`, and orchestrate then halts at the first light step.
 
 Skills are symlinked, or copied where symlinks fail. Existing entries this repository did not create are skipped unless you pass `--force`:
 
