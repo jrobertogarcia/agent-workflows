@@ -75,7 +75,7 @@ In these paths `<repo>` is the main repository's directory name (shared by its w
 
 ## 3. Orchestrated Mode
 
-`orchestrate` drives one requirement end to end. When the breakdown yields one layer, it works on one branch; when it yields several, it builds a stack of branches with gh-stack, one pull request per layer, bottom first. Each step goes to a fresh `orchestrate-step` subagent with no conversation history, so every step, `review-branch` included, starts with a clean context. The orchestrator only coordinates and keeps its state under `~/.agent-workflows/<repo>/`; it never edits code.
+`orchestrate` drives one requirement end to end. When the breakdown yields one layer, it works on one branch; when it yields several, it builds a stack of branches with gh-stack, one pull request per layer, bottom first. Each step goes to a fresh subagent with no conversation history: `orchestrate-step-light`, on a mid-tier model, for the branch and validate-and-commit steps, and `orchestrate-step` for the rest, so every step, `review-branch` included, starts with a clean context. The orchestrator only coordinates and keeps its state under `~/.agent-workflows/<repo>/`; it never edits code.
 
 What you do at each touchpoint:
 

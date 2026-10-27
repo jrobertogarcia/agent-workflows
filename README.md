@@ -52,14 +52,16 @@ python3 setup.py install --ref <tag>
 
 If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install --ref <tag>`. run `unlink` from the old checkout before pulling this change; if you already pulled, delete the agent-workflows symlinks in `~/.codex/skills` by hand (leave Codex's own `.system` entry). To link a checkout directly instead (for development), use `python3 setup.py link`.
 
-For each host whose config directory already exists, `install` and `link` install every skill and the `orchestrate-step` agent that `orchestrate` dispatches to:
+For each host whose config directory already exists, `install` and `link` install every skill and the `orchestrate-step` and `orchestrate-step-light` agents that `orchestrate` dispatches to:
 
-| Host | Skills | `orchestrate-step` agent |
+| Host | Skills | Agents |
 | :--- | :--- | :--- |
-| Claude Code | `~/.claude/skills/` | `~/.claude/agents/orchestrate-step.md` |
-| Antigravity | `~/.gemini/config/skills/` | `~/.gemini/config/agents/orchestrate-step/` |
-| Copilot | `~/.copilot/skills/` | `~/.copilot/agents/orchestrate-step.agent.md` |
-| Codex | `~/.agents/skills/` | `~/.codex/agents/orchestrate-step.toml` (generated) |
+| Claude Code | `~/.claude/skills/` | `~/.claude/agents/<name>.md` |
+| Antigravity | `~/.gemini/config/skills/` | `~/.gemini/config/agents/<name>/` |
+| Copilot | `~/.copilot/skills/` | `~/.copilot/agents/<name>.agent.md` |
+| Codex | `~/.agents/skills/` | `~/.codex/agents/<name>.toml` (generated) |
+
+`orchestrate-step-light` sets `model: sonnet`, a Claude Code alias. Codex's generated file drops it. On Copilot and Antigravity, which model it runs on depends on the host. A host that rejects an unrecognised `model` may not load `orchestrate-step-light`, and orchestrate then halts at the first light step.
 
 Skills are symlinked, or copied where symlinks fail. Existing entries this repository did not create are skipped unless you pass `--force`:
 

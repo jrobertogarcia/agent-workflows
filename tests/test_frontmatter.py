@@ -27,5 +27,18 @@ class SkillFrontmatterTest(unittest.TestCase):
                 self.assertLessEqual(len(description), 1024)
 
 
+class AgentFrontmatterTest(unittest.TestCase):
+    def test_light_agent_is_orchestrate_step_on_sonnet(self):
+        fs = setup.FileSystemManager()
+        loaded = {}
+        for name in ("orchestrate-step", "orchestrate-step-light"):
+            meta, body = fs.load_frontmatter(ROOT / "agents" / name / "agent.md")
+            self.assertEqual(meta.get("name"), name)
+            loaded[name] = (meta, body)
+        self.assertEqual(loaded["orchestrate-step"][1], loaded["orchestrate-step-light"][1])
+        self.assertNotIn("model", loaded["orchestrate-step"][0])
+        self.assertEqual(loaded["orchestrate-step-light"][0].get("model"), "sonnet")
+
+
 if __name__ == "__main__":
     unittest.main()
