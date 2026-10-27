@@ -191,7 +191,7 @@ Run on every invocation, before any other write. **Guard**: unless the human exp
 ## Retries
 
 - **Fix pass**: append `- <UTC time> <skill, or human> <tip SHA>: fix: <its input's root cause>` to `roadblocks.md` and replace `fix-input.md` with its input verbatim, then in one write set phase `IMPLEMENTING`, the pass's `count` or `gaps_fix_used` change, `precut_sha` = null, and `pending_step` = `{ "A1-fix", "implement", branch_tip_sha }` (`A1f`, logged per `<review-fix>`, on a short fix pass). Dispatch it, then Stage A from `A2`, or the short path per `<review-fix>`.
-- **Counted failure**: if `count` >= `max_allowed`, set `BLOCKED`. Otherwise run a fix pass that increments `count`, with the failing report as input.
+- **Counted failure**: if `count` >= `max_allowed`, set `BLOCKED`, its entry led `<step id>: counted failure at cap:`. Otherwise run a fix pass that increments `count`, with the failing report as input.
 - **Not counted**: formatter fixes, unrelated or pre-existing failures (logged), Suggestions and Nitpicks, failures caused only by `A5`, transients, a moved `HEAD` at Gate 2, maintenance, and adoption.
 - Only the human's exit from `BLOCKED` (`fix`, `re-plan`, or `adopt`) resets `count`; `gaps_fix_used` resets where stated above.
 

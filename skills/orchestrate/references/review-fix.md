@@ -18,7 +18,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Short Fix Pass
 
-- **Applies to**: the pass above; Small per `<feedback>` from Gate 2; Small from `BLOCKED` when `blocked_from` is `WAITING_RELEASE_APPROVAL` or `RELEASED`, or is `AUDITING` and the last `roadblocks.md` entry is `B`'s counted failure at the cap, so `B` returned a verdict since the last `Scope Reductions:` entry; and the inner passes of the Short Path.
+- **Applies to**: the pass above; Small per `<feedback>` from Gate 2; Small from `BLOCKED` when `blocked_from` is `WAITING_RELEASE_APPROVAL` or `RELEASED` and `HEAD` equals `approved_sha`, or is `AUDITING` and the last `roadblocks.md` entry is led `B: counted failure at cap:`, so `B` returned a verdict since the last `Scope Reductions:` entry; and the inner passes of the Short Path.
 - **Full Stage A from `A2` stays** for `BLOCKED` from `IMPLEMENTING`, `BLOCKED` from `AUDITING` on a `B` `STOPPED` or second transient, `adopt`, re-entry after a rebase (drift check 4), maintenance (drift check 3(b)), a moved `HEAD` at Gate 2, `GAPS` and A3 CONFLICT passes inside full Stage A, and a fix base that fails the Ancestor guard.
 - **Round-starting pass**: a Retries fix pass, except that it logs `- <UTC time> <skill, or human> <tip SHA>: short fix: <its input's root cause>` in place of `fix:`, and `pending_step` is `{ "A1f", "implement", branch_tip_sha }`. That entry's `<tip SHA>` is the **fix base**.
 - **Inner pass** (`A2f` `FAIL-IN-SCOPE`, `A3f` `GAPS`, a settled `A3f` conflict): a Retries fix pass logged `fix:`, with `pending_step` `A1f`. Its input is the current `fix-input.md` verbatim, then a `## <step id>` heading, then that step's usual fix input verbatim, so the round's findings stay first and the fix base is unchanged.
@@ -49,5 +49,5 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 ## Leave for Gate 2
 
 - Write `approved_sha` = `HEAD`; `review.md` stays as Findings wrote it. Run Draft per `<release>`, which sets `WAITING_RELEASE_APPROVAL`. Not counted.
-- Gate 2 leads with the verdict `REQUEST CHANGES` and, for each blocking finding, why the loop stopped: large, discuss, defer, untiered (a resolve `STOPPED` leaves every finding untiered), under Needs you, carried from the previous review, addressed but unresolved, or no new blocking.
+- Gate 2 leads with the verdict `REQUEST CHANGES` and, for each blocking finding, why the loop stopped: large, discuss, defer, untiered (a resolve `STOPPED` leaves every finding untiered), under Needs you, carried from the previous review, addressed but unresolved, no new blocking, or auto-fixable but held by another finding.
 - `approve` releases with those findings open; `fix <n>, <m>` and the tiers go per `<feedback>`.
