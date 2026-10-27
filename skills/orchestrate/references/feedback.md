@@ -31,7 +31,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Trivial
 
-Handled as Small with no plan-delta, taking the Trivial Path when it is a short fix pass per `<review-fix>`. Otherwise, or when a selected report recommends anything but fix (so plan-delta runs), it is small.
+Handled as Small; when Small skips plan-delta and it is a short fix pass per `<review-fix>`, it takes the Trivial Path, otherwise it is small.
 
 ## Large
 

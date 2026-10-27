@@ -98,7 +98,7 @@ In both cases, continue with Reconcile, then `reopen` with no text.
 
 ## Base Check
 
-Drift check 4, while `S/<branch>/comments.md` exists, `<target>` is `<trunk>`, and `git merge-base --is-ancestor <base_sha> <trunk>` succeeds: trunk only moved ahead, so skip the rebase and its unpushed-trunk halt and go to drift check 5. The PR keeps its base; the human rebases by hand per LIFECYCLE section 4. A layer `<target>`, rewritten upstream, and a Merged target whose parent was squash- or rebase-merged still rebase; after a merge-commit merge the parent's commits are on trunk, so the skip is safe.
+Drift check 4, while `S/<branch>/comments.md` exists, `<target>` is `<trunk>`, and `git merge-base --is-ancestor <base_sha> <trunk>` succeeds: trunk only moved ahead, so skip the rebase and its unpushed-trunk halt and go to drift check 5. The PR keeps its base; the human rebases by hand per LIFECYCLE section 4. After a merge-commit merge of a Merged target's parent, its commits are on trunk, so the skip is safe.
 
 ## Adopt
 
