@@ -96,7 +96,7 @@ In both cases, continue with Reconcile, then `reopen` with no text.
   - `adopt`: with `HEAD` at `approved_sha`, draft replies only, then released; otherwise full Stage A at `A2`, whose validation and simplify-diff steps can still commit.
   - `retry` repeats this stop per BLOCKED.
 
-## Base Check
+## Review-Round Rebase Skip
 
 Drift check 4, while `S/<branch>/comments.md` exists, `<target>` is `<trunk>`, and `git merge-base --is-ancestor <base_sha> <trunk>` succeeds: trunk only moved ahead, so skip the rebase and its unpushed-trunk halt and go to drift check 5. The PR keeps its base; the human rebases by hand per LIFECYCLE section 4. After a merge-commit merge of a Merged target's parent, its commits are on trunk, so the skip is safe.
 
