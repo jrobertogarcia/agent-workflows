@@ -4,7 +4,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Draft
 
-Run after `B` `APPROVE`, and from Gate 2 or Release when `S/<branch>/pr-draft.md` is missing or its `Branch tip:` differs from `approved_sha`.
+Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), and from Gate 2 or Release when `S/<branch>/pr-draft.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
 - Dispatch `draft`.
 - The result is transient per Result when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
