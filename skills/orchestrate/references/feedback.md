@@ -14,7 +14,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
   - If the file it reads (`review.md` at Gate 2, else `comments.md`) is missing, or any number matches no item in it, stop naming the numbers that matched nothing. Propose no tier and change no state.
   - At Gate 2, the feedback is, for each selected number, `B`'s finding n from `## Review`, then resolve's per-item report n from `## Recommendations`, all verbatim. Each entry's tier is the `Tier:` line in its per-item report.
   - From `BLOCKED`, the feedback is, for each selected number, item n from `## Comments`, then report n from `## Triage`, all verbatim. Each entry's tier is the `Tier:` line in its report, except that the item from the human takes `Human tier:` when that is not `none`.
-  - The reply is large if any entry is large, else small.
+  - The reply is large if any entry is large, trivial if every entry is trivial, else small. Only Triage's reports carry `Tier: trivial`; `Human tier:` stays small or large, and no tag or untagged proposal is trivial.
   - When any entry has no tier (no `## Recommendations` or `## Triage`, or no `Tier:` line in that report), the reply is untagged.
 - **Untagged**:
   - Propose a tier by comparing the feedback with `plan.md`'s Goal, Changes, listed files, and Out of Scope.
@@ -23,10 +23,15 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Small
 
-- Dispatch `plan-delta` with the feedback. A missing or unclosed `<plan>` tag, a missing or invalid `Tier:` line, or `Tier: large` without a `Reason:` line is transient.
+- **No plan-delta**: when the reply is `fix <n>, <m>` and every selected per-item report recommends fix, the fix-pass input is the feedback verbatim, with no `## Fix plan`; append and run it as for `Tier: small` below.
+- Otherwise (free-text `fix small:`, a bare `small`, or a selected report recommending defer, discuss, or `already answered`), dispatch `plan-delta` with the feedback. A missing or unclosed `<plan>` tag, a missing or invalid `Tier:` line, or `Tier: large` without a `Reason:` line is transient.
 - On `Tier: large`, append `- <UTC time> plan-delta <tip SHA>: tier escalated from small: <reason>` to `roadblocks.md` and take Large with the reason. No extra stop: Gate 1 shows the escalation per `<resolve>`.
 - On `Tier: small`, the fix-pass input is the feedback verbatim, then a `## Fix plan` heading, then the delta plan verbatim. Append that input to `S/<branch>/resolve.md` under a `## Small fix <UTC time>` heading, so `A3` and `A6a` keep it in the plan on this and later fix passes. Run a fix pass with it per Retries, as a short fix pass where `<review-fix>` allows: not counted from Gate 2, after `BLOCKED`'s reset, with `gate_2_release_approved` false, leaving `plan.md` and `gate_1_plan_approved` untouched.
-- `B` and Gate 2 always run again.
+- `B` and Gate 2 always run again, except on the Trivial Path per `<review-fix>`.
+
+## Trivial
+
+Handled as Small with no plan-delta, taking the Trivial Path when it is a short fix pass per `<review-fix>`. Otherwise, or when a selected report recommends anything but fix (so plan-delta runs), it is small.
 
 ## Large
 

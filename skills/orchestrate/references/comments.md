@@ -86,15 +86,32 @@ In both cases, continue with Reconcile, then `reopen` with no text.
 
 `reopen`, after its write and Boot step 3; and `retry` or `adopt` from `RELEASED` per BLOCKED, when `comments.md` lacks `## Triage`.
 
-- Dispatch `resolve` with the items as kind `PR comment`. Inputs: `comments.md`, `plan.md`, `requirements.md`, `context.md` if any, and, with a stack, each open layer above this one. Add the instruction: "Keep the numbering. Check each comment against the code at `HEAD`, outdated ones included. Mark `already answered` any review body or conversation comment that a comment under `## PR author comments` already answers and that needs no change at `HEAD`. For each fix, sweep the repository at `HEAD`, and each listed upper layer with `git grep <pattern> <branch>`, for the same mistake. List each hit as file:line labeled `this diff` (inside `git diff <base_sha>...HEAD`), `layer <branch>`, or `pre-existing`; only `this diff` hits belong in the fix. End each per-item report, Needs you items included, with `Tier: small` when fixing it stays inside `plan.md`'s Goal and Changes and the files it lists and changes nothing in its Out of Scope, else `Tier: large`."
+- Dispatch `resolve` with the items as kind `PR comment`. Inputs: `comments.md`, `plan.md`, `requirements.md`, `context.md` if any, and, with a stack, each open layer above this one. Add the instruction: "Keep the numbering. Check each comment against the code at `HEAD`, outdated ones included. Mark `already answered` any review body or conversation comment that a comment under `## PR author comments` already answers and that needs no change at `HEAD`. For each fix, sweep the repository at `HEAD`, and each listed upper layer with `git grep <pattern> <branch>`, for the same mistake. List each hit as file:line labeled `this diff` (inside `git diff <base_sha>...HEAD`), `layer <branch>`, or `pre-existing`; only `this diff` hits belong in the fix. End each per-item report, Needs you items included, with `Tier: trivial` only when the fix changes nothing but code comments, docs no tool or agent loads as instructions, spelling or wording in human-facing strings no test asserts, or identifiers local to one file; never for a public or cross-file name, any file a tool or agent executes or loads as instructions (skill, agent, and reference files included), config, CI, tests, or a change to the pull request's title or body. Otherwise `Tier: small` when fixing it stays inside `plan.md`'s Goal and Changes and the files it lists and changes nothing in its Out of Scope, else `Tier: large`."
 - On `SETTLED` or `NEEDS-DECISION`, append `## Triage` and the report verbatim to `comments.md`. On `STOPPED` or a second transient, follow Resolve Step in `<resolve>`, then append `## Triage` with the line `untriaged: <cause>`, so `## Triage` always means Triage finished; the comments then carry no tier.
-- **Stop**: present each comment numbered, with its source, flags, action, tier, and sweep hits, then the Needs you list. When `Human tier:` is not `none`, show it as the "from the human" item's tier. Say: reply `fix <n>, <m>`, `fix small:` or `fix large:` with direction, or `re-plan`; with nothing to fix, `adopt`. `adopt` re-enters full Stage A at `A2`, whose validation and simplify-diff steps can still commit; a small fix takes the short fix path per `<review-fix>`; Gate 2 lists this round's commits and the draft replies.
+- **Stop**: present each comment numbered, with its source, flags, action, tier, and sweep hits, then the Needs you list. When `Human tier:` is not `none`, show it as the "from the human" item's tier. Say: reply `fix <n>, <m>`, `fix small:` or `fix large:` with direction, or `re-plan`; with nothing to fix, `adopt`. Then say what each reply runs:
+  - `fix <n>, <m>`, all trivial and recommended fix: implement and validation, then replies and push, skipping plan-delta, alignment, handover, review, draft, and Release approval, since this reply approves the release. Validation failing in scope, or a fix diff over 20 lines or touching a file the comments do not name, continues it as small.
+  - `fix <n>, <m>`, small and all recommended fix: no plan-delta; implement, validation, alignment, handover, and review of the fix diff, then Release approval with this round's commits and the draft replies.
+  - A selection including defer, discuss, or `already answered`, or `fix small:`: plan-delta first.
+  - `fix large:`: re-plan and plan approval.
+  - `adopt`: with `HEAD` at `approved_sha`, draft replies only, then released; otherwise full Stage A at `A2`, whose validation and simplify-diff steps can still commit.
+  - `retry` repeats this stop per BLOCKED.
+
+## Base Check
+
+Drift check 4, while `S/<branch>/comments.md` exists, `<target>` is `<trunk>`, and `git merge-base --is-ancestor <base_sha> <trunk>` succeeds: trunk only moved ahead, so skip the rebase and its unpushed-trunk halt and go to drift check 5. The PR keeps its base; the human rebases by hand per LIFECYCLE section 4. A layer `<target>`, rewritten upstream, and a Merged target whose parent was squash- or rebase-merged still rebase; after a merge-commit merge the parent's commits are on trunk, so the skip is safe.
+
+## Adopt
+
+`adopt` from `BLOCKED` when `blocked_from` is `RELEASED`, `comments.md` has `## Triage`, and `HEAD` equals `approved_sha`, checked before any Adopt write. Otherwise Adopt runs as usual.
+
+- Make none of Adopt's writes. Append `- <UTC time> orchestrate <HEAD>: adopt: nothing to fix` to `roadblocks.md`.
+- Run Replies, then write `RELEASED` (`blocked_from` null, `count` 0, `gaps_fix_used` false) and the stack layer as Release step 4 does, and report per After Release.
 
 ## Replies
 
-Gate 2 Presentation per `<release>`, when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
+Gate 2 Presentation per `<release>`, the trivial release per `<release>`, or Adopt above, when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
-- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `plan.md`, `handover.md`, and `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`. Tokens: `DONE`.
+- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `plan.md`, `handover.md` if any, and `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`. Tokens: `DONE`.
 - Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Then one short, natural draft per thread, headed `Comment <n>` and its URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, quoting each point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
 - A wrong line 1 is transient.
 
