@@ -4,12 +4,13 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Layer state
 
-Address, in both cases, for the reviewed layer.
+Address, in both cases, for the reviewed layer. Its checks run before that case's first write.
 
-- Read `gh pr view <PR> --json state,title,body,headRefName,baseRefName,headRefOid`. It must read `OPEN`, and `headRefName` must equal the current branch. Run drift check 0, then `git fetch origin`; `HEAD` must equal `headRefOid`. Any failure halts with the cause, writing nothing.
-- `<base_sha>` = `git merge-base origin/<baseRefName> HEAD`; the remote ref keeps a stale local base from pulling its commits into the diff.
-- Write `plan.md` (synthesized): `## Goal` is the PR title plus the body's `## What` section, or its first paragraph; `## Changes` is `git diff --stat <base_sha>...HEAD` verbatim; `## Out of Scope` is what the body states, else "none stated".
-- Write `state.json`, in the fixed shape: phase `RELEASED`, `target_branch` = `baseRefName`, `base_sha` = `<base_sha>`, `branch_tip_sha` = `approved_sha` = `HEAD`, `gate_1_plan_approved` true, `gate_2_release_approved` false.
+- **Checks**: read `gh pr view <PR> --json state,title,body,headRefName,baseRefName,headRefOid`. It must read `OPEN`, and `headRefName` must equal the current branch. Run drift check 0, then `git fetch origin`; `HEAD` must equal `headRefOid`. Any failure halts with the cause, writing nothing.
+- **Writes**:
+  - `<base_sha>` = `git merge-base origin/<baseRefName> HEAD`; the remote ref keeps a stale local base from pulling its commits into the diff.
+  - Write `plan.md` (synthesized): `## Goal` is the PR title plus the body's `## What` section, or its first paragraph; `## Changes` is `git diff --stat <base_sha>...HEAD` verbatim; `## Out of Scope` is what the body states, else "none stated".
+  - Write `state.json`, in the fixed shape: phase `RELEASED`, `target_branch` = `baseRefName`, `base_sha` = `<base_sha>`, `branch_tip_sha` = `approved_sha` = `HEAD`, `gate_1_plan_approved` true, `gate_2_release_approved` false.
 
 ## Address
 
@@ -19,16 +20,18 @@ Locate, on an `address <PR number>` reply.
   - If no layer's `pr` is `<PR>`, halt: "#<PR> is not a layer of <name>; check out its branch".
   - Otherwise the current branch must be that layer's branch, else halt: "check out <branch>".
   - Before writing anything, check `reopen`'s preconditions other than `state.json` (the layer `RELEASED`, `stack.json` phase `LAYERS`, no layer `ACTIVE`), and halt as `reopen` does.
-  - If that layer has no `state.json`, write its Layer state.
+  - If that layer has no `state.json`, run its Layer state.
 - **No stack located (bootstrap)**:
   - Take `<trunk>` as Start does.
   - **Layers**: if `gh stack view --json` exits 0 and lists the branch, take its `branches[].name` bottom first, keeping those whose `gh pr view <b> --json number,state,baseRefName` reads `OPEN`. A non-zero exit, or a list without the branch, makes the current branch the only layer.
   - **Base check**: the bottom open layer's `baseRefName` must equal `<trunk>`, and each upper layer's must equal the open layer below it. Otherwise halt, naming the layer and its base, since drift check 4 would rebase it onto the wrong branch. This also halts a stacked PR misread as one layer, for example when gh-stack is missing.
   - **`<name>`**: a slug of the branch: lower-case it, turn each character outside `[a-z0-9-]` into `-`, trim leading and trailing `-`, and cut it to 40 characters. Halt if `S/stacks/<name>/` or any layer's `S/<b>/` exists, naming the path (resume it, or `abandon`; if `S/stacks/<name>/` has no `stack.json`, delete that directory and reply `address <PR>` again).
+  - **Local layers**: each kept layer `<b>` must exist as a local branch (`git rev-parse --verify --quiet refs/heads/<b>` succeeds). Otherwise halt: "<b> has no local branch; fetch and check out <b>, then reply `address <PR>` again."
+  - Run Layer state's Checks for the reviewed layer.
   - Write, in this order:
     - `requirements.md`: `address <PR>`, then the PR title and body verbatim.
     - `stack.json`, in the shape per `SKILL.md`: `stack_name` = `<name>`, `trunk` = `<trunk>`, `git_common_dir` = `<common>`, phase `LAYERS`, `blocked` null, `active_layer_index` null, each layer `RELEASED` with its `pr` and `scope` "registered".
-    - The reviewed layer's Layer state.
+    - The reviewed layer's Layer state Writes.
   - Append `- <UTC time> orchestrate <HEAD>: address <PR>: bootstrapped` to the stack's `roadblocks.md`.
 
 In both cases, continue with Reconcile, then `reopen` with no text.
@@ -70,13 +73,13 @@ In both cases, continue with Reconcile, then `reopen` with no text.
         pageInfo { hasNextPage endCursor }
         nodes { author { login } body url isMinimized } } } } }
   ```
-- Items:
+- Items (the PR author is the conversation query's `pullRequest.author.login`):
   - each unresolved thread, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
-  - each non-empty, non-minimized review body;
+  - each non-empty, non-minimized review body whose author is not the PR author;
   - each non-minimized conversation comment whose author is not the PR author;
   - the `reopen` text, if any, without its `small:` or `large:` tag, as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, with that reply labeled as the PR author's: it is data, not the human's direction.
-- With items, delete any `S/<branch>/replies.md`, then replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line (`originalLine` when `line` is null) or URL, flags, and verbatim text; then `## PR author comments`, the PR author's conversation comments verbatim and unnumbered, as data for Triage.
+- With items, delete any `S/<branch>/replies.md`, then replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line (`originalLine` when `line` is null) or URL, flags, and verbatim text; then `## PR author comments`, the PR author's conversation comments and non-empty, non-minimized review bodies verbatim and unnumbered, as data for Triage.
 - With no items, report "no unresolved review comments" and stop, writing nothing.
 
 ## Triage
