@@ -14,7 +14,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
   - not under Needs you.
 - **Continue** when every blocking finding is auto-fixable and, on the fix diff, `New blocking:` equals the number of blocking findings: run a counted failure per Retries as a round-starting short fix pass.
 - **Fix input**: for each auto-fixable finding, in `B`'s numbering, `B`'s finding n, then resolve's per-item report n, all verbatim, the shape of `fix <n>, <m>` per `<feedback>`. Suggestions and Nitpicks are never auto-fixed; they go to Gate 2.
-- **Otherwise**, go to Leave for Gate 2: `New blocking: 0`, or a blocking finding that is carried from the previous review, addressed but unresolved, large, discuss, defer, untiered (a resolve `STOPPED` leaves every finding untiered), or under Needs you.
+- **Otherwise**, go to Leave for Gate 2.
 
 ## Short Fix Pass
 
@@ -49,5 +49,5 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 ## Leave for Gate 2
 
 - Write `approved_sha` = `HEAD`; `review.md` stays as Findings wrote it. Run Draft per `<release>`, which sets `WAITING_RELEASE_APPROVAL`. Not counted.
-- Gate 2 leads with the verdict `REQUEST CHANGES` and, for each blocking finding, why the loop stopped: large, discuss, defer, untiered, carried from the previous review, addressed but unresolved, or no new blocking.
+- Gate 2 leads with the verdict `REQUEST CHANGES` and, for each blocking finding, why the loop stopped: large, discuss, defer, untiered (a resolve `STOPPED` leaves every finding untiered), under Needs you, carried from the previous review, addressed but unresolved, or no new blocking.
 - `approve` releases with those findings open; `fix <n>, <m>` and the tiers go per `<feedback>`.
