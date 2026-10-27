@@ -4,7 +4,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Resolve Step
 
-- After `story` or `plan`, or after `B` `APPROVE` per Findings, dispatch `resolve` only when that step reports an `Open items:` count above 0; at 0, skip it. At A3 CONFLICT, always dispatch it.
+- After `story` or `plan`, or after `B` per Findings, dispatch `resolve` only when that step reports an `Open items:` count above 0; at 0, skip it. At A3 CONFLICT, always dispatch it.
 - A missing or non-numeric `Open items:` line from `story`, `plan`, or `B`, or `Plan changes:` line from the `PLANNING` `resolve`, is transient.
 - A `resolve` that returns `STOPPED` or hits a second transient does not set `BLOCKED`. Instead:
   - append `- <UTC time> resolve-open-items <tip SHA, or none>: <cause>` to the applicable `roadblocks.md`;
@@ -40,7 +40,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## Findings
 
-`AUDITING`, after `B` `APPROVE`; `<feedback>` reads the `review.md` this writes.
+`AUDITING`, after `B` `APPROVE`, and after `REQUEST CHANGES` before `<review-fix>` decides; `<feedback>` and `<review-fix>` read the `review.md` this writes.
 
 - **At 0 findings**: delete `S/<branch>/review.md` and go to Draft per `<release>`.
 - **Otherwise**, dispatch `resolve` with `B`'s numbered findings as kind `finding`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `B` report verbatim. Add the instruction: "Keep `B`'s numbering. For each finding, recommend fix, defer, or discuss. End each per-item report, Needs you items included, with `Tier: small` when fixing it stays inside `plan.md`'s Goal and Changes and the files it lists and changes nothing in its Out of Scope, else `Tier: large`."
@@ -50,7 +50,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## A3 CONFLICT
 
-Stage A step 3 only.
+Stage A step 3, and `A3f` per `<review-fix>`.
 
 - Dispatch `resolve` with each conflict in the `A3` report as kind `conflict`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `A3` report verbatim. Add the instruction: "Any resolution that would change `plan.md` is NEEDS-DECISION."
 - `SETTLED` is handled exactly like `GAPS`, using `gaps_fix_used`, with the resolve report as the fix pass's input. First append the report to `S/<branch>/resolve.md` under a `## A3 conflict <UTC time>` heading, so later fix passes keep it settled.

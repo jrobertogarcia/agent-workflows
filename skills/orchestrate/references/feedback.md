@@ -5,7 +5,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 ## Tiered Replies
 
 - Tiered: Gate 2 feedback; BLOCKED `fix` with `gate_1_plan_approved` true, including `fix <n>, <m>` after `reopen`.
-- Not tiered: Gate 1 feedback, BLOCKED `re-plan`, BLOCKED `fix` with the flag false, `redraft`, and the automatic counted passes (`FAIL-IN-SCOPE`, `GAPS`, a settled A3 conflict, `REQUEST CHANGES`).
+- Not tiered: Gate 1 feedback, BLOCKED `re-plan`, BLOCKED `fix` with the flag false, `redraft`, and the automatic counted passes (`FAIL-IN-SCOPE`, `GAPS`, a settled A3 conflict). `REQUEST CHANGES` is tiered per `<review-fix>`.
 
 ## Tier
 
@@ -25,7 +25,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 - Dispatch `plan-delta` with the feedback. A missing or unclosed `<plan>` tag, a missing or invalid `Tier:` line, or `Tier: large` without a `Reason:` line is transient.
 - On `Tier: large`, append `- <UTC time> plan-delta <tip SHA>: tier escalated from small: <reason>` to `roadblocks.md` and take Large with the reason. No extra stop: Gate 1 shows the escalation per `<resolve>`.
-- On `Tier: small`, the fix-pass input is the feedback verbatim, then a `## Fix plan` heading, then the delta plan verbatim. Append that input to `S/<branch>/resolve.md` under a `## Small fix <UTC time>` heading, so `A3` and `A6a` keep it in the plan on this and later fix passes. Run a fix pass with it per Retries: not counted from Gate 2, after `BLOCKED`'s reset, with `gate_2_release_approved` false, leaving `plan.md` and `gate_1_plan_approved` untouched.
+- On `Tier: small`, the fix-pass input is the feedback verbatim, then a `## Fix plan` heading, then the delta plan verbatim. Append that input to `S/<branch>/resolve.md` under a `## Small fix <UTC time>` heading, so `A3` and `A6a` keep it in the plan on this and later fix passes. Run a fix pass with it per Retries, as a short fix pass where `<review-fix>` allows: not counted from Gate 2, after `BLOCKED`'s reset, with `gate_2_release_approved` false, leaving `plan.md` and `gate_1_plan_approved` untouched.
 - `B` and Gate 2 always run again.
 
 ## Large
