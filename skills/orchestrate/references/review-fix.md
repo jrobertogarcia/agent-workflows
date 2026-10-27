@@ -44,7 +44,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 A short fix pass whose reply is trivial per `<feedback>`.
 
-- **Marker**: the round-starting entry is logged `short fix: trivial: <root cause>`. The pass is trivial while the last `short fix:` entry is led `trivial:`, is later than the last `Scope Reductions:` and `reopen:` entries, and no `trivial escalated:` entry follows it. Resume, `retry`, and Release re-derive it from `roadblocks.md`.
+- **Marker**: the round-starting entry is logged `short fix: trivial: <root cause>`. The pass is trivial while the last `short fix:` entry is led `trivial:`, is later than the last `Scope Reductions:` and `reopen:` entries, and no `trivial escalated:` entry follows it.
 - **`A1f`**: add the instruction: "Make only the change each selected report recommends. If any needs more than a change to code comments, docs no tool or agent loads as instructions, human-facing wording no test asserts, or identifiers local to one file, or needs any change to the pull request's title or body, commit nothing and stop." Its `STOPPED` sets `BLOCKED` as usual.
 - **`A2f`**: on `FAIL-IN-SCOPE`, log `- <UTC time> orchestrate <tip SHA>: trivial escalated: A2f FAIL-IN-SCOPE` and continue per Short Path step 2. `FAIL-UNRELATED` is logged and passes.
 - **Threshold**, after `A2f` passes: `git diff --numstat <fix base>...HEAD` trips when added plus deleted lines exceed 20, any entry is binary (`-`), or a changed path is named neither as a selected comment's path nor in its Triage report. On a trip, log `- <UTC time> orchestrate <tip SHA>: trivial escalated: <reason>` and continue the Short Path at `A3f`.

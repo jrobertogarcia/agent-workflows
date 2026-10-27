@@ -31,4 +31,3 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
   - Skip the Precondition and Step 1's text comparison. Run Replies per `<comments>` when `replies.md` is missing or stale.
   - Dispatch `release` with no `pr-draft.md`, adding the instruction: "Push only: do not run `gh pr edit` or open a pull request; with one open, end `DONE`." Restack, the lease list, and Atomic Push are unchanged.
   - Skip the dispatch only when an open pull request is already at `approved_sha` and Atomic Push does not require it.
-  - The PR keeps its title and body; a later round's Gate 2 re-runs Draft, since `pr-draft.md` is stale.
