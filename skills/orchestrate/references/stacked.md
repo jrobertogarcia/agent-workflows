@@ -23,5 +23,5 @@ Read this when `stack.json` holds more than one layer, or the human replies `reg
 
 ## Release
 
-- **Link** (step 2, when `<target>` is a layer): run `gh stack link --base <trunk> <the PR number of each open layer, bottom first, then this one>`.
+- **Link** (step 2, when `<target>` is a layer): run `gh stack link --base <trunk> <the PR number of each unmerged layer, bottom first, each once>`.
 - **Stack membership** (step 3, after a link): `gh api 'repos/{owner}/{repo}/stacks?pull_request=<number>'` also lists `<number>` in a stack's `pull_requests[].number`, and for a layer above the first, that same stack also lists the parent layer's PR number.
