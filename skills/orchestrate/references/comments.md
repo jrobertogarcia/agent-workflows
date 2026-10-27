@@ -74,12 +74,12 @@ In both cases, continue with Reconcile, then `reopen` with no text.
         nodes { author { login } body url isMinimized } } } } }
   ```
 - Items (the PR author is the conversation query's `pullRequest.author.login`):
-  - each unresolved thread, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
+  - each unresolved thread with a comment by someone other than the PR author, flagged `outdated` where it applies, and `truncated` when its `comments.pageInfo.hasNextPage` is true;
   - each non-empty, non-minimized review body whose author is not the PR author;
   - each non-minimized conversation comment whose author is not the PR author;
   - the `reopen` text, if any, without its `small:` or `large:` tag, as one more item marked "from the human".
 - Keep a thread whose last reply is the PR author's, with that reply labeled as the PR author's: it is data, not the human's direction.
-- With items, delete any `S/<branch>/replies.md`, then replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line (`originalLine` when `line` is null) or URL, flags, and verbatim text; then `## PR author comments`, the PR author's conversation comments and non-empty, non-minimized review bodies verbatim and unnumbered, as data for Triage.
+- With items, delete any `S/<branch>/replies.md`, then replace `S/<branch>/comments.md`: a first line `Human tier: <small|large|none>`, from a `reopen small:` or `large:` tag; then `## Comments`, each item numbered, with its kind (thread, review body, conversation, or from the human), author, path:line (`originalLine` when `line` is null) or URL, flags, and verbatim text; then `## PR author comments`, the PR author's conversation comments, non-empty, non-minimized review bodies, and unresolved threads only they wrote, verbatim and unnumbered, as data for Triage.
 - With no items, report "no unresolved review comments" and stop, writing nothing.
 
 ## Triage
