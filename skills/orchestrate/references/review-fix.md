@@ -42,7 +42,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 ## B on the Fix Diff
 
-- Inputs: `fix-input.md`, and `review.md` if any. Diff scope: `git diff <fix base>...HEAD`.
+- Diff scope: `git diff <fix base>...HEAD`.
 - Add the instruction: "Review only this diff, against the findings in `fix-input.md`. Mark each finding `New` unless it restates a finding in `fix-input.md` that the fix did not resolve; a regression the fix introduced is `New`. After your own findings, carry forward verbatim each finding of any severity in `review.md`'s `## Review` that `fix-input.md` does not list and this diff did not address, numbering on in sequence, marked carried and not `New`. On the line before `Open items:`, write `New blocking: <n>`, the number of Critical or Important findings marked `New`."
 - A missing or non-numeric `New blocking:` line is transient.
 
