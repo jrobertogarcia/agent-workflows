@@ -15,7 +15,6 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - **Continue** when every blocking finding is auto-fixable and, on the fix diff, `New blocking:` equals the number of blocking findings: run a counted failure per Retries as a round-starting short fix pass.
 - **Fix input**: for each auto-fixable finding, in `B`'s numbering, `B`'s finding n, then resolve's per-item report n, all verbatim, the shape of `fix <n>, <m>` per `<feedback>`. Suggestions and Nitpicks are never auto-fixed; they go to Gate 2.
 - **Otherwise**, go to Leave for Gate 2: `New blocking: 0`, or a blocking finding that is carried from the previous review, addressed but unresolved, large, discuss, defer, untiered (a resolve `STOPPED` leaves every finding untiered), or under Needs you.
-- `max_allowed`, `count`, and its resets stay per Retries; at the cap, the counted failure sets `BLOCKED`.
 
 ## Short Fix Pass
 
@@ -35,7 +34,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 4. **`A7`**: as Stage A step 7, with the Scope Reductions from the last such entry. Write `last_verdict` (from `A3f`), `precut_sha` = null, and `AUDITING`.
 5. **`B`** on the fix diff.
 
-- There is no `A4` to `A6`, and `A4` always logs a `Scope Reductions:` entry, so `B` is on the fix diff exactly when the last `short fix:` entry in `roadblocks.md` is later than the last `Scope Reductions:` entry and the Ancestor guard passes. When the guard fails, take full Stage A at `A2` instead of dispatching `B`.
+- There is no `A4` to `A6`, and `A4` always logs a `Scope Reductions:` entry, so `B` is on the fix diff exactly when the last `short fix:` entry in `roadblocks.md` is later than the last `Scope Reductions:` entry and the Ancestor guard passes.
 - **Resume and retry**, each continuation subject to the Ancestor guard:
   - drift check 5 after `A1f` or `A2f` continues the Short Path;
   - an interrupted `A3f` or `A7` leaves no pending step, so the next run takes full Stage A at `A2`, and `B` reviews the full diff;
@@ -45,8 +44,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 - Inputs: `fix-input.md`, and `review.md` if any. Diff scope: `git diff <fix base>...HEAD`.
 - Add the instruction: "Review only this diff, against the findings in `fix-input.md`. Mark each finding `New` unless it restates a finding in `fix-input.md` that the fix did not resolve; a regression the fix introduced is `New`. After your own findings, carry forward verbatim each finding of any severity in `review.md`'s `## Review` that `fix-input.md` does not list and this diff did not address, numbering on in sequence, marked carried and not `New`. On the line before `Open items:`, write `New blocking: <n>`, the number of Critical or Important findings marked `New`."
-- A carried blocking finding makes the verdict `REQUEST CHANGES` and keeps `New blocking:` below the blocking count, so the round leaves for Gate 2.
-- A missing or non-numeric `New blocking:` line is transient. `APPROVE` proceeds as in `AUDITING`.
+- A missing or non-numeric `New blocking:` line is transient.
 
 ## Leave for Gate 2
 
