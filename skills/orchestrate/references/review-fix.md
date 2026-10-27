@@ -22,7 +22,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - **Full Stage A from `A2` stays** for `BLOCKED` from `IMPLEMENTING`, `BLOCKED` from `AUDITING` on a `B` `STOPPED` or second transient, `adopt`, re-entry after a rebase (drift check 4), maintenance (drift check 3(b)), a moved `HEAD` at Gate 2, `GAPS` and A3 CONFLICT passes inside full Stage A, and a fix base that fails the Ancestor guard.
 - **Round-starting pass**: a Retries fix pass, except that it logs `- <UTC time> <skill, or human> <tip SHA>: short fix: <its input's root cause>` in place of `fix:`, and `pending_step` is `{ "A1f", "implement", branch_tip_sha }`. That entry's `<tip SHA>` is the **fix base**.
 - **Inner pass** (`A2f` `FAIL-IN-SCOPE`, `A3f` `GAPS`, a settled `A3f` conflict): a Retries fix pass logged `fix:`, with `pending_step` `A1f`. Its input is the current `fix-input.md` verbatim, then a `## <step id>` heading, then that step's usual fix input verbatim, so the round's findings stay first and the fix base is unchanged.
-- **Ancestor guard**: the Short Path and `B` on the fix diff require `git merge-base --is-ancestor <fix base> HEAD` to succeed. When it fails (for example, maintenance rebased the branch in `BLOCKED`, then `retry`), take full Stage A at `A2`; `A4` then logs `Scope Reductions:`, so `B` is full.
+- **Ancestor guard**: the Short Path and `B` on the fix diff require `git merge-base --is-ancestor <fix base> HEAD` to succeed. When it fails (for example, maintenance rebased the branch in `BLOCKED`, then `retry`), take full Stage A at `A2`.
 
 ## Short Path
 
