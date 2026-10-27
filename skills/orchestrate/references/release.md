@@ -27,3 +27,7 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
 
 - **Precondition**: `pr-draft.md`'s `Branch tip:` equals `approved_sha`. Otherwise set `gate_2_release_approved` false, run Draft, and present Gate 2. An unapproved draft is never published.
 - **Step 1, an open pull request at `approved_sha`**: read its text with `gh pr view <branch> --json title,body`. Dispatch `release` anyway when its title or body differs from `pr-draft.md`'s, ignoring line endings (CRLF or LF) and trailing whitespace on each line. The push is then a no-op, and `gh pr edit` applies the approved text. This covers a text-only fix after `reopen` and a crash between push and edit. Skip this comparison when `roadblocks.md` logs a `PUSHED` at `approved_sha` and no `reopen:` entry after it: the human opened that pull request by hand, so its text stands, and Release continues at the RELEASED check.
+- **Trivial release**, while the pass is trivial per `<review-fix>`:
+  - Skip the Precondition and Step 1's text comparison. Run Replies per `<comments>` when `replies.md` is missing or stale.
+  - Dispatch `release` with no `pr-draft.md`, adding the instruction: "No `pr-draft.md` is given: ignore the instructions that use its title and body, and skip `gh pr edit`. Push only and open no pull request; with one open, end `DONE`." Restack, the lease list, and Atomic Push are unchanged.
+  - Skip the dispatch only when an open pull request is already at `approved_sha` and Atomic Push does not require it.
