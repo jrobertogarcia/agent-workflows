@@ -11,7 +11,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 - **Tagged**: `fix small: <text>` or `fix large: <text>` names the tier; the feedback is the text.
 - **`fix <n>, <m>`** (Gate 2, or `BLOCKED` from `RELEASED` with `S/<branch>/comments.md`):
-  - Look each number up per Item lookups in `<dispatch>`, never reading the file: at Gate 2 the `Finding` and `Item` patterns in `review.md`; from `BLOCKED` a numbered `## Comments` item and the `Item` pattern in `comments.md`, with `Human tier:` from `head -1`. If the file is missing, or any number has no `Finding` or comment line, stop naming the numbers that matched nothing. Propose no tier and change no state.
+  - Look each number up per Item lookups in `<dispatch>`, never reading the file: at Gate 2 the `Finding` and `Item` patterns in `review.md`; from `BLOCKED` `grep -m1 -E '^Comment <n>: '` and the `Item` pattern in `comments.md`, with `Human tier:` from `head -1`. If the file is missing, or any number has no `Finding` or comment line, stop naming the numbers that matched nothing. Propose no tier and change no state.
   - The feedback is the selection block per Fix Input in `<dispatch>`. Each entry's tier is the `Tier:` of its `Item` line, except that from `BLOCKED` the item from the human takes `Human tier:` when that is not `none`.
   - The reply is large if any entry is large, trivial if every entry is trivial, else small. Only Triage's reports carry `Tier: trivial`; `Human tier:` stays small or large, and no tag or untagged proposal is trivial.
   - When any entry has no `Item` line, the reply is untagged.
