@@ -27,7 +27,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 ## PLANNING
 
-- After this entry's first `plan.md` is written, delete any `S/<branch>/resolve.md` and `S/<branch>/fix-input.md`, so neither carries an earlier plan's lists or settlements into this one. Dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and on `SETTLED` or `NEEDS-DECISION` `mv -f S/<branch>/reports/resolve-plan.md` to `S/<branch>/resolve.md`.
+- After this entry's first `plan.md` is written, delete any `S/<branch>/resolve.md` and, after appending it per History in `<boot>`, `S/<branch>/fix-input.md`, so neither carries an earlier plan's lists or settlements into this one. Dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and on `SETTLED` or `NEEDS-DECISION` `mv -f S/<branch>/reports/resolve-plan.md` to `S/<branch>/resolve.md`.
 - If the report's `Plan changes:` is above 0, dispatch `plan` once more with `S/<branch>/resolve.md` as an input; it writes `plan.md` itself. This happens at most once per entry to `PLANNING`: the count is held in this thread, and a crash re-runs `PLANNING` from the start.
 - Do not resolve the second plan's open items.
 - Then set `WAITING_PLAN_APPROVAL`.

@@ -10,7 +10,7 @@ Read this when `stack.json` holds more than one layer, or the human replies `reg
 
 ## Phases
 
-- **Split approval** (`WAITING_SPLIT_APPROVAL`): present each layer's branch and scope and stop for the human: `narrow` per below; `approve` continues only after these checks:
+- **Split approval** (`WAITING_SPLIT_APPROVAL`): present each layer's branch and scope and stop for the human: `narrow` per below; any other reply but `approve` is discussion: record it per Decisions in `<boot>`, answer it, and present the split again. `approve`, recorded the same way, continues only after these checks:
   - `gh stack --version` reports 0.2.1 or later and `git --version` 2.36 or later, else halt: "Stacked work needs gh-stack v0.2.1 or later and Git 2.36 or later (found <versions, or none>): run `gh extension install github/gh-stack` or `gh extension upgrade gh-stack`, or upgrade Git."
   - The first line of `gh api --include 'repos/{owner}/{repo}/stacks'` reports status 200, else halt: "Stacked pull requests are unavailable for this repository (status <status>); they need github.com. Check `gh auth status`, `GH_TOKEN`, `GH_REPO`, and the `origin` remote."
 

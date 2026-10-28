@@ -4,8 +4,8 @@ Read this on every invocation and every touchpoint reply, after the Guard in `SK
 
 ## Boot
 
-1. **Locate**: the `S/stacks/*/stack.json` whose `layers[].branch` is the current branch (unless, asked because the message reads as a new requirement, the human says it is a new run), else the stack the human names, else start a new run if the human gave a requirement, else ask for the requirement or a stack name. Write `git_common_dir` into a located stack that lacks it; if it holds another value, halt: "<name> belongs to the repository at <value>; if this one moved from there, set `git_common_dir` in its `stack.json` to <common>." A `narrow`, `register`, `reopen`, `address`, or `abandon` reply is never a requirement; with no stack located, ask for the stack name, except that `address` is handled per `<comments>`. Handle `abandon` and `address` right after Locate, `reopen` right after Reconcile, and `adopt` in place of the drift check 3(c) halt or in `BLOCKED`; otherwise report that there is nothing to adopt.
-2. **Reconcile**, for the active layer (`active_layer_index`): if `state.json` is `RELEASED` and the layer is not, copy `pr` and `RELEASED` into the layer and move `active_layer_index` to the next `PENDING` layer, if any. If the layer is `PENDING` and `state.json` exists, set it `ACTIVE`. Read each `RELEASED` layer's state live with `gh pr view <pr> --json state`. `MERGED` deletes its `S/<branch>/`. `CLOSED` does too, unless a layer sits above it: then follow Closed layer in `<stacked>`. In `LAYERS`, once every layer is `RELEASED` and reads `MERGED` or `CLOSED`, delete `S/stacks/<name>/` and report the stack done. With more than one layer, then run Merged target in `<stacked>`.
+1. **Locate**: the `S/stacks/*/stack.json` whose `layers[].branch` is the current branch (unless, asked because the message reads as a new requirement, the human says it is a new run), else the stack the human names, else a provisional folder the human names (`S/stacks/.start.*`, absolute or relative to `S/stacks/`, resolved and validated as for `abandon <provisional path>`), which resumes Start per `<start>`, else start a new run if the human gave a requirement, else ask for the requirement or a stack name. Write `git_common_dir` into a located stack that lacks it; if it holds another value, halt: "<name> belongs to the repository at <value>; if this one moved from there, set `git_common_dir` in its `stack.json` to <common>." A `narrow`, `register`, `reopen`, `address`, `abandon`, `file`, `defer`, or `drop` reply is never a requirement; with no stack located, ask for the stack name, except that `address` is handled per `<comments>` and `abandon <provisional path>` per below. Handle `abandon` (including `abandon <provisional path>`), `address`, and `file|defer|drop N<n>` right after Locate, so a `file|defer|drop` reply is never read as Gate 2 feedback or as a release trigger when `gate_2_release_approved` is true; `reopen` right after Reconcile, and `adopt` in place of the drift check 3(c) halt or in `BLOCKED`; otherwise report that there is nothing to adopt. **Restore**: in a fresh thread or after a context summary, read the located stack's `decisions.md` and `incidental.md` in full before acting; they are the run's record of decisions and findings.
+2. **Reconcile**, for the active layer (`active_layer_index`): if `state.json` is `RELEASED` and the layer is not, copy `pr` and `RELEASED` into the layer and move `active_layer_index` to the next `PENDING` layer, if any. If the layer is `PENDING` and `state.json` exists, set it `ACTIVE`. Read each `RELEASED` layer's state live with `gh pr view <pr> --json state`. `MERGED` deletes its `S/<branch>/`. `CLOSED` does too, unless a layer sits above it: then follow Closed layer in `<stacked>`. In `LAYERS`, once every layer is `RELEASED` and reads `MERGED` or `CLOSED`, list the stack's `incidental.md` entries not marked `drop` as `N<n>`, for the human to file by hand, then delete `S/stacks/<name>/` and report the stack done with that listing. With more than one layer, then run Merged target in `<stacked>`.
 3. **Drift checks**, for an `ACTIVE` layer, in order:
    0. **Clean tree (halt)**: `git status --porcelain --untracked-files=all` is empty and the git dir holds no `rebase-merge`, `rebase-apply`, `MERGE_HEAD`, or `CHERRY_PICK_HEAD`; a dirty tree is the human's to resolve: never commit, restore, or clean it yourself.
    1. **Branch (halt)**: `git branch --show-current` equals `git_anchor.branch`; report a detached `HEAD` as such.
@@ -18,3 +18,39 @@ Read this on every invocation and every touchpoint reply, after the Guard in `SK
    5. **Resume**: in `IMPLEMENTING` with `pending_step` set, re-run that step, not counted, and continue Stage A after it (after `A6v-cut`, go to `A7`; after `A1f` or `A2f`, continue the short path per `<review-fix>`). For `A5`, instead `git reset --hard <precut_sha>`, write `branch_tip_sha` = `HEAD` and `pending_step` = null, and continue Stage A at `A4`.
 
 **Adopt** (human reply after a drift check 3(c) halt or in `BLOCKED`; any other halt is cleared by fixing the cause and re-invoking): write `base_sha` = `git merge-base <target> HEAD`, or, when `<target>` is `<trunk>` and `git merge-base origin/<trunk> HEAD` descends from it, that instead, `branch_tip_sha` = `HEAD`, `approved_sha`, `precut_sha`, and `pending_step` = null, append to `roadblocks.md`; from `AUDITING`, `WAITING_RELEASE_APPROVAL`, or `BLOCKED` enter `IMPLEMENTING` at `A2`, unless `<comments>` runs Triage or Adopt. Adopting from `BLOCKED` is the human's exit: it also resets `count` to 0 and `gaps_fix_used` to false.
+
+**`abandon <provisional path>`**: resolve a relative path against `S/stacks/`. The resolved path must be a direct child of `S/stacks/` whose name starts `.start.` and which holds no `stack.json`; otherwise halt. List its paths and its `incidental.md` entries, then run:
+```bash
+rm -rf -- "<that path>"
+```
+
+## Decisions
+
+On every touchpoint reply to a located stack, or to a provisional run during Start, after Locate and before acting on the reply, append one entry to the stack's `decisions.md` (`<provisional>/decisions.md` during Start):
+```
+## <UTC time> <touchpoint> <branch or ->
+Reply: <the reply, verbatim>
+Ruling: <what you apply>
+Reason: <one line>
+Cost if wrong: <one line>
+```
+- `<touchpoint>` is the phase being answered (`stack.json` `blocked` or `phase`, `state.json` `lifecycle.phase`), `Start` for the story touchpoint, or the reply word for `address`, `register`, `abandon`, `file`, `defer`, and `drop`.
+- `Reply:` may run over several lines; it ends at the entry's `Ruling:` line.
+- Append by a heredoc concatenation that prints nothing.
+- The entry is the only record of split-approval `approve` and discussion, the untagged tier proposal (`Ruling: proposed tier <small|large>, awaiting reply`), `redraft` feedback, `file|defer|drop`, and every follow-up ruling.
+- A halt cleared by re-invoking is not a reply and writes none.
+
+## History
+
+- Before replacing or deleting `S/<branch>/fix-input.md` or `S/<branch>/plan-feedback.md`, if it exists, append `## <UTC time> <file>: <replaced|deleted> (<cause>)` and then the file's contents to `S/<branch>/history.md`, by concatenation that prints nothing; the success check is empty output.
+- `<cause>` is the triggering step or reply: `fix pass`, `Gate 1 approve`, `re-plan`, `PLANNING`, or `inner pass <step id>`.
+- The live files keep their meaning. Appends to `plan-feedback.md` lose nothing and are not history events.
+
+## Incidental
+
+- `N<n>` is line `n` of the stack's `incidental.md` (`<provisional>/incidental.md` during Start), written per Out of scope in `<dispatch>`. Every line is an entry: the file has no heading and no blank lines, and lines are never removed, so the numbers stay stable.
+- **`file|defer|drop N<n>[, N<m>]`**:
+  - Check each number exists (`sed -n '<n>p'` is non-empty); otherwise stop, naming the numbers that matched nothing, and leave `incidental.md` unchanged; this read-only check runs before the Decisions entry, which records `Ruling: rejected, no such N<n>`.
+  - Otherwise replace the file atomically (`awk` to a temp file, then `mv -f`): on each named line, strip any trailing ` [file]`, ` [defer]`, or ` [drop]` mark and append ` [<word>]`.
+  - Change no phase, and re-present the pending touchpoint's question in one line.
+  - `file` marks an entry for the human to file; you file no issue, since that is a GitHub write.
