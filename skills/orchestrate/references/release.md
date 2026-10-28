@@ -1,13 +1,13 @@
 # Orchestrate: Release Text
 
-Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; each section names where that file points to it.
+It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and BLOCKED rules apply here; each section names where the skill points to it.
 
 ## Draft
 
 Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), and from Gate 2 or Release when `S/<branch>/pr-draft.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
 - Dispatch `draft`.
-- The result is transient per Result when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
+- The result is transient per Result in `<dispatch>` when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
 - It is also transient when the body fails the What bound. The body must have a `## What` heading; without one it fails, unless `git ls-files` lists a path whose name contains `pull_request_template` (any case), where create-pr's step 4 and Gate 2 cover the shape. From that heading up to the next heading, leaving out a trailing link block (create-pr's link block: the body's last blank-line-separated block when none of its lines starts with `- ` or `* ` and each names a `#<number>` or a URL):
   - every non-blank line starts with `- ` or `* `, so wrapped paragraphs, numbered lists, and nested bullets fail;
   - there are at most 6 such lines;
@@ -24,6 +24,15 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
   - Not counted, no fix pass, and the feedback is not persisted.
 
 ## Release
+
+With `gate_2_release_approved` true and `HEAD` equal to `approved_sha` (else enter `IMPLEMENTING`, not counted, which clears the flag), and the Precondition below:
+
+1. Restack per `<comments>`. Read `gh pr view <branch> --json number,state,baseRefName,headRefOid`. One reading `MERGED` at `approved_sha` goes to step 4. An open one with a base other than `<target>` halts when `<target>` is `<trunk>`. Unless an open one is at `approved_sha` with text matching `pr-draft.md` (per Step 1 below), dispatch `release` with `R` = the SHA `git ls-remote origin refs/heads/<branch>` prints, if any. When `R` is set, first `git fetch origin <branch>` and halt if `git cherry approved_sha R` prints a `+` line: "origin/<branch> holds commits not in the approved tip; integrate them, unless they are a merged lower layer's original commits, then force-push with `git push --force-with-lease=refs/heads/<branch>:<R> origin <approved_sha>:refs/heads/<branch>` yourself; then re-invoke." `PUSHED` logs it with `approved_sha` and reports the approved title and body for the human to open the pull request against `<target>`; the next invocation resumes here.
+2. **Link**, when `<target>` is a layer: per `<stacked>`.
+3. **RELEASED check**: a fresh `gh pr view` shows `OPEN` with `baseRefName` equal to `<target>` and `headRefOid` equal to `approved_sha`. After a link, also run Stack membership in `<stacked>`. Exit codes are not evidence.
+4. Write `state.json` `RELEASED`, then in `stack.json` the layer's `pr` and `RELEASED`, moving `active_layer_index` to the next `PENDING` layer if one remains. If it moved, re-run Reconcile and continue at that layer's Branch creation.
+
+A failed `create-pr`, link, or check, including a `release` step returning `STOPPED` or a second transient, does not set `BLOCKED`: append the cause to `roadblocks.md`, leave the phase unchanged, and report; re-run once it is resolved. The flag stays true, and the next invocation resumes at Release.
 
 - **Precondition**: `pr-draft.md`'s `Branch tip:` equals `approved_sha`. Otherwise set `gate_2_release_approved` false, run Draft, and present Gate 2. An unapproved draft is never published.
 - **Step 1, an open pull request at `approved_sha`**: read its text with `gh pr view <branch> --json title,body`. Dispatch `release` anyway when its title or body differs from `pr-draft.md`'s, ignoring line endings (CRLF or LF) and trailing whitespace on each line. The push is then a no-op, and `gh pr edit` applies the approved text. This covers a text-only fix after `reopen` and a crash between push and edit. Skip this comparison when `roadblocks.md` logs a `PUSHED` at `approved_sha` and no `reopen:` entry after it: the human opened that pull request by hand, so its text stands, and Release continues at the RELEASED check.

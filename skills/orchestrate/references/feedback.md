@@ -1,6 +1,6 @@
 # Orchestrate: Feedback Tiers
 
-Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; each section names where that file points to it. `S/<branch>/review.md` is written by Findings in `<resolve>`.
+It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and BLOCKED rules apply here; each section names where the skill points to it. `S/<branch>/review.md` is written by Findings in `<resolve>`.
 
 ## Tiered Replies
 

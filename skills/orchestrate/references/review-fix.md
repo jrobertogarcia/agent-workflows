@@ -1,6 +1,6 @@
 # Orchestrate: Review Fix
 
-Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; each section names where that file points to it. Findings and `S/<branch>/review.md` are per `<resolve>`; tiers are per `<feedback>`.
+It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and BLOCKED rules apply here; each section names where the skill points to it. Findings and `S/<branch>/review.md` are per `<resolve>`; tiers are per `<feedback>`.
 
 ## Request Changes
 
@@ -19,7 +19,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 ## Short Fix Pass
 
 - **Applies to**: the pass above; Small per `<feedback>` from Gate 2; Small from `BLOCKED` when `blocked_from` is `WAITING_RELEASE_APPROVAL` or `RELEASED` and `HEAD` equals `approved_sha`, or is `AUDITING` and the last `roadblocks.md` entry is led `B: counted failure at cap:`, so `B` returned a verdict since the last `Scope Reductions:` entry; and the inner passes of the Short Path.
-- **Full Stage A from `A2` stays** for `BLOCKED` from `IMPLEMENTING`, `BLOCKED` from `AUDITING` on a `B` `STOPPED` or second transient, `adopt` (except Adopt per `<comments>`), re-entry after a rebase (drift check 4), maintenance (drift check 3(b)), a moved `HEAD` at Gate 2, `GAPS` and A3 CONFLICT passes inside full Stage A, and a fix base that fails the Ancestor guard.
+- **Full Stage A from `A2` stays** for `BLOCKED` from `IMPLEMENTING`, `BLOCKED` from `AUDITING` on a `B` `STOPPED` or second transient, `adopt` (except Adopt per `<comments>`), re-entry after a rebase (drift check 4 in `<boot>`), maintenance (drift check 3(b)), a moved `HEAD` at Gate 2, `GAPS` and A3 CONFLICT passes inside full Stage A, and a fix base that fails the Ancestor guard.
 - **Round-starting pass**: a Retries fix pass, except that it logs `- <UTC time> <skill, or human> <tip SHA>: short fix: <its input's root cause>` in place of `fix:`, and `pending_step` is `{ "A1f", "implement", branch_tip_sha }`. That entry's `<tip SHA>` is the **fix base**.
 - **Inner pass** (`A2f` `FAIL-IN-SCOPE`, `A3f` `GAPS`, a settled `A3f` conflict): a Retries fix pass logged `fix:`, with `pending_step` `A1f`. Its input is the current `fix-input.md` verbatim, then a `## <step id>` heading, then that step's usual fix input verbatim, so the round's findings stay first and the fix base is unchanged.
 - **Ancestor guard**: the Short Path and `B` on the fix diff require `git merge-base --is-ancestor <fix base> HEAD` to succeed. When it fails (for example, maintenance rebased the branch in `BLOCKED`, then `retry`), take full Stage A at `A2`.
@@ -36,7 +36,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 
 - There is no `A4` to `A6`, and `A4` always logs a `Scope Reductions:` entry, so `B` is on the fix diff exactly when the last `short fix:` entry in `roadblocks.md` is later than the last `Scope Reductions:` entry and the Ancestor guard passes.
 - **Resume and retry**, each continuation subject to the Ancestor guard:
-  - drift check 5 after `A1f` or `A2f` continues the Short Path;
+  - drift check 5 in `<boot>` after `A1f` or `A2f` continues the Short Path;
   - an interrupted `A3f` or `A7` leaves no pending step, so the next run takes full Stage A at `A2`, and `B` reviews the full diff;
   - `BLOCKED` `retry` at `A1f`, `A2f`, `A3f`, or `A7` continues the Short Path (`A7` without its held report from `A2f`).
 
@@ -48,8 +48,8 @@ A short fix pass whose reply is trivial per `<feedback>`.
 - **`A1f`**: add the instruction: "Make only the change each selected report recommends. If any needs more than a change to code comments, docs no tool or agent loads as instructions, human-facing wording no test asserts, or identifiers local to one file, or needs any change to the pull request's title or body, commit nothing and stop." Its `STOPPED` sets `BLOCKED` as usual.
 - **`A2f`**: on `FAIL-IN-SCOPE`, log `- <UTC time> orchestrate <tip SHA>: trivial escalated: A2f FAIL-IN-SCOPE` and continue per Short Path step 2. `FAIL-UNRELATED` is logged and passes.
 - **Threshold**, after `A2f` passes: `git diff --numstat <fix base>...HEAD` trips when added plus deleted lines exceed 20, any entry is binary (`-`), or a changed path is named neither as a selected comment's path nor in its Triage report. On a trip, log `- <UTC time> orchestrate <tip SHA>: trivial escalated: <reason>` and continue the Short Path at `A3f`.
-- **Release**: otherwise, in one write set `approved_sha` = `HEAD`, `gate_2_release_approved` true, `pending_step` null, and `WAITING_RELEASE_APPROVAL`, then go to Release in `SKILL.md`. The Triage reply was the approval; no `A3f`, `A7`, `B`, `draft`, or handover runs.
-- **Resume and retry**: as Short Path; drift check 5 or `retry` after `A1f` or `A2f` stays on this path while the pass is trivial. After the release write, Gate 2's flag-true rule resumes at Release.
+- **Release**: otherwise, in one write set `approved_sha` = `HEAD`, `gate_2_release_approved` true, `pending_step` null, and `WAITING_RELEASE_APPROVAL`, then go to Release in `<release>`. The Triage reply was the approval; no `A3f`, `A7`, `B`, `draft`, or handover runs.
+- **Resume and retry**: as Short Path; drift check 5 in `<boot>` or `retry` after `A1f` or `A2f` stays on this path while the pass is trivial. After the release write, Gate 2's flag-true rule resumes at Release in `<release>`.
 
 ## B on the Fix Diff
 

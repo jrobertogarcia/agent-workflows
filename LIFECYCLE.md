@@ -93,7 +93,7 @@ To resume, invoke `orchestrate` again on the layer's branch, or with the stack n
 
 Without subagents, `orchestrate` halts; use the skills one by one.
 
-State files, drift checks, retries, and gate rules are defined in [skills/orchestrate/SKILL.md](skills/orchestrate/SKILL.md).
+State files, drift checks, retries, and gate rules are defined in [skills/orchestrate/](skills/orchestrate/).
 
 ---
 
