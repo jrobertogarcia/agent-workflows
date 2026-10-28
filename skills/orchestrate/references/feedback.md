@@ -18,7 +18,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 - **Untagged**:
   - Propose a tier by comparing the feedback with `plan.md`'s Goal, Changes, listed files, and Out of Scope.
   - Present the proposal and stop, leaving the phase unchanged, and record `Ruling: proposed tier <small|large>, awaiting reply` per Decisions in `<boot>`.
-  - A bare `small` or `large` (or `fix small` / `fix large` without text) applies the tier to the feedback of the latest proposal entry for this branch in `decisions.md` (its `Reply:` lines up to `Ruling:`, found by `grep`), when no entry for this branch other than `file`, `defer` or `drop` follows it. Otherwise, ask for the feedback again.
+  - A bare `small` or `large` (or `fix small` / `fix large` without text) applies the tier to the feedback of the latest proposal entry for this branch in `decisions.md` (its `Reply:` lines up to `Ruling:`, found by `grep`), when no entry for this branch follows it other than this reply's own and `file`, `defer` or `drop` entries. Otherwise, ask for the feedback again.
 
 ## Small
 
