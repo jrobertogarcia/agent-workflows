@@ -40,5 +40,12 @@ class AgentFrontmatterTest(unittest.TestCase):
         self.assertEqual(loaded["orchestrate-step-light"][0].get("model"), "sonnet")
 
 
+class OrchestrateCoreBudgetTest(unittest.TestCase):
+    def test_orchestrate_skill_fits_reattach_budget(self):
+        # Compaction re-attaches only a skill's first 5,000 tokens; about 1.72 tokens per word here.
+        text = (ROOT / "skills" / "orchestrate" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertLessEqual(len(text.split()), 2700)
+
+
 if __name__ == "__main__":
     unittest.main()

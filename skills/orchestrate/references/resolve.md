@@ -1,6 +1,6 @@
 # Orchestrate: Open Items
 
-Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, paths, halt, and BLOCKED rules apply here; each section names where that file points to it.
+It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and BLOCKED rules apply here; each section names where the skill points to it.
 
 ## Resolve Step
 
@@ -10,7 +10,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
   - append `- <UTC time> resolve-open-items <tip SHA, or none>: <cause>` to the applicable `roadblocks.md`;
   - present the items unresearched;
   - at A3, `CONFLICT` still sets `BLOCKED` with the `A3` report.
-- Before the stack exists, hold the log line in this thread and append it to the stack's `roadblocks.md` when Start writes the stack.
+- Before the stack exists, hold the log line in this thread and append it to the stack's `roadblocks.md` when Start in `<start>` writes the stack.
 
 ## Start
 
@@ -19,7 +19,7 @@ Read this on every run. It extends the orchestrate `SKILL.md`, whose terms, path
 - Hold the resolve report in this thread. When the name is confirmed, write it verbatim to `S/stacks/<name>/resolve.md` together with `requirements.md`.
 - A Needs you item the human leaves unanswered proceeds on its recommended option.
 - Add this sentence to the instructions of every step that gets both `requirements.md` and `resolve.md`: "The human's answers in `requirements.md` override `resolve.md`; an unanswered Needs you item takes its recommended option."
-- On Start's single `story` re-run:
+- On Start's single `story` re-run (in `<start>`):
   - resolve its questions again, with the first round's Settled list as an input and the instruction: "Carry each Settled item forward unless `requirements.md` overrides it.";
   - on `SETTLED` or `NEEDS-DECISION`, append its report to `resolve.md` under the heading `## Story re-run`, keeping the first round's report;
   - present the lists again.

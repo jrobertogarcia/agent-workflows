@@ -1,0 +1,15 @@
+# Orchestrate: Start
+
+Read this on Start, `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, Branch creation, and Stack `blocked`. It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and BLOCKED rules apply here.
+
+## Phases
+
+- **Start**: dispatch `story`; after it, resolve per `<resolve>`. Present its report with the lists per `<resolve>` and a proposed stack name, a slug of the requirement's title. When the human answers and confirms or replaces the name: if `S/stacks/<name>/` exists, ask whether to resume it (if Locate would find it) or choose another name; otherwise write `requirements.md` (with `resolve.md`, per `<resolve>`) and `stack.json` with `trunk` from `git symbolic-ref --short refs/remotes/origin/HEAD` minus `origin/` (ask if that fails). If the answers raise new questions, re-run `story` once with `requirements.md`, present it, and append the next answers to `requirements.md` before dispatching `context`.
+- **`ANALYSIS`**: append any answers in the human's message to `requirements.md`, dispatch `context`, write its report verbatim to `context.md`, then set `STACK_DECOMPOSITION`.
+- **`STACK_DECOMPOSITION`**: dispatch `decompose`; a `Branch:` line without its `Scope:` line, or a count that differs from `Layers:`, is transient. Write the layers `PENDING` above any `RELEASED` one, bottom first, each `branch` from a `Branch:` line and `scope` from the `Scope:` line after it, and `WAITING_SPLIT_APPROVAL`.
+- **`WAITING_SPLIT_APPROVAL`**: for each layer not `RELEASED`, require that `git check-ref-format --branch <name>` succeeds, the name is not `stacks` or under `stacks/` and is unique among the layers, `S/<name>/` does not exist, `git show-ref --verify --quiet refs/heads/<name>` fails, and `git ls-remote --exit-code --heads origin <name>` exits 2 (any other non-zero exit cannot verify: ask the human). If a check fails or there are more than 3 layers, ask the human for the failing names or scopes, write them, and check again. With more than one layer, stop for Split approval in `<stacked>`. Then write `active_layer_index` to the lowest layer not `RELEASED`, and `LAYERS`.
+- **`register <PR number>`**: per `<stacked>`.
+- **Branch creation** (layer `PENDING`, no `state.json`): run drift check 0. With more than one layer, find the parent per Parent in `<stacked>`. With no parent, the layer starts from the trunk.
+  - **From the trunk**: with more than one layer, first run Fresh trunk in `<stacked>`. If the branch does not exist, run `git fetch origin <trunk>`, record `F` = `git rev-parse origin/<trunk>`, dispatch `branch`, and require the current branch to be it and `HEAD` to equal `F`. If it already existed, or this thread holds no `F`, require instead the current branch to be it and `git rev-list origin/<trunk>..HEAD` to be empty. Otherwise halt. With more than one layer, then run `gh stack init --base <trunk> <branch>` unless `gh stack view --json` already lists it. `<target>` is `<trunk>`.
+  - **On a parent**: per `<stacked>`.
+  - Write `state.json` in `PLANNING` with `target_branch` = `<target>` and `base_sha` = `branch_tip_sha` = `HEAD`, then set the layer `ACTIVE`.
