@@ -46,8 +46,6 @@ Write the full report (what you did, the files you changed, the checks you ran a
 
 ## Reports
 
-Each worker writes its full report to a file and replies with its closing lines only. You pass workers paths and short values, never a report's text, and open a report only where the core lets you.
-
 - **Report path**: `S/<branch>/reports/<file>` once `S/<branch>/` exists; before that, `S/stacks/<name>/reports/<file>`, or `<provisional>/reports/<file>` during Start per `<start>`.
 - **File name**: `<step_id>.md`; for `resolve`, `resolve-<purpose>.md`, with purpose `story`, `story-rerun`, `plan`, `findings`, `conflict`, or `triage`. A re-run overwrites the file.
 - **Before each dispatch**: `mkdir -p` the reports directory and `rm -f` the step's report file; for `context`, also `context.md`.
