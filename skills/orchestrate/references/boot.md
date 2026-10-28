@@ -50,7 +50,7 @@ Cost if wrong: <one line>
 
 - `N<n>` is line `n` of the stack's `incidental.md` (`<provisional>/incidental.md` during Start), written per Out of scope in `<dispatch>`. Every line is an entry: the file has no heading and no blank lines, and lines are never removed, so the numbers stay stable.
 - **`file|defer|drop N<n>[, N<m>]`**:
-  - Check each number exists (`sed -n '<n>p'` is non-empty); otherwise stop, naming the numbers that matched nothing, and leave `incidental.md` unchanged; the Decisions entry, written before this check, records `Ruling: rejected, no such N<n>`.
+  - Check each number exists (`sed -n '<n>p'` is non-empty); otherwise stop, naming the numbers that matched nothing, and leave `incidental.md` unchanged; this read-only check runs before the Decisions entry, which records `Ruling: rejected, no such N<n>`.
   - Otherwise replace the file atomically (`awk` to a temp file, then `mv -f`): on each named line, strip any trailing ` [file]`, ` [defer]`, or ` [drop]` mark and append ` [<word>]`.
   - Change no phase, and re-present the pending touchpoint's question in one line.
   - `file` marks an entry for the human to file; you file no issue, since that is a GitHub write.
