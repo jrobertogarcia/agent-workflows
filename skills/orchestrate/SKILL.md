@@ -5,7 +5,7 @@ description: Drive one requirement from story review to open pull requests, on o
 
 # Orchestrate
 
-You coordinate; workers do the work. You dispatch every step, own the state files, and stop for the human at the touchpoints. You never edit code and never run a step's skill in this thread. Run only the git and gh commands this file and its references assign to you. Any other edit, commit, or git or gh write goes to a dispatched step, or you halt. You change `plan.md` only by writing a `plan` report verbatim or the synthesized plan per `<comments>`, and you never push: only `release` does. Never commit, restore, or clean what an interrupted step left behind; drift check 0 in `<boot>` halts on it.
+You coordinate; workers do the work. You dispatch every step, own the state files, and stop for the human at the touchpoints. You never edit code and never run a step's skill in this thread. Run only the git and gh commands this file and its references assign to you. Any other edit, commit, or git or gh write goes to a dispatched step, or you halt. Only `plan` writes `plan.md`, except the synthesized plan per `<comments>`, and you never push: only `release` does. Read no file contents from the checkout or its history (this skill's own files aside) and print no diff body: use git metadata only (`--stat`, `--numstat`, `log --oneline`, `cherry`, `rev-parse`, and patch-id pipelines that never print the diff). Pass workers paths, never report text, per Reports in `<dispatch>`; read a report or artifact only where this skill presents or checks it. Never commit, restore, or clean what an interrupted step left behind; drift check 0 in `<boot>` halts on it.
 
 ## Inputs
 
@@ -49,16 +49,17 @@ S/stacks/<name>/requirements.md S/<branch>/plan.md
 S/stacks/<name>/roadblocks.md   S/<branch>/handover.md
 S/stacks/<name>/context.md      S/<branch>/roadblocks.md
 S/stacks/<name>/resolve.md      S/<branch>/fix-input.md
-                                S/<branch>/plan-feedback.md
+S/stacks/<name>/reports/        S/<branch>/plan-feedback.md
                                 S/<branch>/pr-draft.md
                                 S/<branch>/resolve.md
                                 S/<branch>/review.md
                                 S/<branch>/comments.md
                                 S/<branch>/replies.md
+                                S/<branch>/reports/
 ```
 
 - `<name>` matches `^[a-z0-9][a-z0-9-]{0,39}$`. Each `/` in `<branch>` is a nested directory; a branch named `stacks` or starting `stacks/` halts.
-- You alone write `stack.json`, `requirements.md`, `context.md`, `plan.md`, `state.json`, `fix-input.md`, `plan-feedback.md`, `resolve.md`, `review.md`, and `comments.md`. Workers write only `handover.md`, `pr-draft.md`, and `replies.md`. Each `roadblocks.md` is append-only, strictly one line per entry: `- <UTC time> <skill> <tip SHA>: <root cause>`. `fix-input.md` holds the last fix pass's input verbatim, replaced on each fix pass and deleted in `PLANNING` per `<resolve>`. Before `state.json` exists, entries go to the stack's `roadblocks.md`.
+- You alone write `stack.json`, `requirements.md`, `state.json`, `fix-input.md`, `plan-feedback.md`, `resolve.md`, `review.md`, and `comments.md`. Workers write their report files, `context.md` (`context`), `plan.md` (`plan`), `handover.md`, `pr-draft.md`, and `replies.md`. Each `roadblocks.md` is append-only, strictly one line per entry: `- <UTC time> <skill> <tip SHA>: <root cause>`. `fix-input.md` holds the last fix pass's input per Fix Input in `<dispatch>`, replaced on each fix pass and deleted in `PLANNING` per `<resolve>`. Before `state.json` exists, entries go to the stack's `roadblocks.md`.
 - SHAs are full 40-character values. Set `updated_at` (UTC, ISO 8601) on every write. Replace a file atomically:
   ```bash
   tmp="$(mktemp "$dir/state.json.XXXXXX")" && cat > "$tmp" <<'EOF'
@@ -101,7 +102,7 @@ Until the layer has `state.json`, `stack.json` drives the next action: `blocked`
 
 ## Phases
 
-- **`PLANNING`**: dispatch `plan`, write the text between the first `<plan>` and the last `</plan>` verbatim to `plan.md` (a missing or unclosed tag is transient), then run PLANNING per `<resolve>`, then set `WAITING_PLAN_APPROVAL`.
+- **`PLANNING`**: dispatch `plan`, which writes `plan.md` (missing or stale per Reports in `<dispatch>` is transient), then run PLANNING per `<resolve>`, then set `WAITING_PLAN_APPROVAL`.
 - **`WAITING_PLAN_APPROVAL`** (Gate 1): present `plan.md` with the lists per `<resolve>`. No code is written before approval. `approve` sets `gate_1_plan_approved`, phase `IMPLEMENTING`, and `pending_step` = `{ "A1", "implement", branch_tip_sha }` in one write, deletes `plan-feedback.md`, then dispatches `A1`. Feedback is appended to `plan-feedback.md`, then enters `PLANNING`; so does a `plan-feedback.md` newer than `plan.md`.
 - **`IMPLEMENTING`** (Stage A): Gate 1 `approve` starts at `A1`, a fix pass at `A1-fix` (a short fix pass takes the short path per `<review-fix>`), and Boot's Resume in `<boot>` at the pending step; every other entry starts at `A2`.
   1. `A1`.
@@ -126,7 +127,7 @@ Until the layer has `state.json`, `stack.json` drives the next action: `blocked`
 
 ## Retries
 
-- **Fix pass**: append `- <UTC time> <skill, or human> <tip SHA>: fix: <its input's root cause>` to `roadblocks.md` and replace `fix-input.md` with its input verbatim, then in one write set phase `IMPLEMENTING`, the pass's `count` or `gaps_fix_used` change, `precut_sha` = null, and `pending_step` = `{ "A1-fix", "implement", branch_tip_sha }` (`A1f`, logged per `<review-fix>`, on a short fix pass). Dispatch it, then Stage A from `A2`, or the short path per `<review-fix>`.
+- **Fix pass**: append `- <UTC time> <skill, or human> <tip SHA>: fix: <its input's root cause>` to `roadblocks.md` and replace `fix-input.md` with its input per Fix Input in `<dispatch>`, then in one write set phase `IMPLEMENTING`, the pass's `count` or `gaps_fix_used` change, `precut_sha` = null, and `pending_step` = `{ "A1-fix", "implement", branch_tip_sha }` (`A1f`, logged per `<review-fix>`, on a short fix pass). Dispatch it, then Stage A from `A2`, or the short path per `<review-fix>`.
 - **Counted failure**: if `count` >= `max_allowed`, set `BLOCKED`, its entry led `<step id>: counted failure at cap:`. Otherwise run a fix pass that increments `count`, with the failing report as input.
 - **Not counted**: formatter fixes, unrelated or pre-existing failures (logged), Suggestions and Nitpicks, failures caused only by `A5`, transients, a moved `HEAD` at Gate 2, maintenance, and adoption.
 - Only the human's exit from `BLOCKED` (`fix`, `re-plan`, or `adopt`) resets `count`; `gaps_fix_used` resets where stated above.

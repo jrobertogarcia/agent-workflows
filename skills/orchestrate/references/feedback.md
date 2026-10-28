@@ -11,11 +11,10 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 - **Tagged**: `fix small: <text>` or `fix large: <text>` names the tier; the feedback is the text.
 - **`fix <n>, <m>`** (Gate 2, or `BLOCKED` from `RELEASED` with `S/<branch>/comments.md`):
-  - If the file it reads (`review.md` at Gate 2, else `comments.md`) is missing, or any number matches no item in it, stop naming the numbers that matched nothing. Propose no tier and change no state.
-  - At Gate 2, the feedback is, for each selected number, `B`'s finding n from `## Review`, then resolve's per-item report n from `## Recommendations`, all verbatim. Each entry's tier is the `Tier:` line in its per-item report.
-  - From `BLOCKED`, the feedback is, for each selected number, item n from `## Comments`, then report n from `## Triage`, all verbatim. Each entry's tier is the `Tier:` line in its report, except that the item from the human takes `Human tier:` when that is not `none`.
+  - Look each number up per Item lookups in `<dispatch>`, never reading the file: at Gate 2 the `Finding` and `Item` patterns in `review.md`; from `BLOCKED` a numbered `## Comments` item and the `Item` pattern in `comments.md`, with `Human tier:` from `head -1`. If the file is missing, or any number has no `Finding` or comment line, stop naming the numbers that matched nothing. Propose no tier and change no state.
+  - The feedback is the selection block per Fix Input in `<dispatch>`. Each entry's tier is the `Tier:` of its `Item` line, except that from `BLOCKED` the item from the human takes `Human tier:` when that is not `none`.
   - The reply is large if any entry is large, trivial if every entry is trivial, else small. Only Triage's reports carry `Tier: trivial`; `Human tier:` stays small or large, and no tag or untagged proposal is trivial.
-  - When any entry has no tier (no `## Recommendations` or `## Triage`, or no `Tier:` line in that report), the reply is untagged.
+  - When any entry has no `Item` line, the reply is untagged.
 - **Untagged**:
   - Propose a tier by comparing the feedback with `plan.md`'s Goal, Changes, listed files, and Out of Scope.
   - Present the proposal and stop, leaving the phase unchanged.
@@ -23,10 +22,10 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 ## Small
 
-- **No plan-delta**: when the reply is `fix <n>, <m>` and every selected per-item report recommends fix, the fix-pass input is the feedback verbatim, with no `## Fix plan`; append and run it as for `Tier: small` below.
-- Otherwise (free-text `fix small:`, a bare `small`, or a selected report recommending defer, discuss, or `already answered`), dispatch `plan-delta` with the feedback. A missing or unclosed `<plan>` tag, a missing or invalid `Tier:` line, or `Tier: large` without a `Reason:` line is transient.
+- **No plan-delta**: when the reply is `fix <n>, <m>` and every selected `Item` line's action is `fix`, the fix-pass input is the selection block, with no `## Fix plan`; append and run it as for `Tier: small` below.
+- Otherwise (free-text `fix small:`, a bare `small`, or a selected `Item` line whose action is defer, discuss, or `already answered`), dispatch `plan-delta` with the human's text, or the selected numbers and the source path. A missing or invalid `Tier:` line, or `Tier: large` without a `Reason:` line is transient.
 - On `Tier: large`, append `- <UTC time> plan-delta <tip SHA>: tier escalated from small: <reason>` to `roadblocks.md` and take Large with the reason. No extra stop: Gate 1 shows the escalation per `<resolve>`.
-- On `Tier: small`, the fix-pass input is the feedback verbatim, then a `## Fix plan` heading, then the delta plan verbatim. Append that input to `S/<branch>/resolve.md` under a `## Small fix <UTC time>` heading, so `A3` and `A6a` keep it in the plan on this and later fix passes. Run a fix pass with it per Retries, as a short fix pass where `<review-fix>` allows: not counted from Gate 2, after `BLOCKED`'s reset, with `gate_2_release_approved` false, leaving `plan.md` and `gate_1_plan_approved` untouched.
+- On `Tier: small`, build the fix-pass input per Fix Input in `<dispatch>`, and append `## Small fix <UTC time>` and that input to `S/<branch>/resolve.md` by concatenation, so `A3` and `A6a` keep it in the plan on this and later fix passes. Run a fix pass with it per Retries, as a short fix pass where `<review-fix>` allows: not counted from Gate 2, after `BLOCKED`'s reset, with `gate_2_release_approved` false, leaving `plan.md` and `gate_1_plan_approved` untouched.
 - `B` and Gate 2 always run again, except on the Trivial Path per `<review-fix>`.
 
 ## Trivial
@@ -35,5 +34,5 @@ Handled as Small; when Small skips plan-delta and it is a short fix pass per `<r
 
 ## Large
 
-- Append the feedback verbatim to `plan-feedback.md` under a `## <UTC time>` heading. After an escalation, follow it with the line `Tier escalated from small: <reason>`.
+- Append the human's text, or the selection block, to `plan-feedback.md` under a `## <UTC time>` heading. After an escalation, follow it with the line `Tier escalated from small: <reason>`.
 - Set `gate_2_release_approved` false and enter `PLANNING`, with resolve and Gate 1 per `<resolve>`.
