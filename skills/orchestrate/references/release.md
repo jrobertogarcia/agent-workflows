@@ -16,12 +16,12 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
 
 ## Gate 2
 
-- **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none". When `comments.md` exists, also present `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`, this round's commits (rebased ones left out), then run Replies per `<comments>` and present `replies.md` verbatim too. There, `fix <n>` selects review findings, not comments; change a comment's reply with `fix small:` or `fix large:` and direction.
+- **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none". Also list `incidental.md`'s entries as `N<n>`, each with its mark if any, with the hint "reply `file`, `defer` or `drop N<n>`". When `comments.md` exists, also present `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`, this round's commits (rebased ones left out), then run Replies per `<comments>` and present `replies.md` verbatim too. There, `fix <n>` selects review findings, not comments; change a comment's reply with `fix small:` or `fix large:` and direction.
 - **`redraft <feedback>`**, when `HEAD` equals `approved_sha` (otherwise handle it as Gate 2 handles a moved `HEAD`):
   - Set `gate_2_release_approved` false.
   - Dispatch `draft` with the feedback verbatim and the current `pr-draft.md`.
   - Present Gate 2 again.
-  - Not counted, no fix pass, and the feedback is not persisted.
+  - Not counted, no fix pass, and the feedback is recorded per Decisions in `<boot>`.
 
 ## Release
 

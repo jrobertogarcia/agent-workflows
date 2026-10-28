@@ -124,7 +124,7 @@ Release, before step 1's dispatch, when an open layer sits above this branch. "M
 - `HEAD` must still equal `approved_sha`, else halt: "<branch> moved during the restack; re-invoke." The next Boot's drift checks in `<boot>` re-verify it.
 - For each moved open layer `<b>` above this branch, with `<p>` the open layer below it:
   - The ordered patch-id list of `<p>..<b>` must equal that of `origin/<p>..origin/<b>`, each from `git log --reverse -p --format=%H <range> | git patch-id --stable | cut -d' ' -f1`. Both ranges are exact, since `<p>` is always open. A mismatch halts with Manual finish.
-  - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
+  - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`. List each `FAIL-UNRELATED` failure under `## Out of scope`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
   - `FAIL-UNRELATED` is logged and passes. `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient halts with Manual finish.
 - Run `git fetch origin` and Sync's cherry-pick check on each open layer above this branch; halt on a listed commit. Release step 1's `git cherry` guard in `<release>` covers this branch.
 - Record `L_b` = `git rev-parse origin/<b>` for this branch and each open layer above it.

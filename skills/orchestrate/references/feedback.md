@@ -5,7 +5,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 ## Tiered Replies
 
 - Tiered: Gate 2 feedback; BLOCKED `fix` with `gate_1_plan_approved` true, including `fix <n>, <m>` after `reopen`.
-- Not tiered: Gate 1 feedback, BLOCKED `re-plan`, BLOCKED `fix` with the flag false, `redraft`, and the automatic counted passes (`FAIL-IN-SCOPE`, `GAPS`, a settled A3 conflict). `REQUEST CHANGES` is tiered per `<review-fix>`.
+- Not tiered: Gate 1 feedback, BLOCKED `re-plan`, BLOCKED `fix` with the flag false, `redraft`, `file`, `defer` and `drop` replies, and the automatic counted passes (`FAIL-IN-SCOPE`, `GAPS`, a settled A3 conflict). `REQUEST CHANGES` is tiered per `<review-fix>`.
 
 ## Tier
 
@@ -17,8 +17,8 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
   - When any entry has no `Item` line, the reply is untagged.
 - **Untagged**:
   - Propose a tier by comparing the feedback with `plan.md`'s Goal, Changes, listed files, and Out of Scope.
-  - Present the proposal and stop, leaving the phase unchanged.
-  - A bare `small` or `large` (or `fix small` / `fix large` without text) applies the tier to the feedback held in this thread. Otherwise, ask for the feedback again.
+  - Present the proposal and stop, leaving the phase unchanged, and record `Ruling: proposed tier <small|large>, awaiting reply` per Decisions in `<boot>`.
+  - A bare `small` or `large` (or `fix small` / `fix large` without text) applies the tier to the feedback of the latest proposal entry for this branch in `decisions.md` (its `Reply:` lines up to `Ruling:`, found by `grep`), when no entry for this branch other than `file`, `defer` or `drop` follows it. Otherwise, ask for the feedback again.
 
 ## Small
 
