@@ -4,11 +4,10 @@ Read this on `CLOSE_OUT`, `WAITING_CLOSE_OUT_APPROVAL`, and a `close-out` reply.
 
 ## Trigger
 
-- Reconcile in `<boot>` writes `stack.json` `phase` = `CLOSE_OUT` once, in `LAYERS`, every layer is `RELEASED` and reads `MERGED` or `CLOSED`.
+- Entered from Reconcile in `<boot>`.
 - A `close-out` reply is handled right after Reconcile:
   - in `CLOSE_OUT` or `WAITING_CLOSE_OUT_APPROVAL`, it continues that phase;
   - otherwise halt, listing each layer that is `PENDING` or `ACTIVE` and each pull request that reads `OPEN` (with its URL from `gh pr view <pr> --json url`), with "merge or close them, or reply `abandon`". There is no partial close-out.
-- While `phase` is either close-out value, `stack.json` drives the run even though the retained layers hold `state.json`.
 - In both phases, BLOCKED writes `stack.json` `blocked` and appends to the stack's `roadblocks.md`, as before `state.json` exists; Stack `blocked` (`fix`, `retry`, `abandon`) then applies unchanged.
 
 ## Close-out steps
@@ -57,9 +56,8 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 ## `WAITING_CLOSE_OUT_APPROVAL`
 
 - Present the `## Links` block and every `C<n>` section: kind, source, action, premise verdict, destination, missing links, and text. The premise verdict for `C<n>` is Item `<n>` in `reports/resolve-close-out.md`; an item with no such Item (numbered after a re-inventory, or after a `resolve` failure) shows "premise unverified".
-- State that a bare `approve` runs every item except `ticket-edit`, `ticket-new`, and `branch`.
 - Replies:
-  - `approve` runs the items it covers.
+  - `approve` runs every item except `ticket-edit`, `ticket-new`, and `branch`; the gate says so.
   - `approve C<n>[, C<m>]` runs exactly the named items. First check each with `grep -m1 -E '^C<n>: (repo-edit|ticket-edit|ticket-new|draft|branch|leave) — '` on the report; if any matches nothing, stop and name it, and the Decisions entry records `Ruling: rejected, no such C<n>`.
   - Any other text, except `abandon` and `file|defer|drop`, is feedback: append it to `requirements.md` under `## Close-out feedback <UTC time>`, write `CLOSE_OUT`, and re-run.
 - The Decisions entry, touchpoint `WAITING_CLOSE_OUT_APPROVAL`, records the approved list in `Ruling:`.
