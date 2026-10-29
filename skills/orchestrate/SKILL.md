@@ -33,6 +33,8 @@ Run on every invocation, before any other write. **Guard**: unless the human exp
 
 **Halt** means stop and report, writing nothing further; anything Reconcile wrote before it is re-derived by the next invocation. **BLOCKED** means write the phase, `blocked_from`, and `pending_step` = null in one write (after a step, also `branch_tip_sha` = `HEAD`, once the After every step checks pass). If the step that set `BLOCKED` is `A5`, after those checks and before that write run `git reset --hard <precut_sha>`, write `branch_tip_sha` = that `HEAD` and `precut_sha` = null in it, and name the discarded tip in the `roadblocks.md` entry. Append the cause, led by the step id when a step set it, to `roadblocks.md`, and report what the human must decide. Before `state.json` exists, write the step's id to `stack.json` `blocked` instead, leaving its `phase`, and append to the stack's `roadblocks.md`; before `stack.json` exists, halt. Write a phase only after its action succeeds.
 
+**Resume line**: end every stop that waits for a human reply with the line per Resume Line in `<boot>`; halts get none.
+
 ## Paths
 
 - `<common>` = `git rev-parse --path-format=absolute --git-common-dir`, `<repo>` = `basename(dirname(<common>))`, `<worktree>` = `git rev-parse --show-toplevel`, `S` = `~/.agent-workflows/<repo>`.

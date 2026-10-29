@@ -87,7 +87,7 @@ What you do at each touchpoint:
 *   **Before the layers are approved**: `register <PR number>` builds the stack on an existing open pull request.
 *   **Any time**: `abandon` drops the run's state and keeps the branches and pull requests. `abandon <path>` deletes a leftover story-review folder that Start lists.
 
-To resume, invoke `orchestrate` again on the layer's branch, or with the stack name before a branch exists, or with its provisional path during story review. It halts when a pull request was closed with a layer above it; reopen the pull request to continue.
+To resume, invoke `orchestrate` again in the run's worktree, on the layer's branch, or with the stack name before a branch exists, or with its provisional path during story review. Every stop that waits for your reply ends with that command, and text after it is your reply, so you can move to a new thread at any such stop: the state folder holds every identifier, answer, and ruling, and the old thread holds nothing more. Use one thread per stack at a time. It halts when a pull request was closed with a layer above it; reopen the pull request to continue.
 
 **Requirements**: the `gh` CLI, authenticated. A stack also needs gh-stack 0.2.1 or later (`gh extension install github/gh-stack`), Git 2.36 or later, and a github.com repository; without them, `orchestrate` offers to narrow the requirement to one branch with the `narrow` reply.
 
