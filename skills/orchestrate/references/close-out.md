@@ -69,7 +69,7 @@ For the approved items, in order:
 1. `tickets`, when any ticket item is approved.
 2. Brief, when any `repo-edit` item is approved.
 3. Branch deletion, for each approved `branch` item.
-4. A final report that prints every approved `draft` verbatim with its destination and links, the ticket results, the brief invocation, the branches deleted or skipped with reasons, and "who owns the leftovers is yours".
+4. A final report that prints every approved `draft` verbatim with its destination and links, and likewise the `Text:`, destination and links of each approved ticket item that `tickets` returned as `draft`, or as `skipped` for any reason but the write already being present; the ticket results, the brief invocation, the branches deleted or skipped with reasons, and "who owns the leftovers is yours".
 5. Cleanup.
 
 **`tickets`**. Skill reference: "the instructions below". Agent: `orchestrate-step`. Tokens: `DONE`.
