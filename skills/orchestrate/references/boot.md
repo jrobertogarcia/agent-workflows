@@ -29,7 +29,7 @@ rm -rf -- "<that path>"
 - End every stop that waits for a human reply with this line, values filled in: ``To continue in a new thread: in `<worktree>`, invoke orchestrate with `<your reply>` ``. `<your reply>` stays a placeholder; the stop already lists the replies.
 - Before the layer has `state.json`, precede `<your reply>` with the stack name; during Start, before `stack.json` exists, with the provisional path. On a layer with `state.json`, Locate finds the run by the current branch.
 - None for a halt or a report cleared by acting and re-invoking (`PUSHED`, a failed Release step), the Guard's and Locate's own questions (they settle which run the message belongs to, and a new thread's message is asked afresh), Start's trunk question (no `stack.json` yet, folder already moved), or a read-only report (`RELEASED`, no review comments).
-- The new thread restores from the state files per Restore; nothing extra is written. Stop using the old thread once the new one starts (one session per stack, core Inputs).
+- The new thread restores from the state files per Restore; nothing extra is written.
 
 ## Decisions
 
