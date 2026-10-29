@@ -4,7 +4,7 @@ Read this when `stack.json` holds more than one layer, or the human replies `reg
 
 ## Boot
 
-- **Closed layer** (Reconcile in `<boot>`, a `CLOSED` layer with a layer above it): halt before deleting, "<PR URL> was closed; reopen it to continue the stack.", and delete only once nothing above depends on it or the human replies `abandon`.
+- **Closed layer** (Reconcile in `<boot>`, a `CLOSED` layer with a layer above it): halt, "<PR URL> was closed; reopen it to continue the stack.", and keep its folder for close-out; continue once nothing above depends on it, or the human replies `abandon`.
 - **Merged target** (end of Reconcile in `<boot>`): if the `ACTIVE` layer's `<target>` reads `MERGED`, run Fresh trunk and write `target_branch` = `<trunk>`; drift check 4 then rebases it.
 - **Upstack rebase** (drift check 4 in `<boot>`, when `<target>` is a layer): run the Tracking check and `gh stack rebase --upstack <branch> --no-trunk`.
 
