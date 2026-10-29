@@ -21,11 +21,11 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 
 ## `CLOSE_OUT`
 
-1. Dispatch `inventory`. Before a re-dispatch on feedback, when `reports/inventory.md` exists, `mv -f` it to `reports/inventory-previous.md` and pass it.
+1. Dispatch `inventory`. Before any re-dispatch (on feedback, or in step 5), when `reports/inventory.md` exists, `mv -f` it to `reports/inventory-previous.md` and pass it.
 2. A missing or non-numeric `Open items:` line is transient.
 3. At 0 items, report "nothing to close out" and run Cleanup.
 4. Otherwise dispatch `resolve` on the items as kind `question`. Inputs: the `inventory` report, `requirements.md`, `context.md` if any, and the stack's `resolve.md`. Add the instruction: "Each item is a proposed follow-up: verify its premise against the sources, and say whether the proposed action is the smallest that settles it, or what is. Keep the inventory's numbering, so Item <n> is C<n>. Second-to-last line: `Inventory changes: <n>`, the number of items whose premise fails or whose action should change." Add: "The human's answers in `requirements.md` override `resolve.md`; an unanswered Needs you item takes its recommended option."
-5. If `Inventory changes:` is above 0, re-dispatch `inventory` once with `reports/resolve-close-out.md` as an input, adding: "Adopt each change and rewrite your report. Keep every `C<n>` number. An item whose premise fails becomes `leave` with the reason. Number any new item after the last." The once-per-entry count is held in this thread, as in PLANNING in `<resolve>`.
+5. If `Inventory changes:` is above 0, re-dispatch `inventory` once with `reports/inventory-previous.md` and `reports/resolve-close-out.md` as inputs, adding: "Adopt each change and rewrite your report. Keep every `C<n>` number from `inventory-previous.md`. An item whose premise fails becomes `leave` with the reason. Number any new item after the last." The once-per-entry count is held in this thread, as in PLANNING in `<resolve>`.
 6. A `resolve` that returns `STOPPED` or hits a second transient follows Resolve Step in `<resolve>`: log it, and mark every item "premise unverified" at the gate.
 7. Then write `WAITING_CLOSE_OUT_APPROVAL`.
 
