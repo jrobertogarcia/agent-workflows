@@ -30,7 +30,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 **`inventory`** (defined here, as `replies` is in `<comments>`). Skill reference: "the instructions below". Agent: `orchestrate-step`. Tokens: `READY`.
 - Inputs: `stack.json`; each layer's `S/<branch>/` path with its PR number; the stack's `requirements.md`, `context.md`, `resolve.md`, `decisions.md` (as context), `incidental.md`, and `roadblocks.md`; on a re-dispatch, also `inventory-previous.md` and/or `resolve-close-out.md`.
 - Instructions:
-  - "Run read-only: use only `gh` `view` and `list` commands, `gh api` GET reads, and the ticket MCP's read tools.
+  - "Run read-only. For ticket and PR state, use only `gh` `view` and `list` commands, `gh api` GET reads, and the ticket MCP's read tools.
   - Inventory the follow-ups this change created, from:
     - each layer's handover `Follow-ups` (for a handover without one, its deviation and "not yet verified" lines) and `Scope Reductions`;
     - each `roadblocks.md`'s `Scope Reductions:`, `PUSHED`, fix, and pending lines;
@@ -85,7 +85,7 @@ After a `tickets` BLOCKED, `retry` or `fix` re-runs Execute from step 1 with the
   - Closing lines: one `C<n>: <written|skipped|draft> <URL or ->` per item."
 
 **Brief**:
-- Skip it when a `S/stacks/.start.*/requirements.md` has `# Close-out follow-ups: <name>` as its exact first line (`awk -v L='# Close-out follow-ups: <name>' 'FNR==1 && $0==L {print FILENAME}' S/stacks/.start.*/requirements.md`), and report that path.
+- Skip it when a `S/stacks/.start.*/requirements.md` has `# Close-out follow-ups: <name>` as its exact first line (`find S/stacks -maxdepth 2 -path 'S/stacks/.start.*/requirements.md' -exec awk -v L='# Close-out follow-ups: <name>' 'FNR==1 && $0==L {print FILENAME}' {} +`), and report that path.
 - Otherwise `mktemp -d S/stacks/.start.XXXXXX` and write `<provisional>/requirements.md` atomically from: the line `# Close-out follow-ups: <name>`; one line naming the merged PR URLs; the inventory's `## Links` block; and each approved `repo-edit` `## C<n>` section, extracted from the report with `awk`, printing nothing.
 - Report "To start it: in `<worktree>`, invoke orchestrate with `<provisional path>`", for a fresh thread. Do not start it here.
 
