@@ -6,7 +6,7 @@ Read this on `CLOSE_OUT`, `WAITING_CLOSE_OUT_APPROVAL`, and a `close-out` reply.
 
 - Entered from Reconcile in `<boot>`.
 - A `close-out` reply is handled right after Reconcile:
-  - in `CLOSE_OUT` or `WAITING_CLOSE_OUT_APPROVAL`, it continues that phase;
+  - in `CLOSE_OUT`, it continues that phase; in `WAITING_CLOSE_OUT_APPROVAL`, it re-presents the gate;
   - otherwise halt, listing each layer that is `PENDING` or `ACTIVE` and each pull request that reads `OPEN` (with its URL from `gh pr view <pr> --json url`), with "merge or close them, or reply `abandon`". There is no partial close-out.
 - In both phases, BLOCKED writes `stack.json` `blocked` and appends to the stack's `roadblocks.md`, as before `state.json` exists; Stack `blocked` (`fix`, `retry`, `abandon`) then applies unchanged.
 
@@ -20,7 +20,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 ## `CLOSE_OUT`
 
 1. Dispatch `inventory`. Before any re-dispatch (on feedback, or in step 5), when `reports/inventory.md` exists, `mv -f` it to `reports/inventory-previous.md` and pass it.
-2. A missing or non-numeric `Open items:` line is transient.
+2. A missing or non-numeric `Open items:` line, or `Inventory changes:` line from the close-out `resolve`, is transient.
 3. At 0 items, report "nothing to close out" and run Cleanup.
 4. Otherwise dispatch `resolve` on the items as kind `question`. Inputs: the `inventory` report, `requirements.md`, `context.md` if any, and the stack's `resolve.md`. Add the instruction: "Each item is a proposed follow-up: verify its premise against the sources, and say whether the proposed action is the smallest that settles it, or what is. Keep the inventory's numbering, so Item <n> is C<n>. Second-to-last line: `Inventory changes: <n>`, the number of items whose premise fails or whose action should change."
 5. If `Inventory changes:` is above 0, re-dispatch `inventory` once with `reports/inventory-previous.md` and `reports/resolve-close-out.md` as inputs, adding: "Adopt each change and rewrite your report. Keep every `C<n>` number from `inventory-previous.md`. An item whose premise fails becomes `leave` with the reason. Number any new item after the last." The once-per-entry count is held in this thread, as in PLANNING in `<resolve>`.
@@ -30,7 +30,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 **`inventory`** (defined here, as `replies` is in `<comments>`). Skill reference: "the instructions below". Agent: `orchestrate-step`. Tokens: `READY`.
 - Inputs: `stack.json`; each layer's `S/<branch>/` path with its PR number; the stack's `requirements.md`, `context.md`, `resolve.md`, `decisions.md` (as context), `incidental.md`, and `roadblocks.md`; on a re-dispatch, also `inventory-previous.md` and/or `resolve-close-out.md`.
 - Instructions:
-  - "Run read-only. Read ticket state only through `gh issue view` / `gh pr view` or the ticket MCP's read tools.
+  - "Run read-only: use only `gh` `view` and `list` commands, `gh api` GET reads, and the ticket MCP's read tools.
   - Inventory the follow-ups this change created, from:
     - each layer's handover `Follow-ups` (for a handover without one, its deviation and "not yet verified" lines) and `Scope Reductions`;
     - each `roadblocks.md`'s `Scope Reductions:`, `PUSHED`, fix, and pending lines;
@@ -69,8 +69,10 @@ For the approved items, in order:
 1. `tickets`, when any ticket item is approved.
 2. Brief, when any `repo-edit` item is approved.
 3. Branch deletion, for each approved `branch` item.
-4. A final report that prints every approved `draft` verbatim with its destination and links, and likewise the `Text:`, destination and links of each approved ticket item that `tickets` returned as `draft`, or as `skipped` for any reason but the write already being present; the ticket results, the brief invocation, the branches deleted or skipped with reasons, and "who owns the leftovers is yours".
+4. A final report that prints: every approved `draft` verbatim with its destination and links; the `Text:`, destination and links of each approved ticket item that `tickets` returned as `draft`, or as `skipped` for any reason but the write already being present; the ticket results; the brief invocation; the branches deleted or skipped with reasons; and "who owns the leftovers is yours".
 5. Cleanup.
+
+After a `tickets` BLOCKED, `retry` or `fix` re-runs Execute from step 1 with the approved list from the last `WAITING_CLOSE_OUT_APPROVAL` Decisions entry.
 
 **`tickets`**. Skill reference: "the instructions below". Agent: `orchestrate-step`. Tokens: `DONE`.
 - Inputs: the `inventory` report, the approved C numbers, and `tickets-previous.md` if any. Before a re-dispatch, when `reports/tickets.md` exists, `mv -f` it to `reports/tickets-previous.md`; a missing report leaves any earlier `tickets-previous.md` in place.
@@ -83,7 +85,7 @@ For the approved items, in order:
   - Closing lines: one `C<n>: <written|skipped|draft> <URL or ->` per item."
 
 **Brief**:
-- Skip it when a `S/stacks/.start.*/requirements.md` already begins with `# Close-out follow-ups: <name>` (`grep -l`), and report that path.
+- Skip it when a `S/stacks/.start.*/requirements.md` has `# Close-out follow-ups: <name>` as its exact first line (`awk -v L='# Close-out follow-ups: <name>' 'FNR==1 && $0==L {print FILENAME}' S/stacks/.start.*/requirements.md`), and report that path.
 - Otherwise `mktemp -d S/stacks/.start.XXXXXX` and write `<provisional>/requirements.md` atomically from: the line `# Close-out follow-ups: <name>`; one line naming the merged PR URLs; the inventory's `## Links` block; and each approved `repo-edit` `## C<n>` section, extracted from the report with `awk`, printing nothing.
 - Report "To start it: in `<worktree>`, invoke orchestrate with `<provisional path>`", for a fresh thread. Do not start it here.
 
