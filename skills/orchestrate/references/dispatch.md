@@ -12,7 +12,7 @@ Send each step as one prompt, built from the template, to the `orchestrate-step-
 - **Result**: read the reply's last line, `Result: <token>`; the token must equal one of the step's Tokens or `STOPPED` exactly (case-sensitive, verbatim, no suffix). A missing line, an unrecognized token, a crash, network or rate-limit error is transient: re-run the step once unchanged, not counted, keeping any `pending_step` as written and writing no tip until the re-run returns; a second transient on the same step sets `BLOCKED` (except `release` and `resolve`, per Release and `<resolve>`). `STOPPED` is valid from every step and sets `BLOCKED` with the report (except `release` and `resolve`, per Release and `<resolve>`); it is never transient. If the worker may still be running (a timeout or lost connection), do not re-run: halt and report; re-invoke once it has finished.
 - If you cannot dispatch a fresh `orchestrate-step` or `orchestrate-step-light` subagent, halt: 'orchestrate needs a host that can run the `orchestrate-step` and `orchestrate-step-light` agents as subagents; install them with `setup.py link`.'
 
-Template (fill every `<...>`; omit the branch clause before the branch exists; `<report path>` is per Reports). `<skill reference>` is the step's skill referenced per Paths, and <`create-commit` reference>, here and in the table, is `create-commit` referenced per Paths; for `A1` it is "the approved plan at <plan.md path>, committing per <`create-commit` reference>", and for `A5` "the `A4` simplify-diff report at <its report path>, committing per <`create-commit` reference>".
+Template (fill every `<...>`; omit the branch clause before the branch exists, and for close-out steps per `<close-out>`; `<report path>` is per Reports). `<skill reference>` is the step's skill referenced per Paths, and <`create-commit` reference>, here and in the table, is `create-commit` referenced per Paths; for `A1` it is "the approved plan at <plan.md path>, committing per <`create-commit` reference>", and for `A5` "the `A4` simplify-diff report at <its report path>, committing per <`create-commit` reference>".
 
 ```
 Work only in <worktree> (and any temporary worktree these instructions create), on branch <branch>; stop and report if `git branch --show-current` differs.
@@ -47,7 +47,8 @@ Write the full report (what you did, the files you changed, the checks you ran a
 ## Reports
 
 - **Report path**: `S/<branch>/reports/<file>` once `S/<branch>/` exists; before that, `S/stacks/<name>/reports/<file>`, or `<provisional>/reports/<file>` during Start per `<start>`.
-- **File name**: `<step_id>.md`; for `resolve`, `resolve-<purpose>.md`, with purpose `story`, `story-rerun`, `plan`, `findings`, `conflict`, or `triage`. A re-run overwrites the file.
+- **File name**: `<step_id>.md`; for `resolve`, `resolve-<purpose>.md`, with purpose `story`, `story-rerun`, `plan`, `findings`, `conflict`, `triage`, or `close-out`. A re-run overwrites the file.
+- **Close-out steps** (`inventory`, `tickets`, and `resolve` for `close-out`) report to `S/stacks/<name>/reports/` and are defined in `<close-out>`.
 - **Before each dispatch**: `mkdir -p` the reports directory and `rm -f` the step's report file; for `context`, also `context.md`.
 - **Transient results**: besides the Result rule on the reply's last line, a step's result is transient when its report file is missing; after `context`, when `context.md` is missing; after `plan`, when `plan.md` is missing or not newer (`-nt`) than `state.json` and every other input file the dispatch named.
 - **Held**: a report is held while its file exists.

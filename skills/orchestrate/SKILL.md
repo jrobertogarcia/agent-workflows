@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use only when the user explicitly asks to orchestrate or run the whole lifecycle end to end, to resume an orchestrated run, or to address review comments on an open pull request without posting replies; never for a single step or an ordinary implementation request.
+description: Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use only when the user explicitly asks to orchestrate or run the whole lifecycle end to end, to resume an orchestrated run, to close one out after its pull requests merge, or to address review comments on an open pull request without posting replies; never for a single step or an ordinary implementation request.
 ---
 
 # Orchestrate
@@ -10,7 +10,7 @@ You coordinate; workers do the work. You dispatch every step, own the state file
 ## Inputs
 
 - A requirement (text, file, or link) to start; nothing to resume the run on the current branch; or a stack name to resume a run that has no branch yet.
-- Human replies: answers and a stack name (story review), `approve` or feedback (gates), `redraft` with feedback (Gate 2), `approve` (a multi-layer split), `fix` with direction, `re-plan` with optional feedback, or `retry` (BLOCKED), `fix small:` or `fix large:` with direction, `fix <n>, <m>` (Gate 2, or `BLOCKED` after `reopen`), or a bare `small` or `large` after a proposed tier (Gate 2, BLOCKED; per `<feedback>`), `adopt` (BLOCKED, or a tip-moved halt), `narrow` with the narrowed requirement (after a multi-layer split or a stacked-work halt), `register <PR number>` (before `LAYERS`), `reopen` with a review, optionally tagged `small:` / `large:` (a released layer), `address <PR number>` (an open pull request; per `<comments>`), `file`, `defer` or `drop N<n>[, N<m>]` (any located stack; per `<boot>`), `abandon` (any located stack, or a `.start.*` path per `<boot>`).
+- Human replies: answers and a stack name (story review), `approve` or feedback (gates), `redraft` with feedback (Gate 2), `approve` (a multi-layer split), `fix` with direction, `re-plan` with optional feedback, or `retry` (BLOCKED), `fix small:` or `fix large:` with direction, `fix <n>, <m>` (Gate 2, or `BLOCKED` after `reopen`), or a bare `small` or `large` after a proposed tier (Gate 2, BLOCKED; per `<feedback>`), `adopt` (BLOCKED, or a tip-moved halt), `narrow` with the narrowed requirement (after a multi-layer split or a stacked-work halt), `register <PR number>` (before `LAYERS`), `reopen` with a review, optionally tagged `small:` / `large:` (a released layer), `address <PR number>` (an open pull request; per `<comments>`), `close-out` (any located stack), `approve C<n>[, C<m>]` (close-out gate; per `<close-out>`), `file`, `defer` or `drop N<n>[, N<m>]` (any located stack; per `<boot>`), `abandon` (any located stack, or a `.start.*` path per `<boot>`).
 - A plain chat reply at a touchpoint continues the run without re-invoking this skill, and Boot runs on it as on an invocation.
 - Run one orchestrator session per stack at a time.
 
@@ -30,6 +30,7 @@ Run on every invocation, before any other write. **Guard**: unless the human exp
 - `<feedback>`: `WAITING_RELEASE_APPROVAL` and `BLOCKED`.
 - `<release>`: `AUDITING`, `WAITING_RELEASE_APPROVAL`, and Release.
 - `<comments>`: `address`, `reopen`, `RELEASED`, `BLOCKED` from `RELEASED`, Release, and whenever `S/<branch>/comments.md` exists.
+- `<close-out>`: `CLOSE_OUT`, `WAITING_CLOSE_OUT_APPROVAL`, and `close-out`.
 
 **Halt** means stop and report, writing nothing further; anything Reconcile wrote before it is re-derived by the next invocation. **BLOCKED** means write the phase, `blocked_from`, and `pending_step` = null in one write (after a step, also `branch_tip_sha` = `HEAD`, once the After every step checks pass). If the step that set `BLOCKED` is `A5`, after those checks and before that write run `git reset --hard <precut_sha>`, write `branch_tip_sha` = that `HEAD` and `precut_sha` = null in it, and name the discarded tip in the `roadblocks.md` entry. Append the cause, led by the step id when a step set it, to `roadblocks.md`, and report what the human must decide. Before `state.json` exists, write the step's id to `stack.json` `blocked` instead, leaving its `phase`, and append to the stack's `roadblocks.md`; before `stack.json` exists, halt. Write a phase only after its action succeeds.
 
@@ -41,7 +42,7 @@ Run on every invocation, before any other write. **Guard**: unless the human exp
 - `<root>`: resolve the real path of this file (follow symlinks) and go up three levels, past `skills/orchestrate/SKILL.md`: the repository root, or for an installed copy the directory above the installed skills. Reference a skill as `<root>/skills/<name>/SKILL.md` when that file exists; otherwise, or when this file's path is unknown, as "the installed `<name>` skill".
 - `<stacked>`: `references/stacked.md` in the directory that holds this file's real path, or, when this file's path is unknown, that file in the installed `orchestrate` skill.
 - `<release>`: `references/release.md` in the directory that holds this file's real path, or, when this file's path is unknown, that file in the installed `orchestrate` skill.
-- `<resolve>`, `<feedback>`, `<comments>`, `<review-fix>`, `<dispatch>`, `<boot>`, `<start>`: `references/resolve.md`, `references/feedback.md`, `references/comments.md`, `references/review-fix.md`, `references/dispatch.md`, `references/boot.md`, and `references/start.md`, each resolved like `<release>`.
+- `<resolve>`, `<feedback>`, `<comments>`, `<review-fix>`, `<dispatch>`, `<boot>`, `<start>`, `<close-out>`: `references/resolve.md`, `references/feedback.md`, `references/comments.md`, `references/review-fix.md`, `references/dispatch.md`, `references/boot.md`, `references/start.md`, and `references/close-out.md`, each resolved like `<release>`.
 
 ## State Files
 
@@ -75,7 +76,7 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
 - `resolve.md`: per `<resolve>`.
 - `decisions.md`, `history.md`, `incidental.md`: per `<boot>`.
 - `review.md`: per `<resolve>`.
-- `stack.json` (layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, or `LAYERS`; `git_common_dir` is `<common>` (absent in older files); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
+- `stack.json` (layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, `LAYERS`, `CLOSE_OUT`, or `WAITING_CLOSE_OUT_APPROVAL`; `git_common_dir` is `<common>` (absent in older files); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
   ```json
   { "schema_version": 1, "stack_name": "<name>", "trunk": "<trunk>", "git_common_dir": "<common>", "phase": "ANALYSIS", "blocked": null,
     "active_layer_index": null, "layers": [], "updated_at": "<time>" }
@@ -102,7 +103,7 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
   - `last_verdict`: the last `check-alignment` or `review-branch` verdict. `approved_sha`: `HEAD` when `AUDITING` leaves for Gate 2. `precut_sha`: the tip before the last `A5` dispatch of this Stage A; cleared on entry to `IMPLEMENTING` and where listed.
   - Every entry to `PLANNING` sets `gate_1_plan_approved` and `gaps_fix_used` false and `pending_step` null. Every entry to `IMPLEMENTING`, including from `IMPLEMENTING`, requires `gate_1_plan_approved` true, else halt, and sets `approved_sha` and `precut_sha` null and `gate_2_release_approved` false.
 
-Until the layer has `state.json`, `stack.json` drives the next action: `blocked` if set, else `phase`; after, `state.json` `lifecycle.phase` does.
+Until the layer has `state.json`, or while `stack.json` `phase` is `CLOSE_OUT` or `WAITING_CLOSE_OUT_APPROVAL`, `stack.json` drives the next action: `blocked` if set, else `phase`; after, `state.json` `lifecycle.phase` does.
 
 ## Phases
 
@@ -126,7 +127,8 @@ Until the layer has `state.json`, `stack.json` drives the next action: `blocked`
 - **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction, or a bare `small` / `large`, with `gate_1_plan_approved` true goes per `<feedback>`, resetting `count` to 0 and `gaps_fix_used` to false once a tier applies. `re-plan` resets `count` to 0 and enters `PLANNING`, first appending any feedback to `plan-feedback.md`, or with `gate_1_plan_approved` true replacing it. From `RELEASED`: when `comments.md` lacks `## Triage`, the report adds "reply `retry` to triage the comments", and `retry` (and `adopt`, after its writes) runs Triage per `<comments>`, staying `BLOCKED`; otherwise `retry` repeats Triage's stop. `retry` from another phase re-enters `blocked_from` resetting nothing, at the step named by the last entry led by a step id (`A5` and `A6` steps from `A4`; `A7` without its held validation report from that `A2`, `A2f`, or `A6v`; ✎ with its Pending step write; short-path steps continue per `<review-fix>`), or with none, as usual. `adopt` per Boot in `<boot>`. With `gate_1_plan_approved` false, `fix` appends its direction to `plan-feedback.md` and enters `PLANNING` (no fix pass), and `adopt` returns to `blocked_from`.
 - **Stack `blocked`**: report the last entry in the stack's `roadblocks.md`. `fix` with direction appends it to `requirements.md`, clears `blocked`, and re-runs that step with the direction as an input; `retry` clears `blocked` and re-runs it; `abandon` per below.
 - **Bare `abandon`** (any located stack, any phase): list the paths and the `incidental.md` entries not marked `drop`, then delete `S/stacks/<name>/` and `S/<branch>/` for every layer. Never delete git branches, worktrees, pull requests, or gh-stack metadata; run no git or gh write. Report that the branches and PRs remain.
-- **`RELEASED`** (the active layer is `RELEASED`, so none is `PENDING`): read-only. Report each open pull request, and replies per `<comments>`, and stop.
+- **`RELEASED`** (the active layer is `RELEASED`, so none is `PENDING`): read-only. Report each open pull request, and replies per `<comments>`, and stop; once every pull request merges or closes, invoke with `<name> close-out`.
+- **`CLOSE_OUT`**, **`WAITING_CLOSE_OUT_APPROVAL`**: per `<close-out>`.
 - **`reopen`**, on a `RELEASED` layer's branch with `state.json` and an `OPEN` pull request, `stack.json` phase `LAYERS`, and no layer `ACTIVE` (else halt: handle the review by hand; with no `state.json`, reply `address <PR>`): run Sync and Fetch per `<comments>`; then set the layer `ACTIVE` and `active_layer_index` to it, run Merged target per `<stacked>`, write its `state.json` `BLOCKED` from `RELEASED`, `gate_2_release_approved` false, logging `reopen: <the review, without its small: or large: tag>`, then run Boot step 3 in `<boot>`, then Triage per `<comments>`. A halt before that write also says: then reply `reopen` again with the review. Text given with `reopen` is a comment per `<comments>`.
 
 ## Retries
