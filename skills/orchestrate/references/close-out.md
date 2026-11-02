@@ -85,7 +85,7 @@ After a `tickets` BLOCKED, `retry` or `fix` re-runs Execute from step 1 with the
   - Closing lines: one `C<n>: <written|skipped|draft> <URL or ->` per item."
 
 **Brief**:
-- Skip it when a `S/stacks/.start.*/requirements.md` has `# Close-out follow-ups: <name>` as its exact first line (`find S/stacks -maxdepth 2 -path 'S/stacks/.start.*/requirements.md' -exec awk -v L='# Close-out follow-ups: <name>' 'FNR==1 && $0==L {print FILENAME}' {} +`), and report that path.
+- Skip it when a `S/stacks/.start.*/requirements.md` has `# Close-out follow-ups: <name>` as its exact first line (`find S/stacks -maxdepth 2 -path '*/.start.*/requirements.md' -exec awk -v L='# Close-out follow-ups: <name>' 'FNR==1 && $0==L {print FILENAME}' {} +`), and report that path.
 - Otherwise `mktemp -d S/stacks/.start.XXXXXX` and write `<provisional>/requirements.md` atomically from: the line `# Close-out follow-ups: <name>`; one line naming the merged PR URLs; the inventory's `## Links` block; and each approved `repo-edit` `## C<n>` section, extracted from the report with `awk`, printing nothing.
 - Report "To start it: in `<worktree>`, invoke orchestrate with `<provisional path>`", for a fresh thread. Do not start it here.
 
