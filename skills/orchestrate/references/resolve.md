@@ -15,8 +15,8 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 ## Start
 
 - After `story`, dispatch `resolve` with the story report's numbered questions as kind `question`; inputs: `requirements.md` and the `story` report file.
-- Present the story report, the Settled and Needs you lists, and the proposed stack name.
-- When the name is confirmed, after the folder moves, `mv` `S/stacks/<name>/reports/resolve-story.md` to `S/stacks/<name>/resolve.md`.
+- Present the story report, the Settled and Needs you lists, and the default stack name.
+- After the folder moves, `mv` `S/stacks/<name>/reports/resolve-story.md` to `S/stacks/<name>/resolve.md`.
 - A Needs you item the human leaves unanswered proceeds on its recommended option.
 - Add this sentence to the instructions of every step that gets both `requirements.md` and `resolve.md`: "The human's answers in `requirements.md` override `resolve.md`; an unanswered Needs you item takes its recommended option."
 - On Start's single `story` re-run (in `<start>`):
@@ -34,7 +34,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 ## Gate 1
 
-- Present `plan.md`, plus the Settled and Needs you lists from `S/<branch>/resolve.md` when it exists.
+- Lead with a summary: **Scope** (the Goal and the files under Changes in 2-3 lines, Out of Scope in one) and **Risks** (the highest-risk Verification areas, or `none stated`), together at most 6 lines; **Open questions** (each numbered Open Questions & Assumptions item in one line, then each Needs you item with its recommended option). Then give the absolute path of `S/<branch>/plan.md` and the Settled list from `S/<branch>/resolve.md` when it exists. Do not paste the plan, and add nothing the plan lacks.
 - When `plan-feedback.md` holds a `Tier escalated from small:` line (per `<feedback>`), also present "tier escalated from small: <reason>", so that `approve` confirms the large tier.
 - A bare `approve` while Needs you items are open accepts each item's recommended option, which the presentation shows. The re-dispatched plan already assumes those options; when no re-dispatch ran, they did not differ from the plan.
 
