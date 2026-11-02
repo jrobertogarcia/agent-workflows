@@ -69,7 +69,7 @@ For the approved items, in order:
 1. `tickets`, when any ticket item is approved.
 2. Brief, when any `repo-edit` item is approved.
 3. Branch deletion, for each approved `branch` item.
-4. A final report that prints: every approved `draft` verbatim with its destination and links; the `Text:`, destination and links of each approved ticket item that `tickets` returned as `draft`, or as `skipped` for any reason but the write already being present; the ticket results; the brief invocation; the branches deleted or skipped with reasons; and "who owns the leftovers is yours".
+4. A final report that prints: every approved `draft` verbatim with its destination and links; the `Text:`, destination and links of each approved ticket item that `tickets` returned as `draft`, or as `skipped` for any reason but the write already being present; the ticket results, with each `mismatch` item's URL and approved `Text:` to fix by hand; the brief invocation; the branches deleted or skipped with reasons; when a deletion detached the checkout, that it is on a detached HEAD at `origin/<trunk>` and `git switch <trunk>` returns to a branch; and "who owns the leftovers is yours".
 5. Cleanup.
 
 After a `tickets` BLOCKED, `retry` or `fix` re-runs Execute from step 1 with the approved list from the last `WAITING_CLOSE_OUT_APPROVAL` Decisions entry.
@@ -78,11 +78,11 @@ After a `tickets` BLOCKED, `retry` or `fix` re-runs Execute from step 1 with the
 - Inputs: the `inventory` report, the approved C numbers, and `tickets-previous.md` if any. Before a re-dispatch, when `reports/tickets.md` exists, `mv -f` it to `reports/tickets-previous.md`; a missing report leaves any earlier `tickets-previous.md` in place.
 - Instructions:
   - "Write only the named items, in order, and run no other gh or MCP write.
-  - Skip an item that `tickets-previous.md` records as written, and report it again as `C<n>: written <URL>`.
+  - Skip an item that `tickets-previous.md` records as `written` or `mismatch`, and report it again with its recorded result and URL; a mismatch was written, so rewriting it would duplicate a new ticket.
   - Re-read each ticket before writing. For an edit, compare its updated time with `Read:`; for a new ticket, search for one with the same title created since the inventory. If it changed, or the write is already present, skip it and say why.
-  - Write `Text:` verbatim: `gh issue edit <url> --body-file <tmp>` / `gh issue create --repo <r> --title <t> --body-file <tmp>`, or the matching Atlassian MCP tool. Read it back and report the URL and whether it matches.
+  - Write `Text:` verbatim: `gh issue edit <url> --body-file <tmp>` / `gh issue create --repo <r> --title <t> --body-file <tmp>`, or the matching Atlassian MCP tool. Read it back; when it differs from `Text:`, report `mismatch` and do not rewrite.
   - With no reachable system, report the item as a draft.
-  - Closing lines: one `C<n>: <written|skipped|draft> <URL or ->` per item."
+  - Closing lines: one `C<n>: <written|mismatch|skipped|draft> <URL or ->` per item."
 
 **Brief**:
 - Skip it when a `S/stacks/.start.*/requirements.md` has `# Close-out follow-ups: <name>` as its exact first line (`find S/stacks -maxdepth 2 -path '*/.start.*/requirements.md' -exec awk -v L='# Close-out follow-ups: <name>' 'FNR==1 && $0==L {print FILENAME}' {} +`), and report that path.
