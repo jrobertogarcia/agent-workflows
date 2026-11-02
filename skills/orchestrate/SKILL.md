@@ -108,7 +108,7 @@ Until the layer has `state.json`, or while `stack.json` `phase` is `CLOSE_OUT` o
 ## Phases
 
 - **`PLANNING`**: dispatch `plan`, which writes `plan.md` (missing or stale per Reports in `<dispatch>` is transient), then run PLANNING per `<resolve>`, then set `WAITING_PLAN_APPROVAL`.
-- **`WAITING_PLAN_APPROVAL`** (Gate 1): present `plan.md` with the lists per `<resolve>`. No code is written before approval. `approve` sets `gate_1_plan_approved`, phase `IMPLEMENTING`, and `pending_step` = `{ "A1", "implement", branch_tip_sha }` in one write, deletes `plan-feedback.md`, then dispatches `A1`. Feedback is appended to `plan-feedback.md`, then enters `PLANNING`; so does a `plan-feedback.md` newer than `plan.md`.
+- **`WAITING_PLAN_APPROVAL`** (Gate 1): present `plan.md` per `<resolve>`. No code is written before approval. `approve` sets `gate_1_plan_approved`, phase `IMPLEMENTING`, and `pending_step` = `{ "A1", "implement", branch_tip_sha }` in one write, deletes `plan-feedback.md`, then dispatches `A1`. Feedback is appended to `plan-feedback.md`, then enters `PLANNING`; so does a `plan-feedback.md` newer than `plan.md`.
 - **`IMPLEMENTING`** (Stage A): Gate 1 `approve` starts at `A1`, a fix pass at `A1-fix` (a short fix pass takes the short path per `<review-fix>`), and Boot's Resume in `<boot>` at the pending step; every other entry starts at `A2`.
   1. `A1`.
   2. `A2`: `FAIL-IN-SCOPE` is a counted failure; `FAIL-UNRELATED` is logged and passes.
