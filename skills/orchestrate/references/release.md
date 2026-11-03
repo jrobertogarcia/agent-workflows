@@ -12,7 +12,7 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
   - every non-blank line starts with `- ` or `* `, so wrapped paragraphs, numbered lists, and nested bullets fail;
   - there are at most 6 such lines when `git diff --name-only <base_sha>...<approved_sha>` lists 10 or fewer files, else at most 10;
   - no line is over 160 characters, counted after stripping a trailing CR.
-  - A `## Tested` or `## Design` section, scanned the same way (heading to next heading, minus a trailing link block), has at most 3 or 2 non-blank lines, none over 160 characters; absent sections pass.
+  - a `## Tested` or `## Design` section, scanned the same way (heading to next heading, minus a trailing link block), has at most 3 or 2 non-blank lines, none over 160 characters; absent sections pass.
 - Then write `WAITING_RELEASE_APPROVAL`; `retry` after a `draft` BLOCKED re-runs `draft`.
 
 ## Gate 2
