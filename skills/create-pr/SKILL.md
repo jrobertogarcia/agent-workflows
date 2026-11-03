@@ -29,7 +29,7 @@ Takes an optional base branch, any related pull request URLs (e.g. a parent pull
    <the reason for a non-obvious choice; omit when none>
 
    ## Tested
-   <only when verification is non-obvious from the diff; what was run, plus unverified items that change review or rollout>
+   <only when verification is non-obvious from the diff>
    ```
    - **Body bounds**: What has at most 6 top-level bullets when the diff touches 10 or fewer files, at most 10 above (count files in the diff you review: the given diff scope, else `git diff --name-only <base>...HEAD`). Design has at most 2 lines and Tested at most 3. Every line is one sentence on one line of at most 160 characters, with no nested bullets and no other lines under What. Group rule-level edits under the one reviewer-visible change they serve. The bounds also hold inside a PR template's narrative section (the Design and Tested caps apply only where those sections exist).
    - **No PR template**: use the skeleton's headings exactly.
