@@ -12,7 +12,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
   - recommended fix with `Tier: small` by resolve;
   - not under Needs you.
 - **Auto-fixable**: an eligible blocking finding.
-- **Non-blocking selection**: when `stack.json` `unattended` is true and `roadblocks.md` has no entry led `short fix: non-blocking:`, every eligible Suggestion or Nitpick; otherwise none.
+- **Non-blocking selection**: when `stack.json` `unattended` is true and `roadblocks.md` has no entry led `short fix: non-blocking:` and no `reopen:` entry, every eligible Suggestion or Nitpick; otherwise none.
 - Take severity and `New` or `carried` from `B`'s `Finding <n>:` lines, and action, tier, and needs-you from resolve's `Item <n>:` lines, each per Item lookups in `<dispatch>`. Severities are the words `Critical`, `Important`, `Suggestion`, and `Nitpick`.
 - **Continue** when every blocking finding is auto-fixable and, on the fix diff, `New blocking:` equals the number of blocking findings: run a counted failure per Retries as a round-starting short fix pass.
 - **Fix input**: the selection block of the auto-fixable findings plus the non-blocking selection, in `B`'s numbering, per Fix Input in `<dispatch>`. When the non-blocking selection is non-empty, the round-starting entry is logged `short fix: non-blocking: <root cause>`. Attended, Suggestions and Nitpicks are never auto-fixed; they go to Gate 2.
