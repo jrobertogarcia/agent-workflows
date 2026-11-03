@@ -111,7 +111,7 @@ Drift check 4 in `<boot>`, while `S/<branch>/comments.md` exists, `<target>` is 
 
 Gate 2 Presentation per `<release>`, the trivial release per `<release>`, or Adopt above, when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
-- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Inputs: `comments.md`, `plan.md`, `handover.md` if any, and `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`. Tokens: `DONE`.
+- Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Agent: `orchestrate-step`. Inputs: `comments.md`, `plan.md`, `handover.md` if any, and `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`. Tokens: `DONE`.
 - Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Then one short, natural draft per thread, headed `Comment <n>` and its URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, quoting each point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
 - A wrong line 1 is transient.
 
@@ -124,7 +124,7 @@ Release, before step 1's dispatch, when an open layer sits above this branch. "M
 - `HEAD` must still equal `approved_sha`, else halt: "<branch> moved during the restack; re-invoke." The next Boot's drift checks in `<boot>` re-verify it.
 - For each moved open layer `<b>` above this branch, with `<p>` the open layer below it:
   - The ordered patch-id list of `<p>..<b>` must equal that of `origin/<p>..origin/<b>`, each from `git log --reverse -p --format=%H <range> | git patch-id --stable | cut -d' ' -f1`. Both ranges are exact, since `<p>` is always open. A mismatch halts with Manual finish.
-  - Dispatch `upper-check` (`validate-commit`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`. List each `FAIL-UNRELATED` failure under `## Out of scope`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
+  - Dispatch `upper-check` (`validate-commit`; Agent: `orchestrate-step-light`) with the instruction: "In `git worktree add --detach "$(mktemp -d)" <b>`, run the checks; fix and commit nothing; remove the worktree with `git worktree remove --force`. `FAIL-UNRELATED` only when the same failure occurs at `origin/<b>`. List each `FAIL-UNRELATED` failure under `## Out of scope`." Tokens: `PASS`, `FAIL-IN-SCOPE`, `FAIL-UNRELATED`.
   - `FAIL-UNRELATED` is logged and passes. `FAIL-IN-SCOPE`, a `STOPPED`, or a second transient halts with Manual finish.
 - Run `git fetch origin` and Sync's cherry-pick check on each open layer above this branch; halt on a listed commit. Release step 1's `git cherry` guard in `<release>` covers this branch.
 - Record `L_b` = `git rev-parse origin/<b>` for this branch and each open layer above it.
