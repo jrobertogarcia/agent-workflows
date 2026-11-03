@@ -42,7 +42,6 @@ Takes an optional base branch, any related pull request URLs (e.g. a parent pull
 4. **Check Before Creating**: Re-read the drafted title and body and fix them in place:
    - every step 3 rule holds, and nothing is added beyond the skeleton (Design included);
    - each section passes the step 3 body bounds; fix What by merging or cutting bullets, never by wrapping lines, and cut Tested and Design to their caps;
-   - Tested and Design hold no assumptions, no "not checked" notes and no test inventory;
    - every claim about what changed matches the diff;
    - every claim about verification is backed by the handover's evidence, and only when the handover is not stale;
    - the Why matches the requirement or handover.
