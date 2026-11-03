@@ -27,6 +27,6 @@ Target `jrobertogarcia/agent-workflows` (`<target>`): pass `-R <target>` to ever
 ## Backlog Rules
 
 - Title: `<skill>: <symptom>`.
-- Body: **Evidence:**, **Symptom:**, **Root cause:** and **Done when:** lines, then an optional **Prior art:** line and an optional `## Design` section.
+- Body: **Evidence:**, **Symptom:**, **Root cause:** and **Done when:** lines, then an optional **Prior art:** line and an optional `## Design` section. Evidence is one sentence (when, where, what happened); Symptom says what goes wrong without repeating Evidence.
 - Labels: exactly one of `observed` or `speculative`, plus at most one `theme:*`.
 - Nothing private in the public repo. Write "private repo; details in local note" only when the note holds those details; otherwise describe the evidence generically.
