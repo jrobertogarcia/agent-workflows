@@ -23,22 +23,26 @@ Takes an optional base branch, any related pull request URLs (e.g. a parent pull
    <the problem or dependency, in 1-2 sentences>
 
    ## What
-   <at most 6 bullets, one per reviewer-visible change>
+   <bullets, one per reviewer-visible change (ceiling in the bound)>
+
+   ## Design
+   <the reason for a non-obvious choice; omit when none>
 
    ## Tested
-   <only when verification is non-obvious from the diff>
+   <only when verification is non-obvious from the diff; what was run, plus unverified items that change review or rollout>
    ```
-   - **What bound**: at most 6 top-level bullets, each one sentence on one line of at most 160 characters, with no nested bullets and no other lines under What. Group rule-level edits under the one reviewer-visible change they serve. The bound also holds inside a PR template's narrative section.
+   - **Body bounds**: What has at most 6 top-level bullets when the diff touches 10 or fewer files, at most 10 above (count files in the diff you review: the given diff scope, else `git diff --name-only <base>...HEAD`). Design has at most 2 lines and Tested at most 3. Every line is one sentence on one line of at most 160 characters, with no nested bullets and no other lines under What. Group rule-level edits under the one reviewer-visible change they serve. The bounds also hold inside a PR template's narrative section (the Design and Tested caps apply only where those sections exist).
    - **No PR template**: use the skeleton's headings exactly.
-   - **PR template exists** anywhere in the repository (e.g. `.github/pull_request_template.md` or `docs/pull_request_template.md`): its sections are the skeleton, so drop those headings and write the same content into it. Put Why and What in the free-form narrative section (`## Description`, `## Summary`, or similar), or split them across sections that already map to them (e.g. `## Motivation` and `## Changes`). When the template has no narrative section at all, put Why and What above its first heading. Add no headings beyond the template, fill its metadata fields (e.g. ticket links) from context, and leave checklist items unchecked unless you verified them yourself. Skip Tested when a checklist item already covers verification.
+   - **PR template exists** anywhere in the repository (e.g. `.github/pull_request_template.md` or `docs/pull_request_template.md`): its sections are the skeleton, so drop those headings and write the same content into it. Put Why and What in the free-form narrative section (`## Description`, `## Summary`, or similar), or split them across sections that already map to them (e.g. `## Motivation` and `## Changes`). When the template has no narrative section at all, put Why and What above its first heading. Add no headings beyond the template, fill its metadata fields (e.g. ticket links) from context, and leave checklist items unchecked unless you verified them yourself. Skip Tested when a checklist item already covers verification. Design has no heading there; put its rationale in the narrative section.
    - **Links**: Build one link list from the handover's `Links` section and the related pull request URLs you were given, and include every link on it. The step 2 pull requests decide only how links are worded and which kinds (ticket, spec, issue, parent pull request) to expect; name each expected kind that has no link in your report. Without a PR template, put the link lines last, as one block after the last section and a blank line: plain lines with one link each, no bullet markers and no label-only lines (e.g. `Closes #56` or `Refs https://…`). Never invent a link and never put a placeholder for a missing one in the body.
-   - **Process vocabulary**: Write about the change, not how it was produced. Leave out terms from your own process: approval gates, step names or ids, numbered questions or rulings, state or evidence file names, and references to "the author".
-   - **Deviations and pending verification**: State a deviation from the requirement, or a check not yet run, plainly when the handover records one.
+   - **Process vocabulary**: Write about the change, not how it was produced. Leave out terms from your own process: approval gates, step names or ids, numbered questions or rulings, state or evidence file names, references to "the author", assumptions, "not checked" or "not verified" wording, and open questions.
+   - **Deviations and pending verification**: State a deviation from the requirement in Design; state a check not yet run in Tested only when it changes review or rollout. Never list assumptions or checks that do not.
    - Leave out shell commands, merge instructions, and test inventories.
    - Compose the body into a temp file outside the repository.
 4. **Check Before Creating**: Re-read the drafted title and body and fix them in place:
-   - every step 3 rule holds, and nothing is added beyond the skeleton;
-   - What passes the What bound; fix a What failure by merging or cutting bullets, never by wrapping lines;
+   - every step 3 rule holds, and nothing is added beyond the skeleton (Design included);
+   - each section passes the step 3 body bounds; fix What by merging or cutting bullets, never by wrapping lines, and cut Tested and Design to their caps;
+   - Tested and Design hold no assumptions, no "not checked" notes and no test inventory;
    - every claim about what changed matches the diff;
    - every claim about verification is backed by the handover's evidence, and only when the handover is not stale;
    - the Why matches the requirement or handover.
