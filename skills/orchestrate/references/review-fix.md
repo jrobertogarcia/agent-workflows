@@ -12,12 +12,12 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
   - recommended fix with `Tier: small` by resolve;
   - not under Needs you.
 - **Auto-fixable**: an eligible blocking finding.
-- **Non-blocking selection**: when `stack.json` `unattended` is true and `roadblocks.md` has no entry led `short fix: non-blocking:`, every eligible Suggestion or Nitpick; otherwise none. That entry caps them at one pass per branch; after it they go to Gate 2.
+- **Non-blocking selection**: when `stack.json` `unattended` is true and `roadblocks.md` has no entry led `short fix: non-blocking:`, every eligible Suggestion or Nitpick; otherwise none.
 - Take severity and `New` or `carried` from `B`'s `Finding <n>:` lines, and action, tier, and needs-you from resolve's `Item <n>:` lines, each per Item lookups in `<dispatch>`. Severities are the words `Critical`, `Important`, `Suggestion`, and `Nitpick`.
 - **Continue** when every blocking finding is auto-fixable and, on the fix diff, `New blocking:` equals the number of blocking findings: run a counted failure per Retries as a round-starting short fix pass.
 - **Fix input**: the selection block of the auto-fixable findings plus the non-blocking selection, in `B`'s numbering, per Fix Input in `<dispatch>`. When the non-blocking selection is non-empty, the round-starting entry is logged `short fix: non-blocking: <root cause>`. Attended, Suggestions and Nitpicks are never auto-fixed; they go to Gate 2.
 - **Otherwise**, go to Leave for Gate 2, selecting nothing (non-blocking included).
-- **On `APPROVE`** (unattended): when `review.md` has no blocking finding and the non-blocking selection is non-empty, run a round-starting short fix pass with that selection block as input, logged `short fix: non-blocking: <root cause>`, changing no `count` (not counted per Retries, so the `max_allowed` check does not apply). Otherwise Draft per `<release>`.
+- **On `APPROVE`** (unattended): when `review.md` has no blocking finding and the non-blocking selection is non-empty, run a round-starting short fix pass with that selection block as input, logged `short fix: non-blocking: <root cause>`, changing no `count`. Otherwise Draft per `<release>`.
 
 ## Short Fix Pass
 
