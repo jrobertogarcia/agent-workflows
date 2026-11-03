@@ -78,7 +78,7 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
 - `resolve.md`: per `<resolve>`.
 - `decisions.md`, `history.md`, `incidental.md`: per `<boot>`.
 - `review.md`: per `<resolve>`.
-- `stack.json` (layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, `LAYERS`, `CLOSE_OUT`, or `WAITING_CLOSE_OUT_APPROVAL`; `git_common_dir` is `<common>` (absent in older files); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
+- `stack.json` (layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, `LAYERS`, `CLOSE_OUT`, or `WAITING_CLOSE_OUT_APPROVAL`; `git_common_dir` is `<common>` (absent in older files); `unattended` (`true`, or absent; per Unattended in `<boot>`); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
   ```json
   { "schema_version": 1, "stack_name": "<name>", "trunk": "<trunk>", "git_common_dir": "<common>", "phase": "ANALYSIS", "blocked": null,
     "active_layer_index": null, "layers": [], "updated_at": "<time>" }

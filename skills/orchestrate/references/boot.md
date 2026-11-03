@@ -28,12 +28,12 @@ rm -rf -- "<that path>"
 
 - End every stop that waits for a human reply with this line, values filled in: ``To continue in a new thread: in `<worktree>`, invoke orchestrate with `<your reply>` ``. `<your reply>` stays a placeholder; the stop already lists the replies.
 - Before the layer has `state.json`, and while `stack.json` `phase` is `CLOSE_OUT` or `WAITING_CLOSE_OUT_APPROVAL`, precede `<your reply>` with the stack name; during Start, before `stack.json` exists, with the provisional path. On a layer with `state.json`, Locate finds the run by the current branch.
-- None for a halt or a report cleared by acting and re-invoking (`PUSHED`, a failed Release step), the Guard's and Locate's own questions (they settle which run the message belongs to, and a new thread's message is asked afresh), Start's trunk question (no `stack.json` yet, folder already moved), or a read-only report (`RELEASED`, no review comments).
+- None for a halt or a report cleared by acting and re-invoking (`PUSHED`, a failed Release step), the Guard's and Locate's own questions (they settle which run the message belongs to, and a new thread's message is asked afresh), Start's trunk question (no `stack.json` yet, folder already moved), or a read-only report (`RELEASED`, no review comments). An auto-answered gate is not a stop and prints none.
 - The new thread restores from the state files per Restore; nothing extra is written.
 
 ## Gate Buttons
 
-- **Use**: when a structured question tool is listed among the session's tools, including one listed only by name that the host loads on request, present each stop below with it, after the gate's content and its resume line have been printed in chat, never inside the call. No tool name is hard-coded. The call carries only the question and the verb options; no summary, findings, diff stat, or PR text goes in it. With no such tool, present the typed verbs as usual. A button choice is an ordinary reply, so switching hosts mid-run is fine.
+- **Use**: when a structured question tool is listed among the session's tools, including one listed only by name that the host loads on request, present each stop below with it, after the gate's content and its resume line have been printed in chat, never inside the call. No tool name is hard-coded. The call carries only the question and the verb options; no summary, findings, diff stat, or PR text goes in it. With no such tool, present the typed verbs as usual. A button choice is an ordinary reply, so switching hosts mid-run is fine. With `unattended` set, an auto-answered gate shows no buttons; see Unattended.
 - **Verbs per stop** (each option is the existing verb, label and meaning unchanged):
   - Split approval: `approve`, `narrow`.
   - Gate 1: `approve`, with the question text "approve, or reply in chat with feedback". Plan feedback is never collected through the tool's free-text field, which truncates at about 300 characters.
@@ -45,9 +45,19 @@ rm -rf -- "<that path>"
 - **Option limits**: if the tool states an upper limit below the stop's verb count, show the verbs in the order listed above (most common first) and leave the rest typed. If the tool needs more options than the stop has verbs, that stop stays typed. Typed verbs always work, and the stop's plain-chat text still lists every verb.
 - **Not covered**: story review answers and the stack name, `register`, `reopen`, `address`, `abandon` (everywhere, including `abandon <path>`, which deletes state and stays typed), `narrow` and `adopt` at the stacked-work and tip-moved halts, `close-out`, `approve C<n>`, close-out `approve`, and `file|defer|drop N<n>` stay typed.
 
+## Unattended
+
+- **Flag**: `stack.json` `unattended` is `true` or absent (absent in older files and every attended run). Read it with the stack; before `stack.json` exists, a provisional run is unattended when its `requirements.md`, above the first `## Answers` heading, has the opt-in per `<start>`. It is set only at Start and never by a later message.
+- **Report line**: every report to the human (stop, halt, final report) leads with "Unattended run: branches are pushed and draft pull requests opened with no approval."
+- **Auto-answer**: at each touchpoint below, instead of stopping, append the Decisions entry with `Reply: (auto: unattended)` and `Ruling:` the recommendation taken, then act as if the human had replied it; print one line naming the touchpoint and ruling. Touchpoints: Start (unanswered Needs you items proceed on their recommended options and the default stack name stands), Split approval (`approve`, after the checks in `<stacked>` pass), Gate 1 (`approve`, per `<resolve>`), Gate 2 (`approve`, per `<release>`).
+- **Stops**: take no auto-answer, report as attended, and end with the Resume Line, when any of: `BLOCKED` (after the retry budget, as the attended flow counts it) or Stack `blocked`; a halt (drift, rebase conflict, tip moved, closed layer, failed Release or link); a `large` tier or `re-plan` recommendation (including a Gate 1 whose `plan-feedback.md` holds `Tier escalated from small:`); a Needs you item whose report names no recommended option; Gate 2 with an unresolved Critical or Important finding or an `Item` action `discuss` (per `<release>`); any other question this skill would put to the human (name taken, more than 3 layers or a failed split check, trunk unresolved).
+- **Scope**: auto-answers apply to fresh runs. `address`, `reopen`, and `close-out` run attended even when the flag is set: every gate on those paths waits for the human.
+- **Question tool**: no auto-answered gate offers buttons; the tool is used only at a stop, as in Gate Buttons.
+- **Known gap**: no new spend, turn, or time cap; the run is bounded by the retry `count`, review rounds that stop on new blocking findings, and BLOCKED.
+
 ## Decisions
 
-On every touchpoint reply to a located stack, or to a provisional run during Start, after Locate and before acting on the reply, append one entry to the stack's `decisions.md` (`<provisional>/decisions.md` during Start):
+On every touchpoint reply or auto-answer to a located stack, or to a provisional run during Start, after Locate and before acting on the reply, append one entry to the stack's `decisions.md` (`<provisional>/decisions.md` during Start):
 ```
 ## <UTC time> <touchpoint> <branch or ->
 Reply: <the reply, verbatim>
@@ -59,6 +69,7 @@ Cost if wrong: <one line>
 - `Reply:` may run over several lines; it ends at the entry's `Ruling:` line.
 - Append by a heredoc concatenation that prints nothing.
 - The entry is the only record of split-approval `approve` and discussion, the untagged tier proposal (`Ruling: proposed tier <small|large>, awaiting reply`), `redraft` feedback, `file|defer|drop`, and every follow-up ruling.
+- `Reply: (auto: unattended)` marks an entry the run wrote itself per Unattended; it carries no human text, and the touchpoint, `Ruling:`, `Reason:` and `Cost if wrong:` lines are the same.
 - A halt cleared by re-invoking is not a reply and writes none.
 - A button choice and its payload turn are one reply: `Reply:` holds the combined typed form, so lookups (for example `grep` of the latest proposal entry in `<feedback>`) are unchanged. A click alone is not a reply and writes no entry.
 
