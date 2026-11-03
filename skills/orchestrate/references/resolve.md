@@ -17,7 +17,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 - After `story`, dispatch `resolve` with the story report's numbered questions as kind `question`; inputs: `requirements.md` and the `story` report file.
 - Present the story report, the Settled and Needs you lists, and the default stack name.
 - After the folder moves, `mv` `S/stacks/<name>/reports/resolve-story.md` to `S/stacks/<name>/resolve.md`.
-- A Needs you item the human leaves unanswered proceeds on its recommended option.
+- A Needs you item the human leaves unanswered proceeds on its recommended option; in an unattended run the list is not presented as a question, and unanswered items take their recommended option.
 - Add this sentence to the instructions of every step that gets both `requirements.md` and `resolve.md`: "The human's answers in `requirements.md` override `resolve.md`; an unanswered Needs you item takes its recommended option."
 - On Start's single `story` re-run (in `<start>`):
   - resolve its questions again, with the first round's Settled list as an input and the instruction: "Carry each Settled item forward unless `requirements.md` overrides it.";
@@ -36,6 +36,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 - Lead with a summary: **Scope** (the Goal and the files under Changes in 2-3 lines, Out of Scope in one) and **Risks** (the highest-risk Verification areas, or `none stated`), together at most 6 lines; **Open questions** (each numbered Open Questions & Assumptions item in one line, then each Needs you item with its recommended option). Then give the absolute path of `S/<branch>/plan.md` and the Settled list from `S/<branch>/resolve.md` when it exists. Do not paste the plan, and add nothing the plan lacks.
 - When `plan-feedback.md` holds a `Tier escalated from small:` line (per `<feedback>`), also present "tier escalated from small: <reason>", so that `approve` confirms the large tier.
+- Unattended per `<boot>`: when no Needs you item lacks a recommended option and `plan-feedback.md` has no `Tier escalated from small:` line, record the auto-answer and proceed as `approve` without presenting; otherwise stop as attended. A Needs you item lacks a recommended option when its resolve report entry has no recommended option line.
 - A bare `approve` while Needs you items are open accepts each item's recommended option, which the presentation shows. The re-dispatched plan already assumes those options; when no re-dispatch ran, they did not differ from the plan.
 
 ## Findings
@@ -47,6 +48,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 - On `SETTLED` or `NEEDS-DECISION`, replace `S/<branch>/review.md` with `{ echo '## Review'; cat S/<branch>/reports/B.md; echo '## Recommendations'; cat S/<branch>/reports/resolve-findings.md; }` via a temp file and `mv -f`, printing nothing.
 - On a `resolve` `STOPPED` or second transient, follow Resolve Step, and write `review.md` the same way with `## Review` and `S/<branch>/reports/B.md` only, so the findings have no tier.
 - **Gate 2 presentation**: read `review.md` and present every finding in it, numbered as `B` numbered it, most severe first, Suggestions and Nitpicks included. Each shows its action (resolve's recommendation, else the reviewer's `Recommended action`) and its tier, if any. Resolve's Needs you list follows, if any. Label the column "action", so resolve's `deferred` marker is not read as the `defer` action.
+- **Unresolved, when unattended**: the verdict is `REQUEST CHANGES`, or `review.md` holds a line matching `^Finding [0-9]+: (Critical|Important) ` (any suffix, so `carried` findings count; per Item lookups in `<dispatch>`), or any `Item` line has action `discuss`. A `defer` action on a non-blocking finding does not stop.
 
 ## A3 CONFLICT
 
