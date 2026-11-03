@@ -42,9 +42,8 @@ Run on every invocation, before any other write. **Guard**: unless the human exp
 
 - `<common>` = `git rev-parse --path-format=absolute --git-common-dir`, `<repo>` = `basename(dirname(<common>))`, `<worktree>` = `git rev-parse --show-toplevel`, `S` = `~/.agent-workflows/<repo>`.
 - `<root>`: resolve the real path of this file (follow symlinks) and go up three levels, past `skills/orchestrate/SKILL.md`: the repository root, or for an installed copy the directory above the installed skills. Reference a skill as `<root>/skills/<name>/SKILL.md` when that file exists; otherwise, or when this file's path is unknown, as "the installed `<name>` skill".
-- `<stacked>`: `references/stacked.md` in the directory that holds this file's real path, or, when this file's path is unknown, that file in the installed `orchestrate` skill.
 - `<release>`: `references/release.md` in the directory that holds this file's real path, or, when this file's path is unknown, that file in the installed `orchestrate` skill.
-- `<resolve>`, `<feedback>`, `<comments>`, `<review-fix>`, `<dispatch>`, `<boot>`, `<start>`, `<close-out>`: `references/resolve.md`, `references/feedback.md`, `references/comments.md`, `references/review-fix.md`, `references/dispatch.md`, `references/boot.md`, `references/start.md`, and `references/close-out.md`, each resolved like `<release>`.
+- `<stacked>`, `<resolve>`, `<feedback>`, `<comments>`, `<review-fix>`, `<dispatch>`, `<boot>`, `<start>`, `<close-out>`: `references/stacked.md`, `references/resolve.md`, `references/feedback.md`, `references/comments.md`, `references/review-fix.md`, `references/dispatch.md`, `references/boot.md`, `references/start.md`, and `references/close-out.md`, each resolved like `<release>`.
 
 ## State Files
 
@@ -78,7 +77,7 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
 - `resolve.md`: per `<resolve>`.
 - `decisions.md`, `history.md`, `incidental.md`: per `<boot>`.
 - `review.md`: per `<resolve>`.
-- `stack.json` (layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, `LAYERS`, `CLOSE_OUT`, or `WAITING_CLOSE_OUT_APPROVAL`; `git_common_dir` is `<common>` (absent in older files); `unattended` (`true`, or absent; per Unattended in `<boot>`); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
+- `stack.json` (any number of layers, at most three with open pull requests per On a parent in `<stacked>`; layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, `LAYERS`, `CLOSE_OUT`, or `WAITING_CLOSE_OUT_APPROVAL`; `git_common_dir` is `<common>` (absent in older files); `unattended` (`true`, or absent; per Unattended in `<boot>`); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
   ```json
   { "schema_version": 1, "stack_name": "<name>", "trunk": "<trunk>", "git_common_dir": "<common>", "phase": "ANALYSIS", "blocked": null,
     "active_layer_index": null, "layers": [], "updated_at": "<time>" }
