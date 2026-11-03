@@ -33,17 +33,17 @@ rm -rf -- "<that path>"
 
 ## Gate Buttons
 
-- **Use**: when a structured question tool is listed among the session's tools, including one listed only by name that the host loads on request, present each stop below with it, after the gate's content has been printed in chat. No tool name is hard-coded. The call carries only the question and the verb options; no summary, findings, diff stat, or PR text goes in it. With no such tool, present the typed verbs as usual. A button choice is an ordinary reply, so switching hosts mid-run is fine.
+- **Use**: when a structured question tool is listed among the session's tools, including one listed only by name that the host loads on request, present each stop below with it, after the gate's content and its resume line have been printed in chat, never inside the call. No tool name is hard-coded. The call carries only the question and the verb options; no summary, findings, diff stat, or PR text goes in it. With no such tool, present the typed verbs as usual. A button choice is an ordinary reply, so switching hosts mid-run is fine.
 - **Verbs per stop** (each option is the existing verb, label and meaning unchanged):
   - Split approval: `approve`, `narrow`.
   - Gate 1: `approve`, with the question text "approve, or reply in chat with feedback". Plan feedback is never collected through the tool's free-text field, which truncates at about 300 characters.
   - Gate 2: `approve`, `fix`, `redraft`.
   - Untagged tier proposal: `small`, `large`.
   - BLOCKED: `fix`, `retry`, `re-plan`, `adopt`.
-  - Stack `blocked`: `fix`, `retry`, `abandon`.
+  - Stack `blocked`: `fix`, `retry`.
 - **Payload turn**: after a button for a verb that takes text or numbers (`fix`, `redraft`, `narrow`, `re-plan`), ask once in plain chat for the payload and read the next message as it. Combine them into the equivalent typed reply and handle it exactly as if typed: `fix <payload as typed>` (numbers such as `fix 3, 5`, `small:` or `large:` text, or untagged text), `redraft <text>`, `narrow <text>`, `re-plan <text>`. A `re-plan` with no feedback is allowed: accept "none". The next message replaces the button choice only when it is exactly one verb word of that stop, or a verb followed by the number list or tag form Inputs accepts (`fix 3, 5`, `small:`); anything else, including text that merely starts with a verb word, is the payload.
 - **Option limits**: if the tool states an upper limit below the stop's verb count, show the verbs in the order listed above (most common first) and leave the rest typed. If the tool needs more options than the stop has verbs, that stop stays typed. Typed verbs always work, and the stop's plain-chat text still lists every verb.
-- **Not covered**: story review answers and the stack name, `register`, `reopen`, `address`, `close-out`, `approve C<n>`, close-out `approve`, and `file|defer|drop N<n>` stay typed.
+- **Not covered**: story review answers and the stack name, `register`, `reopen`, `address`, `abandon` (everywhere, including `abandon <path>`, which deletes state and stays typed), `narrow` and `adopt` at the stacked-work and tip-moved halts, `close-out`, `approve C<n>`, close-out `approve`, and `file|defer|drop N<n>` stay typed.
 
 ## Decisions
 
