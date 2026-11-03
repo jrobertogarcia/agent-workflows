@@ -16,7 +16,7 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
 
 ## Gate 2
 
-- Unattended per `<boot>` (fresh runs only, never an `address` or `reopen` round): when the stop conditions in `<resolve>` do not apply, record the auto-answer, set `gate_2_release_approved`, and go to Release without presenting; otherwise present as attended.
+- Unattended per `<boot>`: when the stop conditions in `<resolve>` do not apply, record the auto-answer, set `gate_2_release_approved`, and go to Release without presenting; otherwise present as attended.
 - **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none". Also list `incidental.md`'s entries as `N<n>`, each with its mark if any, with the hint "reply `file`, `defer` or `drop N<n>`". When `comments.md` exists, also present `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`, this round's commits (rebased ones left out), then run Replies per `<comments>` and present `replies.md` verbatim too. There, `fix <n>` selects review findings, not comments; change a comment's reply with `fix small:` or `fix large:` and direction.
 - **`redraft <feedback>`**, when `HEAD` equals `approved_sha` (otherwise handle it as Gate 2 handles a moved `HEAD`):
   - Set `gate_2_release_approved` false.
