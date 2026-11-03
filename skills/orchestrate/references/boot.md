@@ -52,7 +52,6 @@ rm -rf -- "<that path>"
 - **Auto-answer**: at each touchpoint below, instead of stopping, append the Decisions entry with `Reply: (auto: unattended)` and `Ruling:` the recommendation taken, then act as if the human had replied it; print one line naming the touchpoint and ruling. Touchpoints: Start (unanswered Needs you items proceed on their recommended options and the default stack name stands), Split approval (`approve`, after the checks in `<stacked>` pass), Gate 1 (`approve`, per `<resolve>`), Gate 2 (`approve`, per `<release>`).
 - **Stops**: take no auto-answer, report as attended, and end with the Resume Line, when any of: `BLOCKED` (after the retry budget, as the attended flow counts it) or Stack `blocked`; a halt (drift, rebase conflict, tip moved, closed layer, failed Release or link); a `large` tier or `re-plan` recommendation (including a Gate 1 whose `plan-feedback.md` holds `Tier escalated from small:`); a Needs you item whose report names no recommended option; Gate 2 with an unresolved Critical or Important finding or an `Item` action `discuss` (per `<release>`); any other question this skill would put to the human (name taken, more than 3 layers or a failed split check, trunk unresolved).
 - **Scope**: auto-answers apply to fresh runs. `address`, `reopen`, and `close-out` run attended even when the flag is set: every gate on those paths waits for the human.
-- **Question tool**: no auto-answered gate offers buttons; the tool is used only at a stop, as in Gate Buttons.
 - **Known gap**: no new spend, turn, or time cap; the run is bounded by the retry `count`, review rounds that stop on new blocking findings, and BLOCKED.
 
 ## Decisions
@@ -69,7 +68,7 @@ Cost if wrong: <one line>
 - `Reply:` may run over several lines; it ends at the entry's `Ruling:` line.
 - Append by a heredoc concatenation that prints nothing.
 - The entry is the only record of split-approval `approve` and discussion, the untagged tier proposal (`Ruling: proposed tier <small|large>, awaiting reply`), `redraft` feedback, `file|defer|drop`, and every follow-up ruling.
-- `Reply: (auto: unattended)` marks an entry the run wrote itself per Unattended; it carries no human text, and the touchpoint, `Ruling:`, `Reason:` and `Cost if wrong:` lines are the same.
+- `Reply: (auto: unattended)` marks an entry the run wrote itself per Unattended.
 - A halt cleared by re-invoking is not a reply and writes none.
 - A button choice and its payload turn are one reply: `Reply:` holds the combined typed form, so lookups (for example `grep` of the latest proposal entry in `<feedback>`) are unchanged. A click alone is not a reply and writes no entry.
 
