@@ -36,6 +36,8 @@ Run on every invocation, before any other write. **Guard**: unless the human exp
 
 **Resume line**: end every stop that waits for a human reply with the line per Resume Line in `<boot>`.
 
+**Question tool**: when the session lists one, offer each stop's verbs as buttons and take payloads as a free-text turn; read Gate Buttons in `<boot>` before presenting a stop. Typed verbs stay canonical.
+
 ## Paths
 
 - `<common>` = `git rev-parse --path-format=absolute --git-common-dir`, `<repo>` = `basename(dirname(<common>))`, `<worktree>` = `git rev-parse --show-toplevel`, `S` = `~/.agent-workflows/<repo>`.
