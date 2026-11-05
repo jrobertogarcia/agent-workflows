@@ -49,7 +49,7 @@ Takes an optional base branch, any related pull request URLs (e.g. a parent pull
 4. **Check Before Creating**: Re-read the drafted title and body and fix them in place:
    - every step 3 rule holds, and nothing is added beyond the skeleton (Design included);
    - the body follows the chosen template (every template heading present, no skeleton heading the template lacks), or the skeleton when none;
-   - Tested is at most 1 line and states only kind and outcome;
+   - Tested states only kind and outcome;
    - no internal-knowledge term appears in any section;
    - each section passes the step 3 body bounds; fix What by merging or cutting bullets, never by wrapping lines, and cut Tested (1 line) and Design (2 lines) to their caps;
    - every claim about what changed matches the diff;
