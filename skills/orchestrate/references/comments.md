@@ -112,7 +112,7 @@ Drift check 4 in `<boot>`, while `S/<branch>/comments.md` exists, `<target>` is 
 Gate 2 Presentation per `<release>`, the trivial release per `<release>`, or Adopt above, when `comments.md` exists and `replies.md` is missing or its `Branch tip:` differs from `approved_sha`.
 
 - Dispatch step `replies`. Skill reference: "the instructions below, using `## Triage` in `comments.md`". Agent: `orchestrate-step`. Inputs: `comments.md`, `plan.md`, `handover.md` if any, and `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`. Tokens: `DONE`.
-- Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Write every draft casual, with no preamble, no restating the comment, and no sign-off. Then one draft per thread of a few words to two sentences, headed `Comment <n>` and its URL, citing the fixing commit SHAs or saying why it is deferred or discussed, and naming any sweep hit left unfixed; then one combined top-level draft per reviewer, one short line of a few words per point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
+- Instructions: "Write `<replies.md path>`. Line 1 is `Branch tip: <git rev-parse HEAD>`. Write every draft the way a teammate would answer in the thread: soft, casual, and friendly, with a quick thanks where it fits, and no preamble, no restating the comment, and no sign-off. Then one draft per thread of one short sentence, two at most, headed `Comment <n>` and its URL, saying in plain words what changed, or why it is deferred or discussed, and naming any sweep hit left unfixed; never cite commit SHAs, file paths, or field-by-field detail; then one combined top-level draft per reviewer, one short line of a few words per point from their actionable review bodies and conversation comments. Write no draft for an empty or approval-only body, for an item triaged `already answered`, or for the item from the human. Commit nothing; never post."
 - A wrong line 1 is transient.
 
 ## Restack
@@ -139,4 +139,4 @@ The `release` dispatch, after Restack ran.
 
 ## After Release
 
-`RELEASED`, when `replies.md` exists: report its path and "post these now; they cite pushed commits".
+`RELEASED`, when `replies.md` exists: report its path and "post these now; the commits they describe are pushed".
