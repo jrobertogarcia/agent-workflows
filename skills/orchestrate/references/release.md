@@ -8,16 +8,7 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
 
 - Dispatch `draft`.
 - The result is transient per Result in `<dispatch>` when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
-- It is also transient when the body fails the body bounds. The passed `Template` decides the headings. A heading is a line starting `#` outside code fences and `<!-- ... -->` comments.
-  - Template none: the body must have a `## What` heading, else it fails.
-  - Template path: the body must contain every heading of that file (read from the working tree; the one checkout file the core's no-read rule allows) and none of `## Why`, `## What`, `## Design`, `## Tested` that the file lacks; Why and What above the first heading stay legal. The `## What` bullet checks below run only when a `## What` heading exists. When the template has a narrative heading (`Description`, `Summary`, `Changes`, or `What`, any case and level), the section under it has no line over 160 characters and at most the bullet cap below in `- ` or `* ` lines, not counting `- [ ]` checklist lines.
-
-  From the `## What` heading up to the next heading, leaving out a trailing link block (create-pr's link block: the body's last blank-line-separated block when none of its lines starts with `- ` or `* ` and each names a `#<number>` or a URL):
-  - every non-blank line starts with `- ` or `* `, so wrapped paragraphs, numbered lists, and nested bullets fail;
-  - there are at most 6 such lines when `git diff --name-only <base_sha>...<approved_sha>` lists 10 or fewer files, else at most 10;
-  - no line is over 160 characters, counted after stripping a trailing CR.
-  - a `## Tested` or `## Design` section, scanned the same way (heading to next heading, minus a trailing link block), has at most 2 non-blank lines, none over 160 characters; absent sections pass. In the template-path case, skip this check for a `## Tested` or `## Design` heading that is one of the template's own headings.
-  - a Tested section (`## Tested`, or a template heading containing `test`, any case), scanned the same way, fails when a line holds a backtick or a number followed by `test`, `tests`, `check`, `checks`, `passed` or `failed`.
+- The body's shape is `create-pr`'s to enforce: the `draft` worker checks it against that skill's body bounds and the chosen template, so do not re-check it here.
 - Then write `WAITING_RELEASE_APPROVAL`; `retry` after a `draft` BLOCKED re-runs `draft`.
 
 ## Gate 2
