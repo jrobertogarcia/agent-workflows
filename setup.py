@@ -388,23 +388,28 @@ def install_global(skills_dir: Path, config: AppConfig, fs_manager: FileSystemMa
     return skipped
 
 
-def run_git(*args: str) -> None:
-    """Runs a git command, raising WorkflowSetupError when it fails."""
+def run_git(*args: str) -> str:
+    """Runs a git command and returns its stdout, raising WorkflowSetupError when it fails."""
     try:
-        subprocess.run(["git", *args], check=True, capture_output=True, text=True)
+        return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout
     except (OSError, subprocess.CalledProcessError) as err:
         detail = getattr(err, "stderr", "") or err
         raise WorkflowSetupError(f"git {' '.join(args)} failed: {str(detail).strip()}")
 
 
-def install_ref(origin: str, ref: str, config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> None:
-    """Checks out a release tag detached in the install directory and links its skills."""
+def install_ref(origin: str, ref: Optional[str], config: AppConfig, fs_manager: FileSystemManager, force: bool = False) -> None:
+    """Checks out a release tag (the newest when ref is None) detached in the install directory and links its skills."""
     install_dir = config.install_dir
     if (install_dir / ".git").exists():
         run_git("-C", str(install_dir), "fetch", "--force", "--tags", origin)
     else:
         install_dir.parent.mkdir(parents=True, exist_ok=True)
         run_git("clone", origin, str(install_dir))
+    if ref is None:
+        tags = run_git("-C", str(install_dir), "tag", "--list", "v*", "--sort=-version:refname").split()
+        if not tags:
+            raise WorkflowSetupError(f"No release tags found in {origin}.")
+        ref = tags[0]
     run_git("-C", str(install_dir), "checkout", "--detach", f"refs/tags/{ref}")
     Console.info(f"Installed {ref} at {install_dir}")
     skipped = install_global(install_dir / "skills", config, fs_manager, force=force)
@@ -599,7 +604,7 @@ def main() -> None:
 
     # Install command
     install_parser = subparsers.add_parser("install", help="Check out a release tag and link its skills globally.")
-    install_parser.add_argument("--ref", required=True, help="Release tag to install.")
+    install_parser.add_argument("--ref", help="Release tag to install (defaults to the newest).")
     install_parser.add_argument("--force", action="store_true", help="Replace existing unmanaged target files or directories.")
 
     # Unlink command

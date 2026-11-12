@@ -17,3 +17,25 @@ jobs:
         with:
           python-version: "3.13"
       - run: python -m unittest discover -s tests -v
+
+  release:
+    needs: unittest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag the next patch release
+        run: |
+          if git tag --points-at HEAD | grep -q '^v'; then
+            echo "HEAD is already tagged"; exit 0
+          fi
+          latest=$(git tag --list 'v*' --sort=-version:refname | head -n1)
+          IFS=. read -r major minor patch <<< "${latest#v}"
+          next="v${major}.${minor}.$((patch + 1))"
+          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com tag -a "$next" -m "$next"
+          git push origin "$next"
