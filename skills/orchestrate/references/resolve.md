@@ -4,12 +4,11 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 ## Resolve Step
 
-- After `story` or `plan`, or after `B` per Findings, dispatch `resolve` only when that step reports an `Open items:` count above 0; at 0, skip it. At A3 CONFLICT, always dispatch it.
+- After `story` or `plan`, dispatch `resolve` only when that step reports an `Open items:` count above 0; at 0, skip it. `B` tiers its own findings, so no `resolve` follows it.
 - A missing or non-numeric `Open items:` line from `story`, `plan`, or `B`, or `Plan changes:` line from the `PLANNING` `resolve`, is transient.
 - A `resolve` that returns `STOPPED` or hits a second transient does not set `BLOCKED`. Instead:
   - append `- <UTC time> resolve-open-items <tip SHA, or none>: <cause>` to the applicable `roadblocks.md`;
-  - present the items unresearched;
-  - at A3, `CONFLICT` still sets `BLOCKED` with the `A3` report.
+  - present the items unresearched.
 - Before the stack exists, append the log line to `<provisional>/roadblocks.md`, which moves with the folder per Start in `<start>`.
 
 ## Start
@@ -44,16 +43,6 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 `AUDITING`, after `B` `APPROVE`, and after `REQUEST CHANGES` before `<review-fix>` decides; `<feedback>` and `<review-fix>` read the `review.md` this writes.
 
 - **At 0 findings**: delete `S/<branch>/review.md` and go to Draft per `<release>`.
-- **Otherwise**, dispatch `resolve` with `B`'s numbered findings as kind `finding`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `B` report file. Add the instruction: "Keep `B`'s numbering. For each finding, recommend fix, defer, or discuss. End each per-item report, Needs you items included, with `Tier: small` when fixing it changes nothing in `plan.md`'s Out of Scope and either stays inside its Goal and Changes and the files it lists, or changes nothing but code comments, docs no tool or agent loads as instructions, or whitespace (skill, agent, and reference files are instructions); else `Tier: large`. End with the `Item <n>:` lines."
-- On `SETTLED` or `NEEDS-DECISION`, replace `S/<branch>/review.md` with `{ echo '## Review'; cat S/<branch>/reports/B.md; echo '## Recommendations'; cat S/<branch>/reports/resolve-findings.md; }` via a temp file and `mv -f`, printing nothing.
-- On a `resolve` `STOPPED` or second transient, follow Resolve Step, and write `review.md` the same way with `## Review` and `S/<branch>/reports/B.md` only, so the findings have no tier.
-- **Gate 2 presentation**: read `review.md` and present every finding in it, numbered as `B` numbered it, most severe first, Suggestions and Nitpicks included. Each shows its action (resolve's recommendation, else the reviewer's `Recommended action`) and its tier, if any. Resolve's Needs you list follows, if any. Label the column "action", so resolve's `deferred` marker is not read as the `defer` action.
+- **Otherwise**, replace `S/<branch>/review.md` with `{ echo '## Review'; cat S/<branch>/reports/B.md; }` via a temp file and `mv -f`, printing nothing. A finding with no `Item <n>:` line is untiered.
+- **Gate 2 presentation**: read `review.md` and present every finding in it, numbered as `B` numbered it, most severe first, Suggestions and Nitpicks included. Each shows its action and tier from its `Item` line, if any; list the `discuss` findings again after them as the ones needing the human's call.
 - **Unresolved, when unattended**: the verdict is `REQUEST CHANGES`, or `review.md` holds a line matching `^Finding [0-9]+: (Critical|Important) ` (any suffix, so `carried` findings count; per Item lookups in `<dispatch>`), or any `Item` line has action `discuss`. A `defer` action on a non-blocking finding does not stop.
-
-## A3 CONFLICT
-
-Stage A step 3, and `A3f` per `<review-fix>`.
-
-- Dispatch `resolve` with each conflict in the `A3` report as kind `conflict`. Inputs: `plan.md`, `requirements.md`, `context.md` if any, and the `A3` or `A3f` report file. Add the instruction: "Any resolution that would change `plan.md` is NEEDS-DECISION."
-- `SETTLED` is handled exactly like `GAPS`, using `gaps_fix_used`, with `S/<branch>/reports/resolve-conflict.md` as the fix pass's input. First append `## A3 conflict <UTC time>` and that file to `S/<branch>/resolve.md` by concatenation, so later fix passes keep it settled.
-- `NEEDS-DECISION` sets `BLOCKED` with the resolve report's Needs you list.

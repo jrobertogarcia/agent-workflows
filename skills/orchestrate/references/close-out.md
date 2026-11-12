@@ -32,8 +32,8 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 - Instructions:
   - "Run read-only. For ticket and PR state, use only `gh` `view` and `list` commands, `gh api` GET reads, and the ticket MCP's read tools.
   - Inventory the follow-ups this change created, from:
-    - each layer's handover `Follow-ups` (for a handover without one, its deviation and "not yet verified" lines) and `Scope Reductions`;
-    - each `roadblocks.md`'s `Scope Reductions:`, `PUSHED`, fix, and pending lines;
+    - each layer's handover `Follow-ups` (for a handover without one, its deviation and "not yet verified" lines);
+    - each `roadblocks.md`'s `PUSHED`, fix, and pending lines;
     - `review.md` `Item <n>: defer` lines;
     - deferred and Settled RECOMMEND items in both `resolve.md` files;
     - `incidental.md` entries not marked `[drop]`: `[file]` proposes `ticket-new`, the others `leave`;
