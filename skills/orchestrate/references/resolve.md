@@ -26,7 +26,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 
 ## PLANNING
 
-- After this entry's first `plan.md` is written, delete any `S/<branch>/resolve.md` and, after appending it per History in `<boot>`, `S/<branch>/fix-input.md`, so neither carries an earlier plan's lists or settlements into this one. Dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and on `SETTLED` or `NEEDS-DECISION` `mv -f S/<branch>/reports/resolve-plan.md` to `S/<branch>/resolve.md`.
+- After this entry's first `plan.md` is written, delete any `S/<branch>/resolve.md` and `S/<branch>/fix-input.md`, so neither carries an earlier plan's lists or settlements into this one. Dispatch `resolve` on the plan's numbered Open Questions & Assumptions, with `plan.md` as an input, and on `SETTLED` or `NEEDS-DECISION` `mv -f S/<branch>/reports/resolve-plan.md` to `S/<branch>/resolve.md`.
 - If the report's `Plan changes:` is above 0, dispatch `plan` once more with `S/<branch>/resolve.md` as an input; it writes `plan.md` itself. This happens at most once per entry to `PLANNING`: the count is held in this thread, and a crash re-runs `PLANNING` from the start.
 - Do not resolve the second plan's open items.
 - Then set `WAITING_PLAN_APPROVAL`.
@@ -34,8 +34,7 @@ It extends the orchestrate `SKILL.md`, the core, whose terms, paths, Halt, and B
 ## Gate 1
 
 - Lead with a summary: **Scope** (the Goal and the files under Changes in 2-3 lines, Out of Scope in one) and **Risks** (the highest-risk Verification areas, or `none stated`), together at most 6 lines; **Open questions** (each numbered Open Questions & Assumptions item in one line, then each Needs you item with its recommended option). Then give the absolute path of `S/<branch>/plan.md` and the Settled list from `S/<branch>/resolve.md` when it exists. Do not paste the plan, and add nothing the plan lacks.
-- When `plan-feedback.md` holds a `Tier escalated from small:` line (per `<feedback>`), also present "tier escalated from small: <reason>", so that `approve` confirms the large tier.
-- Unattended per `<boot>`: when no Needs you item lacks a recommended option and `plan-feedback.md` has no `Tier escalated from small:` line, record the auto-answer and proceed as `approve` without presenting; otherwise stop as attended. A Needs you item lacks a recommended option when its resolve report entry has no recommended option line.
+- Unattended per `<boot>`: when no Needs you item lacks a recommended option, record the auto-answer and proceed as `approve` without presenting; otherwise stop as attended. A Needs you item lacks a recommended option when its resolve report entry has no recommended option line.
 - A bare `approve` while Needs you items are open accepts each item's recommended option, which the presentation shows. The re-dispatched plan already assumes those options; when no re-dispatch ran, they did not differ from the plan.
 
 ## Findings

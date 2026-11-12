@@ -28,7 +28,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 7. Then write `WAITING_CLOSE_OUT_APPROVAL`.
 
 **`inventory`** (defined here, as `replies` is in `<comments>`). Skill reference: "the instructions below". Agent: `orchestrate-step`. Tokens: `READY`.
-- Inputs: `stack.json`; each layer's `S/<branch>/` path with its PR number; the stack's `requirements.md`, `context.md`, `resolve.md`, `decisions.md` (as context), `incidental.md`, and `roadblocks.md`; on a re-dispatch, also `inventory-previous.md` and/or `resolve-close-out.md`.
+- Inputs: `stack.json`; each layer's `S/<branch>/` path with its PR number; the stack's `requirements.md`, `context.md`, `resolve.md`, `decisions.md` (as context), and `roadblocks.md`; on a re-dispatch, also `inventory-previous.md` and/or `resolve-close-out.md`.
 - Instructions:
   - "Run read-only. For ticket and PR state, use only `gh` `view` and `list` commands, `gh api` GET reads, and the ticket MCP's read tools.
   - Inventory the follow-ups this change created, from:
@@ -36,7 +36,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
     - each `roadblocks.md`'s `PUSHED`, fix, and pending lines;
     - `review.md` `Item <n>: defer` lines;
     - deferred and Settled RECOMMEND items in both `resolve.md` files;
-    - `incidental.md` entries not marked `[drop]`: `[file]` proposes `ticket-new`, the others `leave`;
+    - the `## Out of scope` lines in the report files under each layer's `S/<branch>/reports/` and the stack's `reports/`, `prev/` included, each one `leave` unless it names a defect worth a ticket;
     - docs in the checkout that name a file or symbol a PR touched (`gh pr view <pr> --json files`, then `rg`);
     - the state of each linked ticket.
   - Mark a `CLOSED` layer's items "not shipped". Add one `branch` item per `MERGED` layer whose local branch exists, and none for a `CLOSED` layer.
@@ -59,7 +59,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 - Replies:
   - `approve` runs every item except `ticket-edit`, `ticket-new`, and `branch`; the gate says so.
   - `approve C<n>[, C<m>]` runs exactly the named items. First check each with `grep -m1 -E '^C<n>: (repo-edit|ticket-edit|ticket-new|draft|branch|leave) — '` on the report; if any matches nothing, stop and name it, and the Decisions entry records `Ruling: rejected, no such C<n>`.
-  - Any other text, except `abandon` and `file|defer|drop`, is feedback: append it to `requirements.md` under `## Close-out feedback <UTC time>`, write `CLOSE_OUT`, and re-run.
+  - Any other text, except `abandon`, is feedback: append it to `requirements.md` under `## Close-out feedback <UTC time>`, write `CLOSE_OUT`, and re-run.
 - The Decisions entry, touchpoint `WAITING_CLOSE_OUT_APPROVAL`, records the approved list in `Ruling:`.
 - The stop ends with the Resume Line, with the stack name.
 
