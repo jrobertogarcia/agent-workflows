@@ -35,6 +35,7 @@ rm -rf -- "<that path>"
 
 - **Use**: when a structured question tool is listed among the session's tools, including one listed only by name that the host loads on request, present each stop below with it, after the gate's content and its resume line have been printed in chat, never inside the call. No tool name is hard-coded. The call carries only the question and the verb options; no summary, findings, diff stat, or PR text goes in it. With no such tool, present the typed verbs as usual. A button choice is an ordinary reply, so switching hosts mid-run is fine. With `unattended` set, an auto-answered gate shows no buttons; see Unattended.
 - **Verbs per stop** (each option is the existing verb, label and meaning unchanged):
+  - Unattended near miss: `yes`, `no`.
   - Split approval: `approve`, `narrow`.
   - Gate 1: `approve`, with the question text "approve, or reply in chat with feedback". Plan feedback is never collected through the tool's free-text field, which truncates at about 300 characters.
   - Gate 2: `approve`, `fix`, `redraft`.
@@ -47,7 +48,7 @@ rm -rf -- "<that path>"
 
 ## Unattended
 
-- **Flag**: `stack.json` `unattended` is `true` or absent (absent in older files and every attended run). Read it with the stack; before `stack.json` exists, a provisional run is unattended when its `requirements.md`, above the first `## Answers` heading, has the opt-in per `<start>`. It is set only at Start and never by a later message; it stays set after a human reply at a stop.
+- **Flag**: `stack.json` `unattended` is `true` or absent (absent in older files and every attended run). Read it with the stack; before `stack.json` exists, a provisional run is unattended when its `decisions.md` has a `Start` entry whose `Ruling:` begins `unattended opt-in`. It is set only at Start, by the starting message or the `yes` to the near-miss question per `<start>`, and never by a later message; it stays set after a human reply at a stop.
 - **Report line**: every report to the human (stop, halt, final report) leads with "Unattended run: branches are pushed and draft pull requests opened with no approval."
 - **Auto-answer**: at each touchpoint below, instead of stopping, append the Decisions entry with `Reply: (auto: unattended)` and `Ruling:` the recommendation taken, then act as if the human had replied it; print one line naming the touchpoint and ruling. Touchpoints: Start (unanswered Needs you items proceed on their recommended options and the default stack name stands), Split approval (`approve`, after the checks in `<stacked>` pass), Gate 1 (`approve`, per `<resolve>`), Gate 2 (`approve`, per `<release>`).
 - **Stops**: take no auto-answer, report as attended, and end with the Resume Line where the attended flow would, when any of: `BLOCKED` (after the retry budget, as the attended flow counts it) or Stack `blocked`; a halt (drift, rebase conflict, tip moved, closed layer, open-layer limit, failed Release or link); a `large` tier or `re-plan` recommendation (including a Gate 1 whose `plan-feedback.md` holds `Tier escalated from small:`); a Needs you item whose report names no recommended option; Gate 2 with an unresolved Critical or Important finding or an `Item` action `discuss` (per `<release>`); any other question this skill would put to the human (name taken, a failed split check, trunk unresolved).
