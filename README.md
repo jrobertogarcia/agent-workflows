@@ -45,12 +45,18 @@ Skills for delivering software with coding agents through explicit, human-gated 
 ## Installation
 
 ```bash
-python3 setup.py install --ref <tag>
+python3 setup.py install
 ```
 
-`install` clones this repository into `~/.local/share/agent-workflows`, checks out the release tag detached, and links from there, so what you run is pinned and does not move with a development checkout. Re-run it with a newer tag to update.
+`install` clones this repository into `~/.local/share/agent-workflows`, checks out the newest release tag detached, and links from there, so what you run is pinned and does not move with a development checkout. Every merge to `main` that passes CI is tagged as the next patch release. To update, run:
 
-If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install --ref <tag>`. run `unlink` from the old checkout before pulling this change; if you already pulled, delete the agent-workflows symlinks in `~/.codex/skills` by hand (leave Codex's own `.system` entry). To link a checkout directly instead (for development), use `python3 setup.py link`.
+```bash
+python3 ~/.local/share/agent-workflows/setup.py install
+```
+
+Pass `--ref <tag>` to install a specific release instead, for example to roll back.
+
+If you installed with `link` from a development checkout, switch over once: run `python3 setup.py unlink` from that checkout, then `python3 setup.py install`. run `unlink` from the old checkout before pulling this change; if you already pulled, delete the agent-workflows symlinks in `~/.codex/skills` by hand (leave Codex's own `.system` entry). To link a checkout directly instead (for development), use `python3 setup.py link`.
 
 For each host whose config directory already exists, `install` and `link` install every skill and the `orchestrate-step` and `orchestrate-step-light` agents that `orchestrate` dispatches to:
 

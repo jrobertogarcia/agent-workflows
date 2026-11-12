@@ -839,6 +839,44 @@ class InstallRefTests(SetupTestCase):
 
         self.assertIn("skipped as unmanaged", output)
 
+    def test_install_without_ref_checks_out_newest_version_tag(self):
+        origin = self.make_origin()
+        config = self.make_config()
+        self.git(origin, "tag", "-d", "v1")
+        self.git(origin, "tag", "v0.1.9")
+        (origin / "skills" / "second").mkdir()
+        (origin / "skills" / "second" / "SKILL.md").write_text("---\nname: second\n---\n", encoding="utf-8")
+        self.git(origin, "add", ".")
+        self.git(origin, "commit", "-qm", "two")
+        self.git(origin, "tag", "v0.1.10")
+
+        output = self.capture_stdout(setup.install_ref, str(origin), None, config, self.fs)[1]
+
+        self.assertIn("Installed v0.1.10", output)
+        self.assertTrue((config.install_dir / "skills" / "second").is_dir())
+
+    def test_install_without_ref_picks_up_a_tag_added_since_last_install(self):
+        origin = self.make_origin()
+        config = self.make_config()
+        self.run_quiet(setup.install_ref, str(origin), None, config, self.fs)
+
+        (origin / "skills" / "second").mkdir()
+        (origin / "skills" / "second" / "SKILL.md").write_text("---\nname: second\n---\n", encoding="utf-8")
+        self.git(origin, "add", ".")
+        self.git(origin, "commit", "-qm", "two")
+        self.git(origin, "tag", "v2")
+        self.run_quiet(setup.install_ref, str(origin), None, config, self.fs)
+
+        self.assertTrue((config.install_dir / "skills" / "second").is_dir())
+
+    def test_install_without_ref_fails_when_origin_has_no_release_tags(self):
+        origin = self.make_origin()
+        config = self.make_config()
+        self.git(origin, "tag", "-d", "v1")
+
+        with self.assertRaises(setup.WorkflowSetupError):
+            self.run_quiet(setup.install_ref, str(origin), None, config, self.fs)
+
     def test_install_ref_rejects_unknown_tag(self):
         origin = self.make_origin()
         config = self.make_config()
