@@ -10,7 +10,7 @@ You coordinate; workers do the work. You dispatch every step, own the state file
 ## Inputs
 
 - A requirement (text, file, or link) to start; nothing to resume the run on the current branch; or a stack name to resume a run that has no branch yet.
-- Human replies: answers and a stack name (story review), `approve` or feedback (gates), `redraft` with feedback (Gate 2), `approve` (a multi-layer split), `fix` with direction, `re-plan` with optional feedback, or `retry` (BLOCKED), `fix small:` or `fix large:` with direction, `fix <n>, <m>` (Gate 2, or `BLOCKED` after `reopen`), or a bare `small` or `large` after a proposed tier (Gate 2, BLOCKED; per `<feedback>`), `adopt` (BLOCKED, or a tip-moved halt), `narrow` with the narrowed requirement (after a multi-layer split or a stacked-work halt), `register <PR number>` (before `LAYERS`), `reopen` with a review, optionally tagged `small:` / `large:` (a released layer), `address <PR number>` (an open pull request; per `<comments>`), `close-out` (any located stack), `approve C<n>[, C<m>]` (close-out gate; per `<close-out>`), `file`, `defer` or `drop N<n>[, N<m>]` (any located stack; per `<boot>`), `abandon` (any located stack, or a `.start.*` path per `<boot>`).
+- Human replies: answers and a stack name (story review), `approve` or feedback (gates), `redraft` with feedback (Gate 2), `approve` (a multi-layer split), `fix` with direction, `re-plan` with optional feedback, or `retry` (BLOCKED), `fix small:` or `fix large:` with direction, `fix <n>, <m>` (Gate 2, or `BLOCKED` after `reopen`; per `<feedback>`), `adopt` (BLOCKED, or a tip-moved halt), `narrow` with the narrowed requirement (after a multi-layer split or a stacked-work halt), `register <PR number>` (before `LAYERS`), `reopen` with a review, optionally tagged `small:` / `large:` (a released layer), `address <PR number>` (an open pull request; per `<comments>`), `close-out` (any located stack), `approve C<n>[, C<m>]` (close-out gate; per `<close-out>`), `abandon` (any located stack, or a `.start.*` path per `<boot>`).
 - A plain chat reply at a touchpoint continues the run without re-invoking this skill, and Boot runs on it as on an invocation.
 - Run one orchestrator session per stack at a time.
 
@@ -32,7 +32,7 @@ Run on every invocation, before any other write. **Guard**: unless the human exp
 - `<comments>`: `address`, `reopen`, `RELEASED`, `BLOCKED` from `RELEASED`, Release, and whenever `S/<branch>/comments.md` exists.
 - `<close-out>`: `CLOSE_OUT`, `WAITING_CLOSE_OUT_APPROVAL`, and `close-out`.
 
-**Halt** means stop and report, writing nothing further; anything Reconcile wrote before it is re-derived by the next invocation. **BLOCKED** means write the phase, `blocked_from`, and `pending_step` = null in one write (after a step, also `branch_tip_sha` = `HEAD`, once the After every step checks pass). Append the cause, led by the step id when a step set it, to `roadblocks.md`, and report what the human must decide. Before `state.json` exists, write the step's id to `stack.json` `blocked` instead, leaving its `phase`, and append to the stack's `roadblocks.md`; before `stack.json` exists, halt. Write a phase only after its action succeeds.
+**Halt** means stop and report, writing nothing further; anything Reconcile wrote before it is re-derived by the next invocation. **BLOCKED** means write the phase and `blocked_from` in one write (after a step, also `branch_tip_sha` = `HEAD`, once the After every step checks pass). Append the cause, led by the step id when a step set it, to `roadblocks.md`, and report what the human must decide. Before `state.json` exists, write the step's id to `stack.json` `blocked` instead, leaving its `phase`, and append to the stack's `roadblocks.md`; before `stack.json` exists, halt. Write a phase only after its action succeeds.
 
 **Resume line**: end every stop that waits for a human reply with the line per Resume Line in `<boot>`.
 
@@ -54,7 +54,6 @@ S/stacks/<name>/roadblocks.md   S/<branch>/handover.md
 S/stacks/<name>/context.md      S/<branch>/roadblocks.md
 S/stacks/<name>/resolve.md      S/<branch>/fix-input.md
 S/stacks/<name>/decisions.md    S/<branch>/plan-feedback.md
-S/stacks/<name>/incidental.md   S/<branch>/history.md
 S/stacks/<name>/reports/        S/<branch>/pr-draft.md
                                 S/<branch>/resolve.md
                                 S/<branch>/review.md
@@ -64,7 +63,7 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
 ```
 
 - `<name>` matches `^[a-z0-9][a-z0-9-]{0,39}$`. Each `/` in `<branch>` is a nested directory; a branch named `stacks` or starting `stacks/` halts.
-- You alone write `stack.json`, `requirements.md`, `state.json`, `fix-input.md`, `plan-feedback.md`, `resolve.md`, `review.md`, `comments.md`, `decisions.md`, `incidental.md`, and `history.md`. Workers write their report files, `context.md` (`context`), `plan.md` (`plan`), `handover.md`, `pr-draft.md`, and `replies.md`. Each `roadblocks.md` is append-only, strictly one line per entry: `- <UTC time> <skill> <tip SHA>: <root cause>`. `fix-input.md` holds the last fix pass's input per Fix Input in `<dispatch>`. Before replacing or deleting `fix-input.md` or `plan-feedback.md`, append it to `history.md` per History in `<boot>`. Before `state.json` exists, entries go to the stack's `roadblocks.md`.
+- You alone write `stack.json`, `requirements.md`, `state.json`, `fix-input.md`, `plan-feedback.md`, `resolve.md`, `review.md`, `comments.md`, and `decisions.md`. Workers write their report files, `context.md` (`context`), `plan.md` (`plan`), `handover.md`, `pr-draft.md`, and `replies.md`. Each `roadblocks.md` is append-only, strictly one line per entry: `- <UTC time> <skill> <tip SHA>: <root cause>`. `fix-input.md` holds the last fix pass's input per Fix Input in `<dispatch>`. Before `state.json` exists, entries go to the stack's `roadblocks.md`.
 - SHAs are full 40-character values. Set `updated_at` (UTC, ISO 8601) on every write. Replace a file atomically:
   ```bash
   tmp="$(mktemp "$dir/state.json.XXXXXX")" && cat > "$tmp" <<'EOF'
@@ -75,7 +74,7 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
 - `requirements.md`: the requirement verbatim, then each round of the human's answers verbatim.
 - `plan-feedback.md`: plan feedback since the last Gate 1 `approve`, each appended verbatim under a `## <UTC time>` heading (a `re-plan` after approval replaces it). Only `plan` reads it; its presence makes `PLANNING` a re-plan.
 - `resolve.md`: per `<resolve>`.
-- `decisions.md`, `history.md`, `incidental.md`: per `<boot>`.
+- `decisions.md`: per `<boot>`.
 - `review.md`: per `<resolve>`.
 - `stack.json` (any number of layers, at most three with open pull requests per On a parent in `<stacked>`; layer counts include `RELEASED` layers); `phase` is `ANALYSIS`, `STACK_DECOMPOSITION`, `WAITING_SPLIT_APPROVAL`, `LAYERS`, `CLOSE_OUT`, or `WAITING_CLOSE_OUT_APPROVAL`; `git_common_dir` is `<common>` (absent in older files); `unattended` (`true`, or absent; per Unattended in `<boot>`); `blocked` is `null` or the blocked step's id; `layers` holds one entry per layer, bottom first, `status` `PENDING`, `ACTIVE`, or `RELEASED`; `active_layer_index` is the layer being authored:
   ```json
@@ -88,8 +87,8 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
   {
     "schema_version": 1,
     "git_anchor": { "repo": "<repo>", "branch": "<branch>", "target_branch": "<target>",
-                    "base_sha": "<sha>", "branch_tip_sha": "<sha>", "pending_step": null },
-    "lifecycle": { "phase": "PLANNING", "active_skill": "plan-implementation", "blocked_from": null },
+                    "base_sha": "<sha>", "branch_tip_sha": "<sha>" },
+    "lifecycle": { "phase": "PLANNING", "pass": "plan", "blocked_from": null },
     "gates": { "gate_1_plan_approved": false, "gate_2_release_approved": false },
     "retries": { "count": 0, "max_allowed": 3 },
     "artifacts": { "plan_file": "plan.md", "handover_file": "handover.md", "roadblocks_file": "roadblocks.md",
@@ -98,34 +97,33 @@ S/stacks/<name>/reports/        S/<branch>/pr-draft.md
   }
   ```
   - `target_branch` (`<target>`): `<trunk>`, or for a layer branched on a parent, the parent's branch. `base_sha`: the `<target>` tip the branch was last based on. `branch_tip_sha`: the last `HEAD` you verified.
-  - `pending_step`: `null` or `{ "step_id", "skill", "from_tip_sha" }`; `step_id` `A1-fix` is `A1` on a fix pass; `A1f` and `A2f` are `A1` and `A2` on a short fix pass, per `<review-fix>`.
-  - `active_skill`: the skill last dispatched; `pending_step.skill`: the pending step's. Both are `implement` for `A1`.
+  - `pass`: where the current pass of `IMPLEMENTING` starts, so Resume in `<boot>` restarts it there: `plan` at `A1` (Gate 1 `approve`), `fix` at `A1-fix` (a Retries fix pass), `short` at `A1f` (a short fix pass per `<review-fix>`), or `validate` at `A2` (every other entry, including Adopt, a rebase, and a moved `HEAD`). Every entry to `IMPLEMENTING` writes it, in the same write as the phase. Step ids: `A1-fix` is `A1` on a fix pass; `A1f` and `A2f` are `A1` and `A2` on a short fix pass.
   - `blocked_from`: the phase `BLOCKED` was entered from, kept on a re-entry from `BLOCKED`; null outside `BLOCKED`.
   - `last_verdict`: the last `review-branch` verdict. `approved_sha`: `HEAD` when `AUDITING` leaves for Gate 2.
-  - Older files may hold `gaps_fix_used` and `precut_sha`; ignore them and drop them on the next write.
-  - Every entry to `PLANNING` sets `gate_1_plan_approved` false and `pending_step` null. Every entry to `IMPLEMENTING`, including from `IMPLEMENTING`, requires `gate_1_plan_approved` true, else halt, and sets `approved_sha` null and `gate_2_release_approved` false.
+  - Older files may hold `gaps_fix_used`, `precut_sha`, `pending_step`, and `active_skill`; ignore them and drop them on the next write, taking a missing `pass` as `validate`.
+  - Every entry to `PLANNING` sets `gate_1_plan_approved` false. Every entry to `IMPLEMENTING`, including from `IMPLEMENTING`, requires `gate_1_plan_approved` true, else halt, and sets `approved_sha` null and `gate_2_release_approved` false.
 
 Until the layer has `state.json`, or while `stack.json` `phase` is `CLOSE_OUT` or `WAITING_CLOSE_OUT_APPROVAL`, `stack.json` drives the next action: `blocked` if set, else `phase`; after, `state.json` `lifecycle.phase` does.
 
 ## Phases
 
 - **`PLANNING`**: dispatch `plan`, which writes `plan.md` (missing or stale per Reports in `<dispatch>` is transient), then run PLANNING per `<resolve>`, then set `WAITING_PLAN_APPROVAL`.
-- **`WAITING_PLAN_APPROVAL`** (Gate 1): present `plan.md` per `<resolve>`. No code is written before approval. `approve` sets `gate_1_plan_approved`, phase `IMPLEMENTING`, and `pending_step` = `{ "A1", "implement", branch_tip_sha }` in one write, deletes `plan-feedback.md`, then dispatches `A1`. Feedback is appended to `plan-feedback.md`, then enters `PLANNING`; so does a `plan-feedback.md` newer than `plan.md`.
-- **`IMPLEMENTING`** (Stage A): Gate 1 `approve` starts at `A1`, a fix pass at `A1-fix` (a short fix pass takes the short path per `<review-fix>`), and Boot's Resume in `<boot>` at the pending step; every other entry starts at `A2`.
+- **`WAITING_PLAN_APPROVAL`** (Gate 1): present `plan.md` per `<resolve>`. No code is written before approval. `approve` sets `gate_1_plan_approved`, phase `IMPLEMENTING`, and `pass` = `plan` in one write, deletes `plan-feedback.md`, then dispatches `A1`. Feedback is appended to `plan-feedback.md`, then enters `PLANNING`; so does a `plan-feedback.md` newer than `plan.md`.
+- **`IMPLEMENTING`** (Stage A): Gate 1 `approve` starts at `A1`, a fix pass at `A1-fix` (a short fix pass takes the short path per `<review-fix>`), and Boot's Resume in `<boot>` restarts the pass; every other entry starts at `A2` with `pass` = `validate`.
   1. `A1`: implements the plan and simplifies its own diff.
-  2. `A2`: validates and writes `handover.md`. `FAIL-IN-SCOPE` is a counted failure; `FAIL-UNRELATED` is logged and passes. Then append `- <UTC time> orchestrate <tip SHA>: Stage A passed` to `roadblocks.md` and write `AUDITING`.
+  2. `A2`: validates and writes `handover.md`. `FAIL-IN-SCOPE` is a counted failure; `FAIL-UNRELATED` is logged and passes. Then write `AUDITING`.
 - **`AUDITING`** (Stage B): dispatch `B` (on the fix diff per `<review-fix>`) and write `last_verdict` from its result. `APPROVE` writes `approved_sha` = `HEAD`, then runs Findings per `<resolve>`, then a non-blocking pass per `<review-fix>` or Draft per `<release>`, which sets `WAITING_RELEASE_APPROVAL`. `REQUEST CHANGES` with no Critical or Important finding is transient; otherwise it runs Findings per `<resolve>`, then a short fix pass or Gate 2 per `<review-fix>`.
-- **`WAITING_RELEASE_APPROVAL`** (Gate 2): `redraft` per `<release>`. Otherwise, if `gate_2_release_approved` is already true and the human's reply is none of feedback, `fix <n>, <m>`, or a bare `small` / `large`, go to Release (a failed release leaves it true; re-invoking does not ask again). Otherwise, if `HEAD` differs from `approved_sha`, enter `IMPLEMENTING`, not counted. Run Draft per `<release>` when `pr-draft.md` is missing or stale. Present `git diff --stat <base_sha>...HEAD`, the review verdict and findings per `<resolve>`, `handover.md` with its validation evidence, and the pull request draft per `<release>`. No pull request is created before approval. `approve` sets `gate_2_release_approved`, then Release. Feedback, `fix <n>, <m>`, or a bare `small` / `large`, even with the flag true, goes per `<feedback>`, not counted; the flag clears only once a tier applies.
-- **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction, or a bare `small` / `large`, with `gate_1_plan_approved` true goes per `<feedback>`, resetting `count` to 0 once a tier applies. `re-plan` resets `count` to 0 and enters `PLANNING`, first appending any feedback to `plan-feedback.md`, or with `gate_1_plan_approved` true replacing it. From `RELEASED`: when `comments.md` lacks `## Triage`, the report adds "reply `retry` to triage the comments", and `retry` (and `adopt`, after its writes) runs Triage per `<comments>`, staying `BLOCKED`; otherwise `retry` repeats Triage's stop. `retry` from another phase re-enters `blocked_from` resetting nothing, at the step named by the last entry led by a step id (✎ with its Pending step write; short-path steps continue per `<review-fix>`; an id this skill no longer defines, such as `A3` to `A7` from an older run, from `A2`), or with none, as usual. `adopt` per Boot in `<boot>`. With `gate_1_plan_approved` false, `fix` appends its direction to `plan-feedback.md` and enters `PLANNING` (no fix pass), and `adopt` returns to `blocked_from`.
+- **`WAITING_RELEASE_APPROVAL`** (Gate 2): `redraft` per `<release>`. Otherwise, if `gate_2_release_approved` is already true and the human's reply is neither feedback nor `fix <n>, <m>`, go to Release (a failed release leaves it true; re-invoking does not ask again). Otherwise, if `HEAD` differs from `approved_sha`, enter `IMPLEMENTING`, not counted. Run Draft per `<release>` when `pr-draft.md` is missing or stale. Present `git diff --stat <base_sha>...HEAD`, the review verdict and findings per `<resolve>`, `handover.md` with its validation evidence, and the pull request draft per `<release>`. No pull request is created before approval. `approve` sets `gate_2_release_approved`, then Release. Feedback or `fix <n>, <m>`, even with the flag true, goes per `<feedback>`, not counted; the flag clears only once a tier applies.
+- **`BLOCKED`**: report the last `roadblocks.md` entry. `fix` with direction, with `gate_1_plan_approved` true, goes per `<feedback>`, resetting `count` to 0 once a tier applies. `re-plan` resets `count` to 0 and enters `PLANNING`, first appending any feedback to `plan-feedback.md`, or with `gate_1_plan_approved` true replacing it. From `RELEASED`: when `comments.md` lacks `## Triage`, the report adds "reply `retry` to triage the comments", and `retry` (and `adopt`, after its writes) runs Triage per `<comments>`, staying `BLOCKED`; otherwise `retry` repeats Triage's stop. `retry` from another phase re-enters `blocked_from` resetting nothing, at the step named by the last entry led by a step id (short-path steps continue per `<review-fix>`; an id this skill no longer defines, such as `A3` to `A7` from an older run, from `A2`), or with none, as usual. `adopt` per Boot in `<boot>`. With `gate_1_plan_approved` false, `fix` appends its direction to `plan-feedback.md` and enters `PLANNING` (no fix pass), and `adopt` returns to `blocked_from`.
 - **Stack `blocked`**: report the last entry in the stack's `roadblocks.md`. `fix` with direction appends it to `requirements.md`, clears `blocked`, and re-runs that step with the direction as an input; `retry` clears `blocked` and re-runs it; `abandon` per below.
-- **Bare `abandon`** (any located stack, any phase): list the paths and the `incidental.md` entries not marked `drop`, then delete `S/stacks/<name>/` and `S/<branch>/` for every layer. Never delete git branches, worktrees, pull requests, or gh-stack metadata; run no git or gh write. Report that the branches and PRs remain.
+- **Bare `abandon`** (any located stack, any phase): list the paths, then delete `S/stacks/<name>/` and `S/<branch>/` for every layer. Never delete git branches, worktrees, pull requests, or gh-stack metadata; run no git or gh write. Report that the branches and PRs remain.
 - **`RELEASED`** (the active layer is `RELEASED`, so none is `PENDING`): read-only. Report each open pull request, and replies per `<comments>`, and stop; once every pull request merges or closes, invoke with `<name> close-out`.
 - **`CLOSE_OUT`**, **`WAITING_CLOSE_OUT_APPROVAL`**: per `<close-out>`.
 - **`reopen`**, on a `RELEASED` layer's branch with `state.json` and an `OPEN` pull request, `stack.json` phase `LAYERS`, and no layer `ACTIVE` (else halt: handle the review by hand; with no `state.json`, reply `address <PR>`): run Sync and Fetch per `<comments>`; then set the layer `ACTIVE` and `active_layer_index` to it, run Merged target per `<stacked>`, write its `state.json` `BLOCKED` from `RELEASED`, `gate_2_release_approved` false, logging `reopen: <the review, without its small: or large: tag>`, then run Boot step 3 in `<boot>`, then Triage per `<comments>`. A halt before that write also says: then reply `reopen` again with the review. Text given with `reopen` is a comment per `<comments>`.
 
 ## Retries
 
-- **Fix pass**: append `- <UTC time> <skill, or human> <tip SHA>: fix: <its input's root cause>` to `roadblocks.md` and replace `fix-input.md` with its input per Fix Input in `<dispatch>`, then in one write set phase `IMPLEMENTING`, the pass's `count` change, and `pending_step` = `{ "A1-fix", "implement", branch_tip_sha }` (`A1f`, logged per `<review-fix>`, on a short fix pass). Dispatch it, then Stage A from `A2`, or the short path per `<review-fix>`.
+- **Fix pass**: append `- <UTC time> <skill, or human> <tip SHA>: fix: <its input's root cause>` to `roadblocks.md` and replace `fix-input.md` with its input per Fix Input in `<dispatch>`, then in one write set phase `IMPLEMENTING`, the pass's `count` change, and `pass` = `fix` (`short` on a short fix pass, logged per `<review-fix>`). Dispatch `A1-fix` (`A1f` on a short fix pass), then Stage A from `A2`, or the short path per `<review-fix>`.
 - **Counted failure**: if `count` >= `max_allowed`, set `BLOCKED`, its entry led `<step id>: counted failure at cap:`. Otherwise run a fix pass that increments `count`, with the failing report as input.
-- **Not counted**: formatter fixes, unrelated or pre-existing failures (logged), Suggestions and Nitpicks, transients, a moved `HEAD` at Gate 2, maintenance, and adoption.
+- **Not counted**: formatter fixes, unrelated or pre-existing failures (logged), Suggestions and Nitpicks, transients, a moved `HEAD` at Gate 2, and adoption.
 - Only the human's exit from `BLOCKED` (`fix`, `re-plan`, or `adopt`) resets `count`.
