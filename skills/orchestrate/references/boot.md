@@ -30,7 +30,7 @@ rm -rf -- "<that path>"
 
 ## Gate Buttons
 
-- **Use**: when the session lists a structured question tool (by name or loaded on request), present each stop below with it, after the stop's content and resume line are printed in chat. The call carries only the question and the verbs, in this order, most common first; a verb the tool has no room for stays typed. With no such tool, or with an auto-answered gate, present the typed verbs. Typed verbs always work, and the chat text lists every verb.
+- **Use**: when the session lists a structured question tool (by name or loaded on request), present each stop below with it, after the stop's content and resume line are printed in chat. The call carries only the question and the verbs, in this order, most common first; a verb the tool has no room for stays typed, and a stop with fewer verbs than the tool's minimum options stays typed. With no such tool, or with an auto-answered gate, present the typed verbs. Typed verbs always work, and the chat text lists every verb.
   - Unattended near miss: `yes`, `no`.
   - Split approval: `approve`, `narrow`.
   - Gate 1: `approve`, with the question text "approve, or reply in chat with feedback"; plan feedback never goes through the tool's free-text field, which truncates.
