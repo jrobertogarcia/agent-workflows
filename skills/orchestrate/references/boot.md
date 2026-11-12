@@ -25,24 +25,20 @@ rm -rf -- "<that path>"
 
 ## Resume Line
 
-- End every stop that waits for a human reply with this line, values filled in: ``To continue in a new thread: in `<worktree>`, invoke orchestrate with `<your reply>` ``. `<your reply>` stays a placeholder; the stop already lists the replies.
-- Before the layer has `state.json`, and while `stack.json` `phase` is `CLOSE_OUT` or `WAITING_CLOSE_OUT_APPROVAL`, precede `<your reply>` with the stack name; during Start, before `stack.json` exists, with the provisional path. On a layer with `state.json`, Locate finds the run by the current branch.
-- None for a halt or a report cleared by acting and re-invoking (`PUSHED`, a failed Release step), the Guard's and Locate's own questions (they settle which run the message belongs to, and a new thread's message is asked afresh), Start's trunk question (no `stack.json` yet, folder already moved), or a read-only report (`RELEASED`, no review comments). An auto-answered gate is not a stop and prints none.
-- The new thread restores from the state files per Restore; nothing extra is written.
+- End every stop that waits for a human reply with ``To continue in a new thread: in `<worktree>`, invoke orchestrate with `<your reply>` ``, leaving `<your reply>` as a placeholder. Before the layer has `state.json`, and in `CLOSE_OUT` or `WAITING_CLOSE_OUT_APPROVAL`, put the stack name before it; during Start, before `stack.json` exists, the provisional path.
+- Print none for a halt or report cleared by acting and re-invoking, the Guard's and Locate's own questions, Start's trunk question, a read-only report, or an auto-answered gate. A new thread restores from the state files per Restore.
 
 ## Gate Buttons
 
-- **Use**: when a structured question tool is listed among the session's tools, including one listed only by name that the host loads on request, present each stop below with it, after the gate's content and its resume line have been printed in chat, never inside the call. No tool name is hard-coded. The call carries only the question and the verb options; no summary, findings, diff stat, or PR text goes in it. With no such tool, present the typed verbs as usual. A button choice is an ordinary reply, so switching hosts mid-run is fine. With `unattended` set, an auto-answered gate shows no buttons; see Unattended.
-- **Verbs per stop** (each option is the existing verb, label and meaning unchanged):
+- **Use**: when the session lists a structured question tool (by name or loaded on request), present each stop below with it, after the stop's content and resume line are printed in chat. The call carries only the question and the verbs, in this order, most common first; a verb the tool has no room for stays typed, and a stop with fewer verbs than the tool's minimum options stays typed. With no such tool, or with an auto-answered gate, present the typed verbs. Typed verbs always work, and the chat text lists every verb.
   - Unattended near miss: `yes`, `no`.
   - Split approval: `approve`, `narrow`.
-  - Gate 1: `approve`, with the question text "approve, or reply in chat with feedback". Plan feedback is never collected through the tool's free-text field, which truncates at about 300 characters.
+  - Gate 1: `approve`, with the question text "approve, or reply in chat with feedback"; plan feedback never goes through the tool's free-text field, which truncates.
   - Gate 2: `approve`, `fix`, `redraft`.
   - BLOCKED: `fix`, `retry`, `re-plan`, `adopt`.
   - Stack `blocked`: `fix`, `retry`.
-- **Payload turn**: after a button for a verb that takes text or numbers (`fix`, `redraft`, `narrow`, `re-plan`), ask once in plain chat for the payload and read the next message as it. Combine them into the equivalent typed reply and handle it exactly as if typed: `fix <payload as typed>` (numbers such as `fix 3, 5`, `small:` or `large:` text, or untagged text), `redraft <text>`, `narrow <text>`, `re-plan <text>`. A `re-plan` with no feedback is allowed: accept "none". The next message replaces the button choice only when it is exactly one verb word of that stop, or a verb followed by the number list or tag form Inputs accepts (`fix 3, 5`, `small:`); anything else, including text that merely starts with a verb word, is the payload.
-- **Option limits**: if the tool states an upper limit below the stop's verb count, show the verbs in the order listed above (most common first) and leave the rest typed. If the tool needs more options than the stop has verbs, that stop stays typed. Typed verbs always work, and the stop's plain-chat text still lists every verb.
-- **Not covered**: story review answers and the stack name, `register`, `reopen`, `address`, `abandon` (everywhere, including `abandon <path>`, which deletes state and stays typed), `narrow` and `adopt` at the stacked-work and tip-moved halts, `close-out`, `approve C<n>`, and close-out `approve` stay typed.
+- **Payload turn**: after a button for `fix`, `redraft`, `narrow`, or `re-plan`, ask once in chat for its text and handle the two as the typed reply (`fix 3, 5`, `fix small: …`, `redraft <text>`; `re-plan` accepts "none"). The next message is a new choice instead only when it is exactly a verb of that stop, or `fix` with numbers or a `small:` or `large:` tag.
+- Every other reply stays typed: story review answers, `register`, `reopen`, `address`, `abandon`, `close-out`, `approve C<n>`, and `narrow` and `adopt` at halts.
 
 ## Unattended
 
@@ -51,7 +47,6 @@ rm -rf -- "<that path>"
 - **Auto-answer**: at each touchpoint below, instead of stopping, append the Decisions entry with `Reply: (auto: unattended)` and `Ruling:` the recommendation taken, then act as if the human had replied it; print one line naming the touchpoint and ruling. Touchpoints: Start (unanswered Needs you items proceed on their recommended options and the default stack name stands), Split approval (`approve`, after the checks in `<stacked>` pass), Gate 1 (`approve`, per `<resolve>`), Gate 2 (`approve`, per `<release>`).
 - **Stops**: take no auto-answer, report as attended, and end with the Resume Line where the attended flow would, when any of: `BLOCKED` (after the retry budget, as the attended flow counts it) or Stack `blocked`; a halt (drift, rebase conflict, tip moved, closed layer, open-layer limit, failed Release or link); a `large` tier or `re-plan` recommendation; a Needs you item whose report names no recommended option; Gate 2 with an unresolved Critical or Important finding or an `Item` action `discuss` (per `<release>`); any other question this skill would put to the human (name taken, a failed split check, trunk unresolved).
 - **Scope**: auto-answers apply to fresh runs. `address`, `reopen`, and `close-out` run attended even when the flag is set: every gate on those paths waits for the human.
-- **Known gap**: no new spend, turn, or time cap; the run is bounded by the retry `count`, review rounds that stop on new blocking findings, one non-blocking fix pass per branch, and BLOCKED.
 
 ## Decisions
 
