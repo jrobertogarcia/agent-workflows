@@ -61,7 +61,6 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
   - `approve C<n>[, C<m>]` runs exactly the named items. First check each with `grep -m1 -E '^C<n>: (repo-edit|ticket-edit|ticket-new|draft|branch|leave) — '` on the report; if any matches nothing, stop and name it, and the Decisions entry records `Ruling: rejected, no such C<n>`.
   - Any other text, except `abandon`, is feedback: append it to `requirements.md` under `## Close-out feedback <UTC time>`, write `CLOSE_OUT`, and re-run.
 - The Decisions entry, touchpoint `WAITING_CLOSE_OUT_APPROVAL`, records the approved list in `Ruling:`.
-- The stop ends with the Resume Line, with the stack name.
 
 ## Execute
 
