@@ -15,7 +15,7 @@ Sections 3 through 7 are conditional: skip any whose subject this diff does not 
 
 #### 1) Context & Intent
 - What is the purpose of this change? (Feature, bug fix, refactor, performance)
-- What problem does it solve, and does it meet the requirement found in step 2 of the skill (the acceptance criteria)? If none was found, judge against the PR title and body and say so.
+- What problem does it solve, and does it meet the requirement found in step 2 of the skill (the acceptance criteria)? Follow-up tickets read there also bound the scope: do not fault the PR for work a read ticket assigns elsewhere. If none was found, judge against the PR title and body and say so.
 
 #### 2) Correctness & Edge Cases
 - Does the code do what it is supposed to do?
@@ -47,8 +47,9 @@ Sections 3 through 7 are conditional: skip any whose subject this diff does not 
 
 #### 8) Code Quality, Readability & Simplicity
 - Are names self-documenting and mapped to clear domain concepts?
-- Is there dead code, unused parameters, or unreachable logic?
+- Is there dead code, unused parameters, or unreachable logic? Unneeded code: code the change adds that nothing uses or that a simpler form replaces.
 - Is the control flow clear, avoiding deep nesting, arrow shapes, or over-engineering?
+- Code comments: flag comments that restate the code, narrate the change, or are stale, and TODOs that do not name the right open ticket.
 
 #### 9) Architecture & Design
 - **Design Principles**: Does the code conform to standard design principles (SOLID, DRY, KISS, YAGNI, low coupling, high cohesion)?
@@ -56,19 +57,20 @@ Sections 3 through 7 are conditional: skip any whose subject this diff does not 
 
 #### 10) Testing & Documentation
 - Are there tests covering edge cases and happy paths? Do mocks hide real integration issues?
-- Is public API or complex logical structures documented?
+- Is public API or complex logical structures documented? (Code comments are checked in 8.)
 
 ### 📝 Review Feedback Format
 
-Raise to the author only `🔴 Critical` and `🟠 Important` findings. List `🟡 Suggestion` findings for the reviewer only, and count `💡 Nitpick` findings.
+Raise every finding that improves the PR: `🔴 Critical` and `🟠 Important` as `comment`, `🟡 Suggestion` as an `ask` the author can decline, and `💡 Nitpick` as one general note per category (such as code comments), not one thread per line. Use `skip` only for findings that do not improve the PR, listed with the reason.
 
 For each issue found, provide:
 - **Severity**: 
   - 🔴 **Critical** (Blocks release; causes severe bugs, resource leaks, or architectural degradation)
-  - 🟠 **Important** (Blocks release; produces a wrong result in a reachable case, a reader cannot follow the change without re-deriving it, or the structure will force a future change to be made in the wrong place)
-  - 🟡 **Suggestion** (Non-blocking; correct and comprehensible as written, and adopting it would change form only, not behavior or where a future change lands)
+  - 🟠 **Important** (Raised; blocks if it produces a wrong result in a reachable case, does not block if only the structure will force a future change to be made in the wrong place)
+  - 🟡 **Suggestion** (Non-blocking; correct and comprehensible as written, and adopting it would change form only, not behavior or where a future change lands; includes an out-of-date description or other non-behavioral issue)
   - 💡 **Nitpick** (Non-blocking; minor style suggestions or opinions)
 - **Location**: File and line number
+- **Basis**: `verified` (read in code, diff, ticket or rule) or `inferred`
 - **Issue**: Clear description of the problem
 - **Suggestion**: Specific recommendation for improvement
 - **Example**: Code snippet showing the fix (when helpful)
@@ -76,10 +78,11 @@ For each issue found, provide:
 
 ### 🚦 Unified Verdict Rules
 Evaluate all documented findings to recommend a single final verdict (the reviewer casts it):
-* **REQUEST CHANGES (FAIL)**: If there is at least one (1) `🔴 Critical` or `🟠 Important` issue.
-* **APPROVE (PASS)**: If there are zero (0) `🔴 Critical` and zero (0) `🟠 Important` issues.
+* **REQUEST CHANGES (FAIL)**: If there is any `🔴 Critical` finding, a behavior defect, a failing required check, or a change that cannot be followed from the diff itself. `🟠 Important` findings about structure alone are raised but do not block on their own.
+* **APPROVE (PASS)**: Otherwise.
 
 ### 🎭 Review Tone
-- Write comments to a colleague who is not present: be constructive, not critical. Explain WHY.
+- Write comments to a colleague who is not present: be constructive, not critical. Explain WHY, in the same sentence as the finding.
 - Acknowledge good practices.
 - Focus on the code, not the person.
+- Drafting rules (wording, links, paste-ready form) live in step 5 of SKILL.md.
