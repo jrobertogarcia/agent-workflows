@@ -66,7 +66,7 @@ Raise every finding that improves the PR: `🔴 Critical` and `🟠 Important` a
 For each issue found, provide:
 - **Severity**: 
   - 🔴 **Critical** (Blocks release; causes severe bugs, resource leaks, or architectural degradation)
-  - 🟠 **Important** (Raised; produces a wrong result in a reachable case, or the structure will force a future change to be made in the wrong place)
+  - 🟠 **Important** (Raised; blocks if it produces a wrong result in a reachable case, does not block if only the structure will force a future change to be made in the wrong place)
   - 🟡 **Suggestion** (Non-blocking; correct and comprehensible as written, and adopting it would change form only, not behavior or where a future change lands; includes an out-of-date description or other non-behavioral issue)
   - 💡 **Nitpick** (Non-blocking; minor style suggestions or opinions)
 - **Location**: File and line number
@@ -82,7 +82,7 @@ Evaluate all documented findings to recommend a single final verdict (the review
 * **APPROVE (PASS)**: Otherwise.
 
 ### 🎭 Review Tone
-- Write comments to a colleague who is not present: be constructive, not critical. Explain WHY.
+- Write comments to a colleague who is not present: be constructive, not critical. Explain WHY, in the same sentence as the finding.
 - Acknowledge good practices.
 - Focus on the code, not the person.
 - Drafting rules (wording, links, paste-ready form) live in step 5 of SKILL.md.
