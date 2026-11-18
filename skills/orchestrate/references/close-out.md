@@ -47,7 +47,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 
 - Present the `## Links` block and every `C<n>` section: kind, source, action, premise verdict, destination, missing links, and text. The premise verdict for `C<n>` is Item `<n>` in `reports/resolve-close-out.md`; an item with no such Item (numbered after a re-inventory, or after a `resolve` failure) shows "premise unverified".
 - Replies:
-  - `approve` and `approve C<n>[, C<m>]` mean what they do in `close-out` step 6. Before running `approve C<n>[, C<m>]`, check each named item with `grep -m1 -E '^C<n>: (repo-edit|ticket-edit|ticket-new|draft|branch|leave) — '` on the report; if any matches nothing, stop and name it, and the Decisions entry records `Ruling: rejected, no such C<n>`.
+  - `approve` and `approve C<n>[, C<m>]` mean what they do in `close-out` step 6, and the gate states what plain `approve` skips. Before running `approve C<n>[, C<m>]`, check each named item with `grep -m1 -E '^C<n>: (repo-edit|ticket-edit|ticket-new|draft|branch|leave) — '` on the report; if any matches nothing, stop and name it, and the Decisions entry records `Ruling: rejected, no such C<n>`.
   - Any other text, except `abandon`, is feedback: append it to `requirements.md` under `## Close-out feedback <UTC time>`, write `CLOSE_OUT`, and re-run.
 - The Decisions entry, touchpoint `WAITING_CLOSE_OUT_APPROVAL`, records the approved list in `Ruling:`.
 
