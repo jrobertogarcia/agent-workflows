@@ -20,7 +20,7 @@ Plan-mode direction in plan-producing skills is prose, not frontmatter, and is e
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 22 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
+Below is the structured list of the 23 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
@@ -52,4 +52,5 @@ Commands in skills:
 | **`distill-lessons`** | `**/*` | Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery. | [SKILL.md](skills/distill-lessons/SKILL.md) |
 | **`triage-feedback`** | `**/*` | File feedback on this project's skills as GitHub issues, recording what the reporter saw without diagnosing it or proposing fixes, and linking matching issues instead of filing duplicates. Writes only after the user approves a preview. Use when you have findings, bugs, or suggestions about these skills to report. | [SKILL.md](skills/triage-feedback/SKILL.md) |
 | **`validate-commit`** | `**/*` | Run formatters, linters, build, and tests to confirm code is ready to commit. Use before committing. | [SKILL.md](skills/validate-commit/SKILL.md) |
+| **`close-out`** | `**/*` | Close out a ticket's loose ends after its pull requests merge: inventory the follow-ups, verify each, and on approval write ticket edits, new tickets, or branch deletions. Use when asked to close out a ticket or pull request. | [SKILL.md](skills/close-out/SKILL.md) |
 | **`orchestrate`** | `**/*` | Drive one requirement from story review to open pull requests, on one branch or a stack of branches, dispatching each lifecycle step to a fresh subagent and stopping for plan and release approval. Use only when the user explicitly asks to orchestrate or run the whole lifecycle end to end, to resume an orchestrated run, to close one out after its pull requests merge, or to address review comments on an open pull request without posting replies; never for a single step or an ordinary implementation request. | [SKILL.md](skills/orchestrate/SKILL.md) |
