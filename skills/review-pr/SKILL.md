@@ -23,7 +23,7 @@ description: Review another person's pull request from its link or number and dr
    - the recommended verdict per `review-guidelines.md`.
 
    Write comments by these rules:
-   - Write the way a teammate answers in a thread: casual and friendly, a quick thanks where it fits, no preamble, no restating the finding, no sign-off, one or two short sentences. A question for choices, not an order. No hedging words ("maybe", "just wondering"). No jargon in a choice; state the options.
+   - Write the way a teammate answers in a thread: casual and friendly, a quick thanks where it fits, no preamble, no restating the finding, no sign-off, one or two short sentences. A question for choices, not an order. No hedging words ("maybe", "just wondering"), no asides or wordplay. No jargon in a choice; state the options.
    - Standalone: never "Same here" or a reference to another comment, since GitHub orders inline comments by path.
    - Link every cited ticket, rule and code location, at most one link per claim, no precedent unless asked.
    - Paste-ready: exact file, line and text to copy as-is.
