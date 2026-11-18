@@ -20,7 +20,7 @@ Plan-mode direction in plan-producing skills is prose, not frontmatter, and is e
 
 ## 2. Core Agent Skills Registry
 
-Below is the structured list of the 21 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
+Below is the structured list of the 22 core skills managed by this repository. Coding agents should trigger these prompts when performing the corresponding lifecycle tasks.
 
 Frontmatter `description` in each SKILL.md is authoritative; keep this table and README in sync when editing descriptions.
 
@@ -47,6 +47,7 @@ Commands in skills:
 | **`refactor-code`** | `**/*` | Audit structural design problems and apply the behavior-preserving restructure after approval. Use when code needs restructuring rather than subtraction. | [SKILL.md](skills/refactor-code/SKILL.md) |
 | **`prepare-handover`** | `**/*` | Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread. | [SKILL.md](skills/prepare-handover/SKILL.md) |
 | **`review-branch`** | `**/*` | Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request. | [SKILL.md](skills/review-branch/SKILL.md) |
+| **`review-pr`** | `**/*` | Review another person's pull request from its link or number and draft comments for the author without posting. Use when asked to review a PR you did not write. | [SKILL.md](skills/review-pr/SKILL.md) |
 | **`create-pr`** | `**/*` | Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit. | [SKILL.md](skills/create-pr/SKILL.md) |
 | **`distill-lessons`** | `**/*` | Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery. | [SKILL.md](skills/distill-lessons/SKILL.md) |
 | **`triage-feedback`** | `**/*` | File feedback on this project's skills as GitHub issues, recording what the reporter saw without diagnosing it or proposing fixes, and linking matching issues instead of filing duplicates. Writes only after the user approves a preview. Use when you have findings, bugs, or suggestions about these skills to report. | [SKILL.md](skills/triage-feedback/SKILL.md) |
