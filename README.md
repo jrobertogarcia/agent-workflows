@@ -33,6 +33,7 @@ Skills for delivering software with coding agents through explicit, human-gated 
 ### Hand over, review, release
 *   **`prepare-handover`**: Summarize completed work, key decisions, and verification evidence for a reviewer. Use at the end of an implementation thread.
 *   **`review-branch`**: Review the active branch diff against its target branch. Use in a fresh thread before opening a pull request.
+*   **`review-pr`**: Review another person's pull request from its link or number and draft comments for the author without posting. Use when asked to review a PR you did not write.
 *   **`create-pr`**: Push the current branch and open a pull request with a synthesized title and description. Use when a reviewed branch is ready to submit.
 *   **`distill-lessons`**: Codify durable lessons from recent work into project guidelines or documentation. Use sparingly, after a notable discovery.
 *   **`triage-feedback`**: File feedback on this project's skills as GitHub issues, recording what the reporter saw without diagnosing it or proposing fixes, and linking matching issues instead of filing duplicates. Writes only after the user approves a preview. Use when you have findings, bugs, or suggestions about these skills to report.
