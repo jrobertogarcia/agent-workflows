@@ -85,4 +85,4 @@ Evaluate all documented findings to recommend a single final verdict (the review
 - Write comments to a colleague who is not present: be constructive, not critical. Explain WHY, in the same sentence as the finding.
 - Acknowledge good practices.
 - Focus on the code, not the person.
-- Drafting rules (wording, links, paste-ready form) live in step 5 of SKILL.md.
+- Drafting rules (wording, fenced form, review body, links) live in step 5 of SKILL.md.
