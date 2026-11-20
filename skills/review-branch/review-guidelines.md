@@ -15,7 +15,7 @@ Sections 3 through 7 are conditional: skip any whose subject this diff does not 
 
 #### 1) Context & Intent
 - What is the purpose of this change? (Feature, bug fix, refactor, performance)
-- What problem does it solve, and does it meet the requirements/acceptance criteria?
+- What problem does it solve? Check it against the requirements found in step 2 of the skill, naming each unmet criterion; say "not assessed" when none were found.
 
 #### 2) Correctness & Edge Cases
 - Does the code do what it is supposed to do?
@@ -63,7 +63,7 @@ Sections 3 through 7 are conditional: skip any whose subject this diff does not 
 For each issue found, provide:
 - **Severity**: 
   - 🔴 **Critical** (Blocks release; causes severe bugs, resource leaks, or architectural degradation)
-  - 🟠 **Important** (Blocks release; produces a wrong result in a reachable case, a reader cannot follow the change without re-deriving it, or the structure will force a future change to be made in the wrong place)
+  - 🟠 **Important** (Blocks release; produces a wrong result in a reachable case, leaves a stated requirement or acceptance criterion unmet, a reader cannot follow the change without re-deriving it, or the structure will force a future change to be made in the wrong place)
   - 🟡 **Suggestion** (Non-blocking; correct and comprehensible as written, and adopting it would change form only, not behavior or where a future change lands)
   - 💡 **Nitpick** (Non-blocking; minor style suggestions or opinions)
 - **Location**: File and line number
