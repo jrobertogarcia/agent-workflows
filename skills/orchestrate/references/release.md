@@ -8,12 +8,23 @@ Run when `AUDITING` leaves for Gate 2 (`B` `APPROVE`, or per `<review-fix>`), an
 
 - Dispatch `draft`.
 - The result is transient per Result in `<dispatch>` when `pr-draft.md` fails any of: first line `Branch tip: <approved_sha>`, second line `Missing links: …`, third line `Title: …`, a blank line, then a non-empty body.
-- The body's shape is `create-pr`'s to enforce: the `draft` worker checks it against that skill's body bounds and the chosen template, so do not re-check it here.
+- The body's shape is `create-pr`'s to enforce: the `draft` worker checks it against that skill's body bounds and the chosen template, so attended runs leave body shape to the worker and the human at Gate 2; when `unattended` is set, run the Draft check below.
 - Then write `WAITING_RELEASE_APPROVAL`; `retry` after a `draft` BLOCKED re-runs `draft`.
+
+### Draft check
+
+Unattended only, run on `pr-draft.md`'s body before Gate 2 auto-approval; mechanical, no judgment. The template is the one passed to `draft` (re-run `create-pr` step 2's template command after a context summary). Checks 2 and 3 skip lines that appear verbatim in the template.
+
+1. Headings: the body's `#` headings (outside code fences) equal the template's, or, with no template, are a subset of Why, What, Design, Tested that contains Why and What.
+2. Process vocabulary: `grep -iE 'assum|inferred|unverified|not (yet )?(verified|checked)|open question'` on the body finds nothing.
+3. Bounds: no body line over 160 characters unless it contains a URL; with no template, at most 6 top-level bullets under `## What` (10 when `git diff --name-only <base_sha>...HEAD` lists more than 10 files). No bullet check with a template.
+4. Links: every URL in `handover.md`'s `Links` section and the parent pull request URL appears in the body.
+
+On failure, dispatch `draft` once as `redraft` with the failed checks verbatim as feedback (not counted) and re-run the check. A second failure stops as attended: append the failures to `roadblocks.md` and present Gate 2 as attended with the failures listed. Nothing is auto-approved and no pull request is opened.
 
 ## Gate 2
 
-- Unattended per `<boot>`: when the stop conditions in `<resolve>` do not apply, record the auto-answer, set `gate_2_release_approved`, and go to Release without presenting; otherwise present as attended.
+- Unattended per `<boot>`: when the Draft check passed and the stop conditions in `<resolve>` do not apply, record the auto-answer, set `gate_2_release_approved`, and go to Release without presenting; otherwise present as attended. The Draft check re-runs on every draft, and auto-approval resumes on a pass, even after a human reply.
 - **Presentation**: also present `pr-draft.md`'s title and body verbatim, and its `Missing links` line when it is not "none". When `comments.md` exists, also present `git log --oneline --cherry-pick --right-only origin/<branch>...HEAD --not <base_sha>`, this round's commits (rebased ones left out), then run Replies per `<comments>` and present `replies.md` verbatim too. There, `fix <n>` selects review findings, not comments; change a comment's reply with `fix small:` or `fix large:` and direction.
 - **Re-presentation**: the first presentation in a thread is complete, and so is the first after a context summary. A later one always shows `pr-draft.md`'s title and body verbatim, and `Missing links` when not "none"; otherwise only what changed since the last presentation in this thread: `git log --oneline <last presented HEAD>..HEAD` instead of the diff stat when `HEAD` moved, findings per Findings in `<resolve>`, `handover.md` only when `A2` rewrote it, and `replies.md` only when Replies rewrote it. Name each unchanged part with its path, such as "findings unchanged: <review.md path>".
 - **`redraft <feedback>`**, when `HEAD` equals `approved_sha` (otherwise handle it as Gate 2 handles a moved `HEAD`):
