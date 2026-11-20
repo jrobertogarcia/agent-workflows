@@ -31,7 +31,7 @@ These rules apply to `inventory`, `tickets`, and `resolve` with purpose `close-o
 - Inputs: `stack.json`; each layer's `S/<branch>/` path with its PR number; the stack's `requirements.md`, `context.md`, `resolve.md`, `decisions.md` (as context), and `roadblocks.md`; on a re-dispatch, also `inventory-previous.md` and/or `resolve-close-out.md`.
 - Instructions:
   - "The skill's read of local state maps to the layer paths and stack files given as Inputs. Besides the skill's sources, inventory the follow-ups this change created, from:
-    - each layer's handover `Follow-ups` (for a handover without one, its deviation and "not yet verified" lines);
+    - each layer's handover `Follow-ups` (for a handover without one, its deviation and `Not run:` (or "not yet verified") lines);
     - each `roadblocks.md`'s `PUSHED`, fix, and pending lines;
     - `review.md` `Item <n>: defer` lines;
     - deferred and Settled RECOMMEND items in both `resolve.md` files;
